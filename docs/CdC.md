@@ -134,7 +134,7 @@ Accessoires	Un par arme, sauf indication contraire.
 Les capacités structurées personnalisées peuvent modifier les valeurs et emplacements qu’elles visent. Une capacité disponible ne garantit pas son remplissage par le randomizer.
 5.5 Delta, Critique et minimum de Force
 Le coefficient Delta natif d’une offensive est 5, puis 4 à12, puis 3 à18. Un Stabilisateur le réduit de1 : les coefficients natifs équipés deviennent donc4,3,2. Atteindre16 ne réduit pas le coefficient.
-La Visée n’est pas une caractéristique indépendante. Un bonus/malus de Visée modifie le seuil du test d’attaque utilisant la caractéristique de l’arme. Les formules complètes de résolution figurent en section 13.
+La Visée n’est pas une caractéristique indépendante. Un bonus/malus de Visée modifie le seuil du test d’attaque utilisant la caractéristique de l’arme. Ce modificateur change le seuil effectif et donc la marge du jet, mais ne change jamais le palier du coefficient Delta. Le coefficient Delta dépend de la caractéristique réelle et des seuls effets qui modifient explicitement ce coefficient, comme le Stabilisateur. Les formules complètes de résolution figurent en section 13.
 La plage critique native commence à1 ; chaque point de Critique augmente son seuil supérieur de1. Le20 naturel reste un échec critique. Les armes lourdes ne bénéficient pas de Fulgurance ; les autres propriétés de vitesse restent décrites sans extrapolation automatique à des sous-systèmes non gérés.
 Pour les armes ayant un minimum de Force, chaque point manquant impose −1 au test d’attaque dans l’usage manuel. Le randomizer exclut ces armes si le minimum n’est pas satisfait.
 5.6 Armes natives
@@ -208,8 +208,9 @@ Les descriptions complètes, durées et conditions proviennent des sections IV �
 6.1 Consultation, création et édition
 Le catalogue privé réunit armes, accessoires, implants, gadgets et Perks. Le MJ peut créer des éléments personnalisés et modifier les natifs. Chaque élément présente son identité, sa nature, sa définition active et ses paramètres de génération.
 Les champs structurés proposés correspondent aux capacités réellement comprises par l’application : bonus/malus de Puissance, Visée, Critique, coefficient Delta, Armure, PV, Réactions ; modifications de slots armes/gadgets/implants ; prérequis de caractéristiques ; compatibilités. Les effets et modes natifs nécessaires, dont Annihilation et Fulgurance, restent identifiables.
+Pour la PR2, cette automatisation est volontairement bornée aux effets numériques que GMTK sait calculer directement : Puissance, Visée, Critique, coefficient Delta, PVmax, Armure, Réactions, slots principaux/secondaires/gadgets/implants, prérequis et compatibilités. Des conditions simples peuvent qualifier un calcul lorsque le CDC les prévoit explicitement, par exemple cible Robot, cible Marquée ou activation d’un Avantage de Perk. Ces conditions n’introduisent pas de suivi d’état, de cible ou de tour.
 Un effet doit avoir une portée précise : porteur, arme concernée ou arme portant l’accessoire, par exemple. Un bonus propre à une occurrence ne s’applique pas automatiquement à toutes les armes de la fiche. Les conditions structurées ne deviennent pas un moteur de combat général.
-Une zone de texte libre permet de décrire tout effet spécial non automatisé. Un texte renseigné seul ne modifie aucun calcul.
+Une zone de texte libre permet de décrire tout effet spécial non automatisé. Un texte renseigné seul ne modifie aucun calcul. Suppression, Vigilance, Brûlure, Ricochet, Déstabilisation, Overdrive et les autres sous-systèmes exclus restent descriptifs/manuels sauf décision explicite ultérieure.
 6.2 Natifs, référence et restauration
 Un natif conserve sa référence TMP applicative, incluant les compléments mécaniques validés. L’application distingue l’état actif de cette référence et indique si l’élément est modifié.
 Remettre par défaut demande confirmation, conserve l’identité de l’élément et restaure les valeurs natives. Un personnalisé ne propose pas de fausse restauration TMP. Le périmètre de restauration des paramètres de génération, distincts des valeurs mécaniques, reste identifié en section 18.
@@ -324,11 +325,11 @@ Nettoyer la Table demande confirmation puis retire les instances. Cette action n
 Le Dice Roller automatise d20, caractéristique utilisée, seuil effectif, bonus/malus, Avantage/Désavantage, verdict, Critique, coefficient et Bonus Delta, Puissance, dégâts, effets structurés directement applicables et Fulgurance.
 Les tests génériques de caractéristiques/résistance sont accessibles. Ils ne déclenchent pas automatiquement les sous-systèmes de survie, d’Overdrive ou les résistances secondaires d’armes.
 Portée, couverture, surprise, positionnement et autres circonstances de scène ne sont pas interprétés automatiquement. Le MJ utilise les ajustements proches du dé et les descriptions consultables. L’interface n’ajoute pas systématiquement des questions de portée ou de couverture.
-Les contrôles contextuels apparaissent lorsque leur valeur modifie réellement un calcul pris en charge : par exemple robot/Marqué pour les bonus de Puissance IEM, ou Fulgurance. L’application ne suit pas pour autant ces états sur une cible. Un sélecteur purement narratif ou redondant, notamment de protocole Med Rifle sans différence utile au calcul demandé, n’est pas ajouté.
+Les contrôles contextuels apparaissent uniquement lorsqu’ils modifient réellement un calcul pris en charge : par exemple Robot/Marqué pour les bonus de Puissance IEM, ou l’activation d’un Avantage conditionnel comme Dextérité. Ils peuvent être présentés sous forme de petites icônes ou contrôles directement sur la carte de l’arme afin de rester rapides à utiliser. Cliquer une telle condition signifie uniquement « cette condition s’applique à ce jet » : GMTK ne mémorise pas que la cible est Robot, Marquée, verrouillée ou dans un état particulier. Un sélecteur purement narratif ou redondant, notamment de protocole Med Rifle sans différence utile au calcul demandé, n’est pas ajouté.
 13.2 Valeurs de préparation du jet
 La caractéristique de l’arme est sélectionnée automatiquement. Le seuil effectif est la valeur de la caractéristique augmentée ou diminuée des modificateurs applicables, dont le bonus/malus MJ. Les effets structurés connus et leurs portées sont pris en compte ; le détail permet de distinguer leurs contributions des ajustements contextuels.
 La Puissance effective provient de l’arme, de l’accessoire, des bonus structurés applicables au contexte et des overrides prioritaires. La plage de Critique tient compte des bonus applicables, dont ceux des accessoires et Perks.
-Le coefficient Delta effectif utilise le palier et les modificateurs structurés/overrides concernés. Les cas limites de franchissement temporaire de palier par un modificateur de seuil sont conservés en section18 ; aucune règle non décidée n’est ajoutée.
+Le coefficient Delta effectif est déterminé par la caractéristique réelle et les modificateurs qui ciblent explicitement le coefficient Delta. Un bonus ou malus appliqué au seuil du jet ne fait jamais franchir un palier de coefficient Delta. Exemple : une caractéristique à11 avec +5 au jet utilise un seuil effectif16 mais conserve son coefficient Delta natif5, sauf effet explicite tel qu’un Stabilisateur.
 13.3 Avantage et Désavantage
 Les niveaux d’Avantage et Désavantage s’annulent niveau par niveau, en combinant les sources automatiques connues et les ajustements indiqués par le MJ.
 Entrées	Solde	Dés lancés et retenus
@@ -350,23 +351,24 @@ Dans la résolution ordinaire sous caractéristique, le meilleur est le plus pet
 La présence d’un20 sur un dé non retenu ne remplace pas le résultat du dé retenu. Les conséquences narratives d’un échec critique sont déterminées par le MJ.
 13.5 Bonus Delta et dégâts
 Pour une attaque réussie :
-Bonus Delta = partie entière inférieure de ((seuil effectif − résultat retenu) / coefficient Delta effectif).
+Bonus Delta = partie entière inférieure de ((seuil effectif − résultat retenu) / coefficient Delta effectif), avec un minimum de0.
 Dégâts ordinaires = Puissance effective + Bonus Delta.
 Dégâts critiques standards = Puissance effective×2 + Bonus Delta.
 Dégâts critiques avec Annihilation = Puissance effective×3 + Bonus Delta.
 Le Bonus Delta n’est jamais multiplié par le critique. Annihilation remplace le multiplicateur2 par3, sans cumuler les deux.
 Exemple validé : PER16, malus−2, seuil14, résultat7, coefficient4 → plancher((14−7)/4)=+1 Delta. Le calcul ne repart pas de PER16 brute.
+Un critique reste prioritaire lorsqu’il appartient à la plage critique malgré un résultat supérieur au seuil effectif. Dans ce cas, la réussite critique est conservée et le Bonus Delta vaut0. Exemple : seuil effectif2, plage critique1–3, résultat3 → réussite critique, Bonus Delta0.
 Ces dégâts sont les dégâts calculés du jet, avant application manuelle à une cible et réduction par son Armure via la Table. Un échec n’inflige pas automatiquement les dégâts génériques d’une attaque réussie ; les propriétés spéciales restent au MJ.
-Un critique peut être prioritaire malgré une marge négative. La convention de traitement de ce Bonus Delta particulier n’est pas déterminée et reste explicitement identifiée en section18.
 13.6 Fulgurance
 Fulgurance utilise un seul jet d’attaque et un seul calcul de dégâts d’une frappe. Le Dice Roller propose Concentré / Réparti et affiche le résultat correspondant à partir de cette même valeur.
 Pour une frappe calculée à5 dégâts :
-    • Concentré : 5×2=10 dégâts sur une cible.
+    • Concentré : deux frappes de5 dégâts sont appliquées à la même cible ; la présentation peut afficher10 dégâts bruts au total, mais les deux frappes restent distinctes pour l’application de l’Armure.
     • Réparti : 5 dégâts sur la cibleA et5 sur la cibleB.
-Il n’y a ni deuxième jet, ni deuxième calcul Delta indépendant. Le même résultat mécanique est appliqué deux fois. Les restrictions aux armes légères/moyennes restent applicables. Le choix de cible, ses Réactions et l’application d’Armure ne deviennent pas un suivi tactique automatique.
+Il n’y a ni deuxième jet, ni deuxième calcul Delta indépendant. Le même résultat mécanique est appliqué deux fois. En mode Concentré, l’Armure de la cible s’applique séparément à chacune des deux frappes. Exemple : frappe5, Armure2 → (5−2)+(5−2)=6 PV perdus, et non10−2=8.
+Les restrictions aux armes légères/moyennes restent applicables. L’utilisation de Fulgurance avec le Fusil de précision applique le Désavantage prévu pour cette combinaison à l’unique jet de Fulgurance ; aucun second jet n’est créé. Le choix de cible, ses Réactions et les autres effets tactiques ne deviennent pas un suivi automatique.
 13.7 Présentation du résultat
 Le résultat doit permettre de comprendre rapidement : stat et seuil employés, modificateur, dés, dé retenu, réussite/échec/critique/échec critique, Bonus Delta et dégâts pertinents. Les contributions structurées et le mode Fulgurance sont accessibles lorsqu’ils interviennent.
-Une valeur définie seulement par texte libre ne reçoit pas de contribution numérique implicite. Une valeur forcée impropre au calcul ne doit pas produire un résultat fictif ; son traitement précis relève des cas de recette de la section18, sans empêcher de conserver la fiche manuelle.
+Une valeur définie seulement par texte libre ne reçoit pas de contribution numérique implicite. Une fiche peut conserver une override même si cette valeur rend un calcul particulier impossible. Dans ce cas, GMTK ne fabrique aucun résultat : le Dice Roller refuse uniquement le calcul concerné et affiche un message explicite indiquant la valeur invalide à corriger. Exemple : coefficient Delta forcé à0 → fiche conservée, jet non calculé, message d’erreur clair.
 14. Historique des jets
 Le journal est global au compte, chronologique et persistant jusqu’à sa suppression explicite. Il n’est pas séparé par rencontre et ne nécessite aucune session de jeu à créer, ouvrir ou fermer.
 Chaque entrée fige les informations nécessaires pour comprendre le résultat :
@@ -461,14 +463,14 @@ AC-039	Modifier une instance puis demander une mise à jour de sa source.	L’é
 ID	Situation	Résultat attendu
 AC-040	PER16, malus−2, dé7, coefficient4.	Seuil14 et Bonus Delta+1 ; pas+2.
 AC-041	Puissance5 et Bonus Delta3, critique standard puis avec Annihilation.	Dégâts13 puis18 ; Delta jamais multiplié.
-AC-042	Seuil effectif1, plage critique1–2, dé retenu2.	Réussite critique prioritaire. La convention de dégâts à marge négative reste le point RC-02.
+AC-042	Seuil effectif2, plage critique1–3, dé retenu3.	Réussite critique prioritaire malgré le dépassement du seuil ; Bonus Delta0.
 AC-043	Dé retenu20 malgré un seuil modifié supérieur à20.	Échec critique.
 AC-044	ADV2 et DES1.	SoldeADV1 ; deux d20, meilleur retenu ; les deux valeurs restent visibles.
 AC-045	ADV1 et DES1.	Solde normal, un seul d20.
 AC-046	Stabilisateur sur coefficient4 ; Canon renforcé sur Puissance5 ; Assistance ; Percuteur.	Contributions respectives : coefficient3, Puissance6, Visée+2 et Critique+1, chacune dans son cas d’équipement.
 AC-047	Fusil IEM contre cible déclarée robot et Marquée.	Puissance de base4 augmentée de2+2, soit8 avant autre effet ; aucune gestion automatique de zone/état.
 AC-048	ANCHOR équipé, test deVOL avec DES1 fourni par le MJ.	ADV1 automatique et DES1 s’annulent ; l’application n’exécute pas l’Overdrive d’ANCHOR.
-AC-049	Fulgurance produit une frappe de5 dégâts.	Un jet et un calcul ; Concentré affiche10 sur une cible ; Réparti affiche5 par cible.
+AC-049	Fulgurance produit une frappe de5 dégâts.	Un jet et un calcul ; Concentré applique deux frappes de5 à la même cible et Réparti5 par cible. En Concentré, l’Armure est appliquée séparément à chaque frappe.
 AC-050	Jet effectué, puis Puissance/nom de l’arme et stats du personnage modifiés.	Ancienne entrée conservant nom/contexte, Puissance, seuil, dés, verdict, Delta et dégâts de l’époque.
 AC-051	Retirer l’instance puis nettoyer la Table et se reconnecter.	Les jets restent lisibles dans le journal du compte.
 AC-052	Vider l’historique en annulant, puis en confirmant.	Annulation sans perte ; confirmation efface les jets sans toucher à la Table ni aux profils.
@@ -485,18 +487,16 @@ AC-059	Supprimer un équipement encore affecté à une fiche.	Suppression refus�
 AC-060	Déplacer un dossier sous l’un de ses descendants, dans l’autre arbre ou vers un autre propriétaire.	Opération incohérente refusée ; contenu et relations préservés.
 
 18. Points de recette à préciser avant implémentation concernée
-Les points suivants sont les seuls compléments de recette signalés ici. Ils ne remettent pas en cause les décisions consolidées et ne donnent lieu à aucune nouvelle question dans cette livraison.
+Les points suivants sont les seuls compléments de recette encore ouverts. RC-02 et RC-03 ont été résolus avant la PR2 et leurs décisions sont désormais intégrées dans les sections 5, 6 et 13 ainsi que dans AC-042 et AC-049. Le volet « effets structurés / contrôles contextuels » de RC-10 est également verrouillé pour la PR2 : seules les valeurs numériques comprises par GMTK et des conditions simples qualifiant le jet courant sont automatisées ; elles ne créent aucun suivi d’état.
 ID	Point réellement indéterminé	Limite de la décision actuelle
 RC-01	Initialisation des PV actuels d’une nouvelle instance et traitement après variation de PVmax, notamment via catalogue ou override.	PV actuels stockés, PVmax calculés/forcés et soins plafonnés sont acquis ; la règle de transition reste à fixer.
-RC-02	Delta dans les cas limites : critique prioritaire à marge négative ; palier de coefficient lors d’une modification temporaire du seuil ; valeur forcée non calculable.	Seuil effectif pour la marge, arrondi inférieur, priorité critique et coefficients natifs sont acquis ; aucun plancher ou comportement supplémentaire n’est inventé.
-RC-03	Fulgurance : application d’Armure par frappe ou sur le total concentré, et articulation des Désavantages de tirs successifs du fusil de précision avec le jet unique.	Un jet, une valeur de frappe, résultat répété et modes Concentré/Réparti sont acquis.
 RC-04	Chargement d’une rencontre sur Table occupée et éventuelle utilisation de l’ordre préparatoire.	Références aux versions et nouvelles instances indépendantes sont acquises ; ajout/remplacement n’est pas choisi silencieusement.
 RC-05	Champs repris lors d’une remontée volontaire au Bestiaire, cible en cas de niveau local modifié et rattachement après sauvegarde d’une fiche générée.	Sauvegarde explicite et confirmation d’écrasement sont acquises ; aucune remontée automatique.
 RC-06	Édition d’une ancienne version évolutive ou de son niveau ; effet sur validation des suivantes ; devenir de choix/équipements après baisse de seuil.	Séquence, disponibilité des niveaux validés, overrides persistantes et absence de rétropropagation sont acquises ; aucune suppression silencieuse décidée.
 RC-07	Suppression d’un dossier non vide ; modalités de masquage des natifs ; inclusion des permissions/raretés dans « Remettre par défaut ».	Intégrité des références, restauration des valeurs natives et confirmations prévues restent obligatoires.
 RC-08	Détails non chiffrés du pipeline : point de passage de priorité Élite, choix des familles dans certains slots additionnels, catalogue entièrement sans arme admissible et éléments personnalisés ouvrant d’autres possibilités de génération.	Budget légal, repli d’arme sans régénération du personnage, arme minimale, priorités et capacités sont obligatoires ; aucune stratégie de secours interdite n’est inventée.
 RC-09	Réglage initial des autorisations/raretés des éléments natifs et pondérations non fournies ; répartition Mob et tirages de niveau.	Les paramètres restent à définir/calibrer pendant l’implémentation. Les distributions d’Armure validées et les invariants de composition ne changent pas.
-RC-10	Présentation d’une dominante ex æquo hors tirage, filtres supplémentaires des rencontres, liste exacte de contrôles/effets structurés exposés par type et cas des Perks personnalisés sélectionnables.	Les identités, références, champs mécaniques approuvés et frontière d’automatisation sont fixés ; pas d’automatisation du texte libre ni de sous-systèmes exclus.
+RC-10	Présentation d’une dominante ex æquo hors tirage, filtres supplémentaires des rencontres et cas des Perks personnalisés sélectionnables.	Le périmètre des effets structurés et contrôles contextuels nécessaires aux calculs est désormais fixé pour la PR2 ; les autres volets restent à préciser dans les PR qui les exposent.
 
 Les anciennes ambiguïtés de propriétés devenues manuelles — Overdrive, drone, survie, états et propriétés spéciales non calculées — ne deviennent pas des blocages à résoudre par l’application. Leur description reste fidèle à la source, sans ajout mécanique.
 19. Contraintes de déploiement
