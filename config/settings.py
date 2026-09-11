@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "users",
     "catalogue",
     "toolkit",
+    "rules",
 ]
 
 MIDDLEWARE = [
