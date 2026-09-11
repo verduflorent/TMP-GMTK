@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Table de jeu — TMP-GMTK{% endblock %}
+{% block content %}
+<h1>Table de jeu</h1>
+<p>Socle PR1 : la Table persistante du compte est prête. Les fiches de combat arriveront dans les PR suivantes.</p>
+<div class="grid">
+    <section class="panel">
+        <h2>Alliés</h2>
+        {% for instance in allies %}<p>{{ instance.name }}</p>{% empty %}<p>Aucun allié sur la Table.</p>{% endfor %}
+    </section>
+    <section class="panel">
+        <h2>Ennemis</h2>
+        {% for instance in enemies %}<p>{{ instance.name }}</p>{% empty %}<p>Aucun ennemi sur la Table.</p>{% endfor %}
+    </section>
+</div>
+{% endblock %}

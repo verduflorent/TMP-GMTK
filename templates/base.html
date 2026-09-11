@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}TMP-GMTK{% endblock %}</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; background: #111; color: #eee; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #333; }
+        main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .panel { border: 1px solid #333; border-radius: .5rem; padding: 1rem; min-height: 12rem; }
+        button, input { font: inherit; }
+        a { color: inherit; }
+        @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <strong>TMP — Game Master Toolkit</strong>
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Déconnexion</button>
+    </form>
+    {% endif %}
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

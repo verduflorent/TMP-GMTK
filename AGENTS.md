@@ -4,7 +4,7 @@
 
 Pour toute implémentation, respecter cet ordre :
 
-1. `docs/CDC.md` — autorité sur le comportement de TMP-GMTK et les arbitrages applicatifs.
+1. `docs/CdC.md` — autorité sur le comportement de TMP-GMTK et les arbitrages applicatifs.
 2. `docs/LdR.md` — autorité sur les données et règles de THE MOIRA PROTOCOL.
 3. `docs/Roadmap.md` — autorité sur le découpage et le périmètre des PR.
 
@@ -45,16 +45,16 @@ Ne jamais :
 - remplacer silencieusement une donnée du LdR ;
 - interpréter une ambiguïté comme une décision acquise.
 
-Si `CDC.md` contient un arbitrage explicitement destiné à TMP-GMTK qui précise ou remplace le LdR, cet arbitrage prévaut pour l'application.
+Si `docs/CdC.md` contient un arbitrage explicitement destiné à TMP-GMTK qui précise ou remplace le LdR, cet arbitrage prévaut pour l'application.
 
-Sinon, `LdR.md` reste l'autorité.
+Sinon, `docs/LdR.md` reste l'autorité.
 
 ## Workflow obligatoire pour les données de règles
 
 Avant d'implémenter ou modifier une donnée TMP :
 
 1. retrouver sa définition dans `docs/LdR.md` ;
-2. vérifier si `docs/CDC.md` contient un arbitrage applicable ;
+2. vérifier si `docs/CdC.md` contient un arbitrage applicable ;
 3. implémenter uniquement la valeur ainsi obtenue ;
 4. ajouter ou mettre à jour le test correspondant ;
 5. vérifier que la donnée structurée produite correspond à la source.
@@ -67,17 +67,17 @@ Si une contradiction ou une ambiguïté subsiste :
 
 Le LdR n'est jamais interprété à runtime.
 
-`LdR.md` est une source documentaire.
+`docs/LdR.md` est une source documentaire.
 
 Les règles utilisées par l'application sont traduites explicitement en Python et/ou données structurées testables.
 
 Le code doit permettre de retrouver facilement la correspondance entre :
 
-`LdR/CDC → donnée structurée → règle Python → test`
+`LdR/CdC → donnée structurée → règle Python → test`
 
 ## Modification du LdR
 
-Une modification future de `LdR.md` ne doit jamais entraîner une adaptation approximative du code.
+Une modification future de `docs/LdR.md` ne doit jamais entraîner une adaptation approximative du code.
 
 Lorsqu'une règle source change :
 
@@ -85,7 +85,7 @@ Lorsqu'une règle source change :
 2. modifier leur représentation structurée ;
 3. modifier les calculs concernés ;
 4. mettre à jour les tests ;
-5. vérifier les critères d'acceptation du CDC concernés.
+5. vérifier les critères d'acceptation du CdC concernés.
 
 ## Périmètre
 
@@ -93,4 +93,4 @@ Ne pas profiter d'une modification pour effectuer un refactor, une optimisation 
 
 En particulier :
 
-**la fidélité au LdR et au CDC est prioritaire sur l'élégance, la généralisation et l'optimisation du code.**
+**la fidélité au LdR et au CdC est prioritaire sur l'élégance, la généralisation et l'optimisation du code.**
