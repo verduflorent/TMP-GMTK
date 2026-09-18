@@ -11,6 +11,9 @@ class EquipmentDefinition(models.Model):
         IMPLANT = "IMPLANT", "Implant"
         GADGET = "GADGET", "Gadget"
         PERK = "PERK", "Perk"
+        ARMOR = "ARMOR", "GPB"
+        BIOCHIP = "BIOCHIP", "Biopuce"
+        DRUG = "DRUG", "D.R.U.G."
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -110,3 +113,95 @@ class CatalogueEntry(models.Model):
     def __str__(self):
         definition = self.active_definition
         return definition.name if definition else f"CatalogueEntry #{self.pk}"
+
+
+class WeaponProfile(models.Model):
+    """Structured mechanical profile; values come from the catalogue, not the rules engine."""
+
+    class Stat(models.TextChoices):
+        FORCE = "FOR", "Force"
+        AGILITY = "AGI", "Agilité"
+        PERCEPTION = "PER", "Perception"
+        TECHNIQUE = "TEC", "Technique"
+
+    class Weight(models.TextChoices):
+        LIGHT = "LIGHT", "Légère"
+        MEDIUM = "MEDIUM", "Moyenne"
+        HEAVY = "HEAVY", "Lourde"
+
+    class Slot(models.TextChoices):
+        PRIMARY = "PRIMARY", "Principale"
+        SECONDARY = "SECONDARY", "Secondaire"
+
+    class Range(models.TextChoices):
+        CONTACT = "CONTACT", "Contact"
+        SHORT = "SHORT", "Courte"
+        MEDIUM = "MEDIUM", "Moyenne"
+        LONG = "LONG", "Longue"
+
+    definition = models.OneToOneField(
+        EquipmentDefinition, on_delete=models.CASCADE, related_name="weapon_profile"
+    )
+    stat = models.CharField(max_length=3, choices=Stat.choices)
+    weight = models.CharField(max_length=10, choices=Weight.choices)
+    slot = models.CharField(max_length=10, choices=Slot.choices)
+    optimal_range = models.CharField(max_length=10, choices=Range.choices)
+    power = models.IntegerField(default=0)
+    minimum_force = models.PositiveSmallIntegerField(null=True, blank=True)
+    profile_label = models.CharField(max_length=40, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.definition.kind != EquipmentDefinition.Kind.WEAPON:
+            raise ValidationError("Un profil d’arme doit appartenir à une définition d’arme.")
+
+
+class WeaponVariant(models.Model):
+    """Ascend/Overcome configuration of the same weapon definition."""
+
+    class Path(models.TextChoices):
+        ASCEND = "ASCEND", "Ascend"
+        OVERCOME = "OVERCOME", "Overcome"
+
+    weapon = models.ForeignKey(WeaponProfile, on_delete=models.CASCADE, related_name="variants")
+    path = models.CharField(max_length=10, choices=Path.choices)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    stat = models.CharField(max_length=3, choices=WeaponProfile.Stat.choices, blank=True)
+    weight = models.CharField(max_length=10, choices=WeaponProfile.Weight.choices, blank=True)
+    slot = models.CharField(max_length=10, choices=WeaponProfile.Slot.choices, blank=True)
+    optimal_range = models.CharField(max_length=10, choices=WeaponProfile.Range.choices, blank=True)
+    power = models.IntegerField(null=True, blank=True)
+    minimum_force = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["weapon", "path"], name="unique_weapon_variant_path")
+        ]
+
+
+class StructuredEffect(models.Model):
+    """Small, explicit effects GMTK can calculate; tactical prose remains descriptive."""
+
+    class Target(models.TextChoices):
+        POWER = "POWER", "Puissance"
+        AIM = "AIM", "Visée"
+        CRITICAL = "CRITICAL", "Critique"
+        DELTA = "DELTA", "Coefficient Delta"
+        MAX_HP = "MAX_HP", "PV max"
+        ARMOR = "ARMOR", "Armure"
+        CRITICAL_RESISTANCE = "CRITICAL_RESISTANCE", "Résistance critique"
+        REACTIONS = "REACTIONS", "Réactions"
+        IGNORED_ARMOR = "IGNORED_ARMOR", "Armure ignorée"
+
+    definition = models.ForeignKey(
+        EquipmentDefinition, on_delete=models.CASCADE, related_name="structured_effects"
+    )
+    target = models.CharField(max_length=30, choices=Target.choices)
+    value = models.IntegerField()
+    condition_key = models.CharField(
+        max_length=80,
+        blank=True,
+        help_text="Condition explicite du jet, ex. target_marked, target_robot, toggle_icarus.",
+    )
+    description = models.CharField(max_length=200, blank=True)
