@@ -1,6 +1,6 @@
 Cahier des charges fonctionnel final
 TMP Character Editor et GM Toolkit
-Version consolidée du 10 septembre 2026 — Référence fonctionnelle avant implémentation.
+Version consolidée du 19 septembre 2026 — Référence fonctionnelle réconciliée avec le Livre des Règles TMP V4.
 Ce document fixe le périmètre V1, les comportements attendus, les règles nécessaires aux calculs et le modèle conceptuel de l’application. Les points de recette encore indéterminés sont regroupés en section 18 ; aucune réponse implicite ne leur est attribuée.
 L’ordre d’autorité appliqué est : réponses ARB-001 à ARB-031 et décisions complémentaires validées ; décisions du brouillon non remplacées ; règles certaines du Livre des Règles TMP V4 ; modèle conceptuel validé à l’issue de l’audit DATA. Les décisions récentes remplacent leurs formulations antérieures. Le Livre des Règles source n’est pas modifié par l’application.
 Sources de référence : 00.8 Livre des règles — édition V4 ; Brouillon TMP Editor ; audit fonctionnel et mécanique ; arbitrages post-audit ; audit du modèle de données ; décisions d’authentification et consigne de consolidation finale. Les mentions ARB dans ce document identifient des décisions acquises, pas des questions à rouvrir.
@@ -81,26 +81,26 @@ Cette section intègre les règles nécessaires à la création, à l’équipem
 5.1 Caractéristiques et création N1
 Les caractéristiques offensives sont Force, Agilité, Perception et Technique. Les caractéristiques défensives sont Constitution et Volonté. CON et VOL ne possèdent pas de coefficient Delta offensif.
 Au niveau1, chaque offensive commence à5. Les bonus +8, +5, +3 et +0 sont attribués une seule fois chacun : les valeurs forment une permutation de 13/10/8/5. Une simple répartition libre de16 points ne remplace pas cette règle.
-CON et VOL commencent chacune à8 ; cinq points sont répartis entre elles, sans dépasser13 à la création. Leur somme au N1 est21.
+CON et VOL commencent chacune à8 ; sept points sont répartis entre elles, sans dépasser13 à la création. Leur somme au N1 est23.
 5.2 Progression et budgets
 Chaque montée de niveau ajoute deux points offensifs et un point à CON ou VOL. Le plafond normal de chaque caractéristique est18. Mob et Élite emploient exactement le budget de leur niveau.
 Niveau	Points offensifs ajoutés depuis N1	Points défensifs ajoutés depuis N1	Somme offensive	Somme défensive
-N1	0	0	36	21
-N2	2	1	38	22
-N3	4	2	40	23
-N4	6	3	42	24
-N5	8	4	44	25
-N6	10	5	46	26
-N7	12	6	48	27
-N8	14	7	50	28
-N9	16	8	52	29
-N10	18	9	54	30
+N1	0	0	36	23
+N2	2	1	38	24
+N3	4	2	40	25
+N4	6	3	42	26
+N5	8	4	44	27
+N6	10	5	46	28
+N7	12	6	48	29
+N8	14	7	50	30
+N9	16	8	52	31
+N10	18	9	54	32
 
 Un profil standard créé directement à un niveau donné doit être compatible avec un départ N1 légal puis les ajouts autorisés. La conformité ne se limite pas aux sommes. Pour un évolutif, l’application vérifie en plus les progressions entre les versions enregistrées.
 5.3 Seuils et capacités
 Condition normale	Capacité ou récompense	Conséquence exploitable par l’application
 FOR16	Adaptation	Autorise une principale dans le slot secondaire ; description du changement d’arme gratuit une fois/tour.
-AGI16	Dextérité	Deux armes légères possibles dans un même slot principal ; +1 Réaction ; Avantage conditionnel aux attaques avec deux armes à portée optimale.
+AGI16	Dextérité	Deux armes légères possibles dans un même slot principal ; +1 Réaction ; Avantage uniquement avec deux armes identiques à leur portée optimale.
 PER16	Verrouillage	+1 Critique ; Avantage conditionnel contre la cible verrouillée, dont le suivi reste au MJ.
 TEC16	Prévoyance	+2 slots gadgets.
 FOR18 et choix du Perk	Momentum	+1 slot principal ; effet de tour supplémentaire consultable, appliqué manuellement.
@@ -119,8 +119,8 @@ Les Perks16 offensifs et les récompenses défensives sont automatiques aux seui
 Un personnage possède normalement un seul Perk18 offensif parmi FOR/AGI/PER/TEC. Si plusieurs caractéristiques sont à18, l’éditeur demande le choix au MJ ; le randomizer choisit parmi les éligibles. Ce choix ne détermine ni la dominante ni la famille de l’arme principale. Les récompenses CON18/VOL18 sont indépendantes ; aucune exclusivité supplémentaire n’est créée entre elles.
 Les spécialisations Technique sont Invasion, Renfort, Bastion et Étau. Leur nom/capacité est identifiable sur la fiche et leur descriptif accessible. Leur choix ne limite pas les équipements. L’Ultimate dépend de Mise à jour, pas du seul fait d’avoir une spécialisation.
 5.4 Valeurs dérivées et emplacements
-PVmax théoriques = CON +5 si CON≥12 +5 si CON≥16 + bonus permanents de PV applicables. Les soins ordinaires ne dépassent pas les PVmax effectifs, sauf règle particulière ou correction explicite du MJ.
-Armure totale théorique = Armure de base stockée + bonus permanents d’Armure. Les sources permanentes sont cumulatives. Les bonus temporaires, dont le cumul progressif d’AEGIS, ne sont pas suivis automatiquement.
+PVmax théoriques = CON +5 si CON≥12 +5 si CON≥16 + bonus permanents de PV applicables + bonus du GPB porté. Le GPB léger ajoute +5 PV ; le moyen +5 PV et +1 Armure ; le lourd +10 PV et +2 Armure. Les catégories de GPB ne se cumulent pas. Les soins ordinaires ne dépassent pas les PVmax effectifs, sauf règle particulière ou correction explicite du MJ.
+Armure totale théorique = Armure de base stockée + bonus permanents d’Armure + Armure du GPB porté. Les sources permanentes sont cumulatives. Les bonus temporaires, dont le cumul progressif d’AEGIS, ne sont pas suivis automatiquement.
 Réactions maximales théoriques = une Réaction de base + effets permanents applicables, notamment +1 Dextérité. Aucune consommation n’est suivie.
 Capacité native	Valeur
 Armement	Un slot principal et un slot secondaire.
@@ -132,11 +132,22 @@ Implants	Zéro sous VOL12 ; un de VOL12 à15 ; deux dès VOL16.
 Accessoires	Un par arme, sauf indication contraire.
 
 Les capacités structurées personnalisées peuvent modifier les valeurs et emplacements qu’elles visent. Une capacité disponible ne garantit pas son remplissage par le randomizer.
+5.4 bis GPB, Biopuce et Résistance critique
+Le GPB et la Biopuce sont des choix d’équipement explicites dans l’éditeur manuel : Aucun, léger, moyen ou lourd. Un prérequis CON/VOL insuffisant produit un avertissement mais n’empêche pas le forçage et la sauvegarde par le MJ.
+Dans le Randomizer, GPB et Biopuce sont tirés par une distribution pondérée comprenant « aucun » et les catégories auxquelles le personnage est éligible. Plus CON/VOL sont élevés et plus le profil est qualitatif (Élite plutôt que Mob), plus les catégories hautes sont probables et moins « aucun » est probable. Les pourcentages exacts sont calibrés pendant l’implémentation.
+La Biopuce légère (VOL14) ajoute +1 Puissance aux armes ; la moyenne (VOL16) ajoute +1 Puissance et +1 Critique ; la lourde (VOL18) ajoute +2 Puissance et +2 Critique. Ces bonus remplacent ceux des catégories inférieures et s’appliquent aussi aux armes de Puissance 0. Une Puissance positive ne signifie pas à elle seule qu’une propriété de contrôle inflige des dégâts ; le Répulseur exploite notamment sa Puissance dans la formule de dégâts de poussée en cas d’impact.
+La Résistance critique est une valeur de combat affichée, de base 0, dérivée des effets permanents et overridable par le MJ. RHODOS apporte +5 Résistance critique. Ses autres déclenchements, son renvoi de dégâts et son Overdrive restent gérés manuellement.
+
 5.5 Delta, Critique et minimum de Force
 Le coefficient Delta natif d’une offensive est 5, puis 4 à12, puis 3 à18. Un Stabilisateur le réduit de1 : les coefficients natifs équipés deviennent donc4,3,2. Atteindre16 ne réduit pas le coefficient.
 La Visée n’est pas une caractéristique indépendante. Un bonus/malus de Visée modifie le seuil du test d’attaque utilisant la caractéristique de l’arme. Ce modificateur change le seuil effectif et donc la marge du jet, mais ne change jamais le palier du coefficient Delta. Le coefficient Delta dépend de la caractéristique réelle et des seuls effets qui modifient explicitement ce coefficient, comme le Stabilisateur. Les formules complètes de résolution figurent en section 13.
 La plage critique native commence à1 ; chaque point de Critique augmente son seuil supérieur de1. Le20 naturel reste un échec critique. Les armes lourdes ne bénéficient pas de Fulgurance ; les autres propriétés de vitesse restent décrites sans extrapolation automatique à des sous-systèmes non gérés.
 Pour les armes ayant un minimum de Force, chaque point manquant impose −1 au test d’attaque dans l’usage manuel. Le randomizer exclut ces armes si le minimum n’est pas satisfait.
+5.5 bis Variantes Ascend / Overcome
+Une arme légendaire reste la même occurrence d’arme et possède une configuration Ascend ou Overcome. Le recalibrage change cette configuration ; il ne crée pas une nouvelle arme indépendante. Une variante peut remplacer des champs structurés du profil actif : caractéristique, Puissance, portée, poids, emplacement, minimum FOR ou propriétés.
+La compatibilité des accessoires est évaluée contre le profil mécanique actif après recalibrage. Une incompatibilité nouvelle est signalée mais n’entraîne aucune suppression automatique ; le MJ peut conserver la configuration forcée.
+Les valeurs natives et les variantes sont des données de référentiel, pas des constantes dispersées dans le moteur.
+
 5.6 Armes natives
 Poids, emplacement, caractéristique et profil sont des informations distinctes. « Spécialisé » n’est pas une autorisation réservée aux Élites. Les propriétés détaillées du LdR IV restent consultables ; seules leurs incidences sur le calcul générique et les effets structurés retenus sont automatisées.
 Arme	Stat	Poids / emplacement	Puissance	Portée / profil	Minimum FOR et éléments de calcul particuliers
@@ -504,3 +515,10 @@ L’application doit rester déployable sur un hébergement web standard et êtr
 Le choix de l’hébergement et du fournisseur est volontairement différé à la phase de déploiement. Les intentions du brouillon sont conservées : coût gratuit ou faible si possible, absence d’achat obligatoire de nom de domaine et possibilité d’utiliser l’URL fournie par l’hébergeur.
 Python/Django ont été envisagés dans le brouillon ; ce CDC n’en déduit ni modèles, ni migrations, ni architecture, ni décision de fournisseur. Le stockage doit permettre la persistance et l’intégrité décrites, sans imposer ici sa réalisation technique.
 Le CDC est suffisamment complet pour passer à la conception technique et à l’implémentation, sous réserve de préciser chaque point de recette ouvert avant d’implémenter le comportement concerné.
+
+
+20. Réconciliation LdR V4 — décisions du 19 septembre 2026
+Le référentiel V1 intègre les nouvelles armes et les variantes Ascend/Overcome, les accessoires et gadgets nécessaires à l’affichage/calcul, ainsi que les 18 implants actuels. Les propriétés tactiques non nécessaires au calcul restent descriptives.
+Pour les armes à minimum FOR, l’éditeur manuel autorise l’équipement et applique −1 Visée par point manquant ; le Randomizer retire l’arme des candidats lorsque le minimum n’est pas satisfait.
+RHODOS : +5 Résistance critique est structuré. Chaque fois qu’une attaque inflige des dégâts au porteur, l’attaquant subit 1 dégât ; ce renvoi, son Overdrive et le gain de Réaction INNOVATE restent manuels.
+Les dégâts de poussée existent dans le LdR mais leur résolution géométrique reste hors automatisation V1.
