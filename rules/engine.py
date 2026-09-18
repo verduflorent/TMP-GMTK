@@ -46,22 +46,17 @@ def offensive_budget(level: int) -> int:
 
 def defensive_budget(level: int) -> int:
     _validate_level(level)
-    return 21 + (level - 1)
+    return 23 + (level - 1)
 
 
 def is_legal_level_one(stats: BuildStats) -> bool:
     offensive = sorted((stats.force, stats.agility, stats.perception, stats.technique))
     defensive = (stats.constitution, stats.willpower)
-    return offensive == [5, 8, 10, 13] and sum(defensive) == 21 and all(8 <= value <= 13 for value in defensive)
+    return offensive == [5, 8, 10, 13] and sum(defensive) == 23 and all(8 <= value <= 13 for value in defensive)
 
 
 def delta_coefficient(stat_value: int, explicit_modifier: int = 0) -> int:
-    if stat_value >= 18:
-        native = 3
-    elif stat_value >= 12:
-        native = 4
-    else:
-        native = 5
+    native = 3 if stat_value >= 18 else 4 if stat_value >= 12 else 5
     effective = native + explicit_modifier
     if effective <= 0:
         raise RuleCalculationError(f"Coefficient Delta invalide ({effective}).")
@@ -72,9 +67,9 @@ def critical_upper_bound(critical_bonus: int = 0) -> int:
     return max(1, 1 + critical_bonus)
 
 
-def max_hp(constitution: int, permanent_bonus: int = 0) -> int:
-    bonus = (5 if constitution >= 12 else 0) + (5 if constitution >= 16 else 0)
-    return constitution + bonus + permanent_bonus
+def max_hp(constitution: int, permanent_bonus: int = 0, gpb_bonus: int = 0) -> int:
+    progression = (5 if constitution >= 12 else 0) + (5 if constitution >= 16 else 0)
+    return constitution + progression + permanent_bonus + gpb_bonus
 
 
 def max_reactions(agility: int, permanent_bonus: int = 0) -> int:
@@ -98,9 +93,19 @@ def implant_slots(willpower: int, permanent_bonus: int = 0) -> int:
     return native + permanent_bonus
 
 
-def derive_build(stats: BuildStats) -> BuildDerived:
+def biopuce_bonuses(willpower: int) -> tuple[int, int]:
+    if willpower >= 18:
+        return 2, 2
+    if willpower >= 16:
+        return 1, 1
+    if willpower >= 14:
+        return 1, 0
+    return 0, 0
+
+
+def derive_build(stats: BuildStats, *, gpb_hp_bonus: int = 0) -> BuildDerived:
     return BuildDerived(
-        max_hp=max_hp(stats.constitution),
+        max_hp=max_hp(stats.constitution, gpb_bonus=gpb_hp_bonus),
         max_reactions=max_reactions(stats.agility),
         main_slots=main_slots(stats.force),
         secondary_slots=secondary_slots(),
@@ -113,6 +118,14 @@ def force_shortfall_penalty(force: int, minimum_force: int | None) -> int:
     if minimum_force is None:
         return 0
     return -max(0, minimum_force - force)
+
+
+def net_advantage(advantage: int = 0, disadvantage: int = 0) -> int:
+    return advantage - disadvantage
+
+
+def effective_armor(armor: int, ignored_armor: int = 0) -> int:
+    return max(0, armor - ignored_armor)
 
 
 def resolve_attack(
@@ -139,32 +152,41 @@ def resolve_attack(
 
     margin = threshold - roll
     delta = max(0, floor(margin / coefficient))
-    if critical:
-        multiplier = 3 if annihilation else 2
-        damage = power * multiplier + delta
-        verdict = "critical_success"
-    else:
-        damage = power + delta
-        verdict = "success"
-
-    return AttackResult(threshold, roll, verdict, coefficient, delta, damage)
+    multiplier = (3 if annihilation else 2) if critical else 1
+    damage = power * multiplier + delta
+    return AttackResult(threshold, roll, "critical_success" if critical else "success", coefficient, delta, damage)
 
 
-def fulgurance_damage(strike_damage: int, mode: str) -> tuple[int, ...]:
-    if mode == "concentrated":
-        return strike_damage, strike_damage
-    if mode == "split":
-        return strike_damage, strike_damage
-    raise ValueError("Mode Fulgurance inconnu.")
+def apply_damage_reductions(
+    damage: int,
+    *,
+    armor: int = 0,
+    ignored_armor: int = 0,
+    critical_resistance: int = 0,
+    is_critical: bool = False,
+) -> int:
+    reduction = effective_armor(armor, ignored_armor)
+    if is_critical:
+        reduction += max(0, critical_resistance)
+    return max(0, damage - reduction)
 
 
-def apply_armor(damage: int, armor: int) -> int:
-    return max(0, damage - armor)
+def fulgurance_strikes(first_damage: int, second_damage: int | None = None) -> tuple[int, int]:
+    """Same weapon reuses one calculated strike; different weapons supply both values."""
+    return first_damage, first_damage if second_damage is None else second_damage
 
 
-def apply_concentrated_fulgurance(strike_damage: int, armor: int) -> int:
-    first, second = fulgurance_damage(strike_damage, "concentrated")
-    return apply_armor(first, armor) + apply_armor(second, armor)
+def apply_concentrated_fulgurance(
+    first_damage: int,
+    armor: int,
+    *,
+    second_damage: int | None = None,
+    ignored_armor: int = 0,
+) -> int:
+    first, second = fulgurance_strikes(first_damage, second_damage)
+    return apply_damage_reductions(first, armor=armor, ignored_armor=ignored_armor) + apply_damage_reductions(
+        second, armor=armor, ignored_armor=ignored_armor
+    )
 
 
 def _validate_level(level: int) -> None:
