@@ -27,10 +27,17 @@
                     {% csrf_token %}
                     <button type="submit">✎ Rééditer</button>
                 </form>
-                <form method="post" action="{% url 'table_mob_delete' mob.id %}" onsubmit="return confirm('Retirer définitivement ce Mob de la Table ?');">
-                    {% csrf_token %}
-                    <button type="submit">× Supprimer</button>
-                </form>
+                <button type="button" onclick="document.getElementById('delete-table-mob-{{ mob.id }}').showModal()">× Supprimer</button>
+                <dialog class="confirm-dialog" id="delete-table-mob-{{ mob.id }}">
+                    <strong>Retirer ce Mob ?</strong>
+                    <p>Cette instance sera supprimée de la Table.</p>
+                    <div class="confirm-actions">
+                        <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                        <form method="post" action="{% url 'table_mob_delete' mob.id %}">
+                            {% csrf_token %}<button type="submit">Supprimer</button>
+                        </form>
+                    </div>
+                </dialog>
             </div>
         </article>
     {% endfor %}
