@@ -102,3 +102,17 @@ class ResolvedCombatCardTests(SimpleTestCase):
 
         implants = [self.Item("AEGIS"), self.Item("ANCHOR")]
         self.assertEqual(implant_armor_bonus(implants, 3), 21)
+
+
+class FivePointQuantizationTests(SimpleTestCase):
+    def test_round_to_five_uses_nearest_step(self):
+        from rules.engine import round_to_5
+
+        expected = {
+            20: 20, 21: 20, 22: 20,
+            23: 25, 24: 25, 25: 25,
+            26: 25, 27: 25, 28: 30,
+        }
+        for value, rounded in expected.items():
+            with self.subTest(value=value):
+                self.assertEqual(round_to_5(value), rounded)
