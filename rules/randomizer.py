@@ -474,6 +474,13 @@ def _apply_draft_overrides(mob):
     ]
 
 
+def _weapon_ref(weapon):
+    return {
+        "source": "user" if weapon.__class__.__name__ == "UserWeapon" else "catalogue",
+        "id": weapon.id,
+    }
+
+
 def serialize_mob(mob):
     weapons = mob.get("weapons")
     if weapons is None:
@@ -484,7 +491,7 @@ def serialize_mob(mob):
         "level": mob["level"],
         "profile": str(mob["profile"]),
         "name": mob.get("name", ""),
-        "weapon_ids": [("u:" + str(weapon.id) if weapon.__class__.__name__ == "UserWeapon" else weapon.id) for weapon in weapons],
+        "weapons": [_weapon_ref(weapon) for weapon in weapons],
         "implant_ids": [item.id for item in mob["implants"]],
         "abilities": list(mob.get("abilities", [])),
         "overrides": dict(mob.get("overrides", {})),
@@ -496,35 +503,36 @@ def rebuild_mob(weapons, implants, data, user_weapons=None):
     user_weapon_by_id = {item.id: item for item in (user_weapons or [])}
     implant_by_id = {item.id: item for item in implants}
 
-    # Transitional compatibility with drafts created before list-based equipment.
-    weapon_ids = data.get("weapon_ids")
-    if weapon_ids is None:
-        weapon_ids = [data["primary_id"]]
-        if data.get("secondary_id") is not None:
-            weapon_ids.append(data["secondary_id"])
+    refs = data.get("weapons")
+    if refs is None:
+        # Compatibility with drafts produced before structured equipment refs.
+        refs = []
+        legacy_ids = data.get("weapon_ids")
+        if legacy_ids is None and "primary_id" in data:
+            legacy_ids = [data["primary_id"]]
+            if data.get("secondary_id") is not None:
+                legacy_ids.append(data["secondary_id"])
+        for item_id in legacy_ids or []:
+            if isinstance(item_id, str) and item_id.startswith("u:"):
+                refs.append({"source": "user", "id": int(item_id[2:])})
+            else:
+                refs.append({"source": "catalogue", "id": item_id})
 
     selected_weapons = []
-    for item_id in weapon_ids:
-        if isinstance(item_id, str) and item_id.startswith("u:"):
-            try:
-                user_id = int(item_id[2:])
-            except ValueError:
-                continue
-            if user_id in user_weapon_by_id:
-                selected_weapons.append(user_weapon_by_id[user_id])
-        elif item_id in weapon_by_id:
+    for ref in refs:
+        source, item_id = ref.get("source"), ref.get("id")
+        if source == "user" and item_id in user_weapon_by_id:
+            selected_weapons.append(user_weapon_by_id[item_id])
+        elif source == "catalogue" and item_id in weapon_by_id:
             selected_weapons.append(weapon_by_id[item_id])
+
     mob = assemble_draft_mob(
-        level=data["level"],
-        profile=data["profile"],
-        weapons=selected_weapons,
+        level=data["level"], profile=data["profile"], weapons=selected_weapons,
         implants=[
-            implant_by_id[item_id]
-            for item_id in data.get("implant_ids", [])
+            implant_by_id[item_id] for item_id in data.get("implant_ids", [])
             if item_id in implant_by_id
         ],
-        abilities=data.get("abilities", []),
-        overrides=data.get("overrides", {}),
+        abilities=data.get("abilities", []), overrides=data.get("overrides", {}),
     )
     mob["name"] = data.get("name", "")
     return mob
