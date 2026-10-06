@@ -4,11 +4,11 @@ from catalogue.models import MobProfile
 
 
 PROFILE_WEIGHTS = {
-    MobProfile.COMBATANT: 5,
-    MobProfile.ASSASSIN: 3,
+    MobProfile.COMBATANT: 3,
+    MobProfile.ASSASSIN: 4,
     MobProfile.TIREUR: 5,
     MobProfile.SOUTIEN: 2,
-    MobProfile.CONTROLE: 1,
+    MobProfile.CONTROLE: 2,
 }
 
 LIMITED_PROFILES = (MobProfile.SOUTIEN, MobProfile.CONTROLE)
@@ -38,6 +38,7 @@ def generate_profiles(quantity: int, rng=None) -> list[str]:
     _validate_quantity(quantity)
     rng = rng or random
     cap = specialist_cap(quantity)
+    combatant_cap = 1 if quantity <= 4 else 2 if quantity <= 10 else 1 + quantity // 5
     counts = {profile: 0 for profile in PROFILE_WEIGHTS}
     generated = []
 
@@ -45,7 +46,10 @@ def generate_profiles(quantity: int, rng=None) -> list[str]:
         candidates = [
             profile
             for profile in PROFILE_WEIGHTS
-            if profile not in LIMITED_PROFILES or counts[profile] < cap
+            if (
+                (profile not in LIMITED_PROFILES or counts[profile] < cap)
+                and (profile != MobProfile.COMBATANT or counts[profile] < combatant_cap)
+            )
         ]
         weights = [PROFILE_WEIGHTS[profile] for profile in candidates]
         selected = rng.choices(candidates, weights=weights, k=1)[0]
