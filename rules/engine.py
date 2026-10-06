@@ -102,6 +102,81 @@ def profile_derived(profile: str, level: int) -> MobDerived:
     )
 
 
+
+@dataclass(frozen=True)
+class ResolvedWeapon:
+    weapon: object
+    effective_power: int
+    neutral_damage: int
+    effective_aim: int
+    resolved_property: str
+
+
+@dataclass(frozen=True)
+class ResolvedImplant:
+    implant: object
+    resolved_property: str
+
+
+def effective_weapon_power(weapon) -> int:
+    if weapon.name == "Revolver":
+        return weapon.power + 5
+    return weapon.power
+
+
+def neutral_weapon_damage(level: int, weapon) -> int:
+    return base_damage(level) + effective_weapon_power(weapon) * 2
+
+
+def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
+    _validate_level(level)
+    power = effective_weapon_power(weapon)
+    text = weapon.property_text
+    if weapon.name == "Revolver":
+        text = "Puissance +5 intégrée."
+    elif weapon.name == "Fusil à pompe court":
+        text = f"Au Contact : +{5 * level} Dégâts."
+    elif weapon.name == "Smartgun":
+        text = f"+{5 * level} Dégâts contre une cible Marquée."
+    elif weapon.name == "Katana":
+        text = f"Après une Esquive réussie contre une attaque à distance, renvoie {5 * level} Dégâts à l'attaquant."
+    elif weapon.name == "Powerfist":
+        text = f"Une attaque réussie génère {5 * level} PB, non cumulables."
+    elif weapon.name == "Arbalète":
+        text = f"Une attaque réussie soigne le porteur de {5 * level} PV."
+    elif weapon.name == "Carabine":
+        text = f"Vigilance : +{level // 5} Visée."
+    elif weapon.name == "Med Rifle":
+        text = f"Soigne un allié de {20 * level} PV."
+    elif weapon.name == "Smart Rifle":
+        text = f"+{10 * level} Dégâts contre une cible Marquée."
+    elif weapon.name == "Masse de combat":
+        text = f"+{5 * level} Dégâts."
+    return ResolvedWeapon(weapon, power, base_damage(level) + power * 2, weapon.aim, text)
+
+
+def resolve_implant(implant, level: int, max_hp_value: int) -> ResolvedImplant:
+    _validate_level(level)
+    text = implant.property_text
+    if implant.name == "AEGIS":
+        text = f"+{5 * level} Armure."
+    elif implant.name == "ANCHOR":
+        text = f"+{2 * level} Armure ; résistance aux Poussées."
+    elif implant.name == "COLOSSUS":
+        text = f"+{2 * level} Armure ; Propulsion : +{round(max_hp_value * 0.05)} dégâts + test FOR → Étourdi."
+    elif implant.name == "MINOS":
+        text = f"+50 % Vitesse de Déplacement vers un ennemi ; attaques au Contact : +{5 * level} Dégâts."
+    elif implant.name == "ZEPHYR":
+        text = f"Attaques à distance : +{(level // 2) * 5} Dégâts."
+    elif implant.name == "PHALANX":
+        text = f"Réaction : déploie une barrière à {10 * level} PV."
+    return ResolvedImplant(implant, text)
+
+
+def implant_armor_bonus(implants, level: int) -> int:
+    bonuses = {"AEGIS": 5, "ANCHOR": 2, "COLOSSUS": 2}
+    return sum(bonuses.get(implant.name, 0) * level for implant in implants)
+
 def attack_threshold(perception: int, weapon_aim: int, context_modifier: int = 0) -> int:
     return 10 + (perception - 10) + weapon_aim + context_modifier
 
