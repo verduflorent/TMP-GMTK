@@ -79,9 +79,9 @@ def profile_stats(profile: str, level: int) -> MobStats:
     return MobStats(*values)
 
 
-def max_hp(level: int) -> int:
+def max_hp(level: int, constitution: int = 10) -> int:
     _validate_level(level)
-    return 250 + 30 * (level - 1)
+    return 250 + 30 * (level - 1) + (constitution - 10) * 10
 
 
 def base_damage(level: int) -> int:
@@ -94,7 +94,7 @@ def profile_derived(profile: str, level: int) -> MobDerived:
     if profile not in PROFILE_STATS:
         raise ValueError(f"Profil Mob inconnu : {profile}")
     return MobDerived(
-        max_hp=max_hp(level),
+        max_hp=max_hp(level, profile_stats(profile, level).constitution),
         armor=5 * level if profile == "C" else 0,
         shield=20 * level if profile == "S" else 0,
         reactions=2 if profile == "A" else 1,
