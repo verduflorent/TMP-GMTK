@@ -155,20 +155,69 @@
             <p><strong>TECH</strong> — Soins +{{ mob.tech_support_bonus }} · Bouclier +{{ mob.tech_support_bonus }}</p>
             {% endif %}
 
-            {% if mob.implant_cards %}
             <section>
-                <h3>Implants</h3>
+                <h3>Implant(s)</h3>
                 {% for card in mob.implant_cards %}
-                    {% if card.property_lines %}
-                        {% for line in card.property_lines %}
-                            <p>{% if forloop.first %}<strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }} : {% endif %}{{ line }}</p>
-                        {% endfor %}
-                    {% else %}
-                        <p><strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }}</p>
-                    {% endif %}
+                    <div class="implant-entry">
+                        {% if card.property_lines %}
+                            {% for line in card.property_lines %}
+                                <p>{% if forloop.first %}<strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }} : {% endif %}{{ line }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p><strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }}</p>
+                        {% endif %}
+                        <div class="edit-only block">
+                            <form method="post" action="{% url 'monster_builder_implant' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                                <input type="hidden" name="implant_index" value="{{ forloop.counter0 }}">
+                                <input type="hidden" name="action" value="replace">
+                                <select name="implant_id" onchange="this.form.submit()" aria-label="Remplacer l'implant">
+                                    {% for group_name, implants in implant_groups %}
+                                    <optgroup label="{{ group_name }}">
+                                        {% for implant in implants %}
+                                        <option value="{{ implant.id }}"{% if implant.id == card.implant.id %} selected{% endif %}>{{ implant.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            <form method="post" action="{% url 'monster_builder_implant' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                                <input type="hidden" name="implant_index" value="{{ forloop.counter0 }}">
+                                <input type="hidden" name="action" value="remove">
+                                <button type="submit">× Retirer</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="view-only">Aucun implant.</p>
                 {% endfor %}
+
+                <div class="edit-only block">
+                    <button type="button" onclick="document.getElementById('implant-modal-{{ forloop.counter0 }}').showModal()">+ Implant</button>
+                    <dialog id="implant-modal-{{ forloop.counter0 }}">
+                        <form method="post" action="{% url 'monster_builder_implant' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <input type="hidden" name="action" value="add">
+                            <h3>Ajouter un implant</h3>
+                            <select name="implant_id" required>
+                                {% for group_name, implants in implant_groups %}
+                                <optgroup label="{{ group_name }}">
+                                    {% for implant in implants %}
+                                    <option value="{{ implant.id }}">{{ implant.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Ajouter</button>
+                            <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                        </form>
+                    </dialog>
+                </div>
             </section>
-            {% endif %}
         </article>
         {% endfor %}
     </div>
