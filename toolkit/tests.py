@@ -74,6 +74,8 @@ class DomainIntegrityTests(TestCase):
 class MonsterBuilderViewTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
 
     def setUp(self):
         self.user = User.objects.create_user(username="builder", password="pwd")
