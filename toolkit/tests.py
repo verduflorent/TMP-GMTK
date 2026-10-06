@@ -547,3 +547,16 @@ class BuilderValidationTests(TestCase):
         self.assertFalse(TableMob.objects.filter(id=table_mob.id).exists())
         self.assertEqual(len(self.client.session["monster_builder_mobs"]), 1)
         self.assertEqual(response.context["editing_index"], 0)
+
+
+    def test_table_mob_can_be_deleted_without_returning_to_builder(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        table_mob = TableMob.objects.get(game_table__owner=self.user)
+
+        response = self.client.post(reverse("table_mob_delete", args=[table_mob.id]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(TableMob.objects.filter(id=table_mob.id).exists())
+        self.assertEqual(self.client.session.get("monster_builder_mobs", []), [])
