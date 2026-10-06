@@ -9,8 +9,10 @@
     <h3>{{ mob.name }}</h3>
     <p>{{ mob.get_profile_display }} · N{{ mob.level }}</p>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-        <form method="post" action="{% url 'bestiary_load' mob.id %}">
-            {% csrf_token %}<button type="submit">Charger dans Builder</button>
+        <form method="post" action="{% url 'bestiary_load' mob.id %}" style="display:flex;gap:.35rem;align-items:center;">
+            {% csrf_token %}
+            <label>× <input type="number" name="quantity" value="1" min="1" max="50" style="width:3.5rem;"></label>
+            <button type="submit">Charger dans Builder</button>
         </form>
         <form method="post" action="{% url 'bestiary_duplicate' mob.id %}">
             {% csrf_token %}<button type="submit">Dupliquer</button>
