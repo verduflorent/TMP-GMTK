@@ -284,3 +284,15 @@ class MonsterBuilderViewTests(TestCase):
         self.assertContains(response, "✎ Modifier")
         self.assertContains(response, 'class="edit-only')
         self.assertContains(response, 'class="view-only')
+
+
+    def test_edit_layer_css_strictly_hides_inactive_controls(self):
+        response = self.client.get(reverse("monster_builder"))
+        self.assertContains(
+            response,
+            ".mob-card:not(.is-editing) .edit-only { display: none !important; }",
+        )
+        self.assertContains(
+            response,
+            ".mob-card.is-editing .view-only { display: none !important; }",
+        )
