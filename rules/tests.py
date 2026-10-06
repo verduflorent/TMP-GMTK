@@ -104,6 +104,14 @@ class ResolvedCombatCardTests(SimpleTestCase):
         self.assertEqual(implant_armor_bonus(implants, 3), 21)
 
 
+    def test_combat_mace_integrates_unconditional_level_damage(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Masse de combat", 25, 0, "+5 Dégâts × Niveau."), 10)
+        self.assertEqual(card.neutral_damage, 240)
+        self.assertEqual(card.resolved_property, "")
+
+
 class FivePointQuantizationTests(SimpleTestCase):
     def test_round_to_five_uses_nearest_step(self):
         from rules.engine import round_to_5
