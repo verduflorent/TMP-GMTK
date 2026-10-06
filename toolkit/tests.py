@@ -208,7 +208,8 @@ class MonsterBuilderViewTests(TestCase):
     def test_generated_draft_uses_equipment_lists(self):
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         draft = self.client.session["monster_builder_mobs"][0]
-        self.assertIsInstance(draft["weapon_ids"], list)
+        self.assertIsInstance(draft["weapons"], list)
+        self.assertTrue(all("source" in ref and "id" in ref for ref in draft["weapons"]))
         self.assertIsInstance(draft["implant_ids"], list)
         self.assertEqual(draft["abilities"], [])
         self.assertEqual(draft["overrides"], {})
@@ -301,7 +302,7 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "action": "add", "weapon_id": weapons[2].id},
             follow=True,
         )
-        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["weapon_ids"]), 3)
+        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["weapons"]), 3)
         self.assertEqual(len(response.context["generated_mobs"][0]["weapon_cards"]), 3)
 
     def test_manual_weapon_removal_removes_selected_list_item(self):
