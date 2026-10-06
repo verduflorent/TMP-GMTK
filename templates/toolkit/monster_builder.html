@@ -262,6 +262,18 @@
                 {% endfor %}
                 <div class="edit-only block">
                     <button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">+ Créer une capacité</button>
+                    {% if user_abilities %}
+                    <form method="post" action="{% url 'monster_builder_ability_library' %}" style="margin-top:.5rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                        <select name="ability_id" required>
+                            {% for saved_ability in user_abilities %}
+                            <option value="{{ saved_ability.id }}">{{ saved_ability.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">+ Capacité sauvegardée</button>
+                    </form>
+                    {% endif %}
                     <dialog id="ability-modal-{{ forloop.counter0 }}">
                         <form method="post" action="{% url 'monster_builder_ability' %}">
                             {% csrf_token %}
@@ -291,6 +303,7 @@
                                 </select>
                             </label></p>
                             <p><label>Valeur <input type="number" name="value" value="0"></label></p>
+                            <p><label><input type="checkbox" name="save_to_library"> Sauvegarder dans ma bibliothèque</label></p>
                             <button type="submit">Créer</button>
                             <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
                         </form>
