@@ -123,6 +123,15 @@ class ResolvedImplant:
     resolved_property: str
 
 
+def stat_modifier(value: int) -> int:
+    """FOR/AGI/PER/VOL/TECH modifier: +1 per 2 points above 10."""
+    return max(0, (value - 10) // 2)
+
+
+def tech_support_bonus(technique: int) -> int:
+    return stat_modifier(technique) * 10
+
+
 def effective_weapon_power(weapon) -> int:
     if weapon.name == "Revolver":
         return weapon.power + 5
@@ -133,9 +142,17 @@ def neutral_weapon_damage(level: int, weapon) -> int:
     return round_to_5(base_damage(level) + effective_weapon_power(weapon) * 2)
 
 
-def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
+def resolve_weapon(
+    weapon,
+    level: int,
+    *,
+    perception: int = 10,
+    technique: int = 10,
+) -> ResolvedWeapon:
     _validate_level(level)
     power = effective_weapon_power(weapon)
+    per_bonus = stat_modifier(perception)
+    tech_bonus = tech_support_bonus(technique)
     text = weapon.property_text
     if weapon.name == "Revolver":
         text = "Puissance +5 intégrée."
@@ -146,13 +163,13 @@ def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
     elif weapon.name == "Katana":
         text = f"Après une Esquive réussie contre une attaque à distance, renvoie {round_to_5(5 * level)} Dégâts à l'attaquant."
     elif weapon.name == "Powerfist":
-        text = f"Une attaque réussie génère {round_to_5(5 * level)} PB, non cumulables."
+        text = f"Une attaque réussie génère {round_to_5(5 * level + tech_bonus)} PB, non cumulables."
     elif weapon.name == "Arbalète":
-        text = f"Une attaque réussie soigne le porteur de {round_to_5(5 * level)} PV."
+        text = f"Une attaque réussie soigne le porteur de {round_to_5(5 * level + tech_bonus)} PV."
     elif weapon.name == "Carabine":
         text = f"Vigilance : +{level // 5} Visée."
     elif weapon.name == "Med Rifle":
-        text = f"Soigne un allié de {round_to_5(20 * level)} PV."
+        text = f"Soigne un allié de {round_to_5(20 * level + tech_bonus)} PV."
     elif weapon.name == "Smart Rifle":
         text = f"+{round_to_5(10 * level)} Dégâts contre une cible Marquée."
     elif weapon.name == "Masse de combat":
@@ -160,11 +177,24 @@ def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
     neutral_damage = base_damage(level) + power * 2
     if weapon.name == "Masse de combat":
         neutral_damage += 5 * level
-    return ResolvedWeapon(weapon, power, round_to_5(neutral_damage), weapon.aim, text)
+    return ResolvedWeapon(
+        weapon,
+        power,
+        round_to_5(neutral_damage),
+        weapon.aim + per_bonus,
+        text,
+    )
 
 
-def resolve_implant(implant, level: int, max_hp_value: int) -> ResolvedImplant:
+def resolve_implant(
+    implant,
+    level: int,
+    max_hp_value: int,
+    *,
+    technique: int = 10,
+) -> ResolvedImplant:
     _validate_level(level)
+    tech_bonus = tech_support_bonus(technique)
     text = implant.property_text
     if implant.name == "AEGIS":
         text = f"+{round_to_5(5 * level)} Armure."
@@ -177,7 +207,7 @@ def resolve_implant(implant, level: int, max_hp_value: int) -> ResolvedImplant:
     elif implant.name == "ZEPHYR":
         text = f"Attaques à distance : +{round_to_5((level // 2) * 5)} Dégâts."
     elif implant.name == "PHALANX":
-        text = f"Réaction : déploie une barrière à {round_to_5(10 * level)} PV."
+        text = f"Réaction : déploie une barrière à {round_to_5(10 * level + tech_bonus)} PV."
     return ResolvedImplant(implant, text)
 
 
