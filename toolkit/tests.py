@@ -72,6 +72,9 @@ class DomainIntegrityTests(TestCase):
 
 
 class MonsterBuilderViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+
     def setUp(self):
         self.user = User.objects.create_user(username="builder", password="pwd")
         self.client.login(username="builder", password="pwd")
@@ -92,9 +95,6 @@ class MonsterBuilderViewTests(TestCase):
         self.assertContains(response, "Niveau")
 
     def test_builder_post_generates_requested_number_of_cards(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         response = self.client.post(
             reverse("monster_builder"),
             {"action": "generate", "quantity": 3, "level": 5},
@@ -118,9 +118,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_role_switch_rerolls_only_selected_mob_and_keeps_level(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         response = self.client.post(
             reverse("monster_builder"),
             {"action": "generate", "quantity": 3, "level": 5},
@@ -198,9 +195,6 @@ class MonsterBuilderViewTests(TestCase):
         )
 
     def test_weapon_groups_are_family_then_tier_sorted(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         response = self.client.get(reverse("monster_builder"))
         groups = response.context["weapon_groups"]
         self.assertEqual([name for name, _ in groups][:3], ["Commun", "Combattant", "Assassin"])
@@ -210,8 +204,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_generated_draft_uses_equipment_lists(self):
-        from django.core.management import call_command
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         draft = self.client.session["monster_builder_mobs"][0]
         self.assertIsInstance(draft["weapon_ids"], list)
@@ -221,9 +213,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_manual_perception_override_recalculates_weapon_aim(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         response = self.client.post(
             reverse("monster_builder_field"),
@@ -260,9 +249,6 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(response.context["generated_mobs"][0]["max_hp"], 999)
 
     def test_manual_armor_override_does_not_change_modifiers(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         response = self.client.post(
             reverse("monster_builder_field"),
@@ -274,9 +260,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_builder_renders_compact_view_and_opt_in_edit_controls(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         response = self.client.post(
             reverse("monster_builder"),
             {"action": "generate", "quantity": 1, "level": 5},
@@ -405,9 +388,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_edit_mode_survives_field_post_redirect(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
         response = self.client.post(
             reverse("monster_builder_field"),
@@ -419,9 +399,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_custom_ability_fixed_effect_is_rendered(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
         response = self.client.post(
             reverse("monster_builder_ability"),
@@ -439,9 +416,6 @@ class MonsterBuilderViewTests(TestCase):
         self.assertContains(response, "Dégâts Distance")
 
     def test_custom_ability_level_effect_scales_with_mob_level(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
         response = self.client.post(
             reverse("monster_builder_ability"),
@@ -457,9 +431,6 @@ class MonsterBuilderViewTests(TestCase):
         )
 
     def test_custom_ability_can_be_removed(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         self.client.post(
             reverse("monster_builder_ability"),
@@ -474,9 +445,6 @@ class MonsterBuilderViewTests(TestCase):
 
 
     def test_custom_aim_effect_applies_live_before_validation(self):
-        from django.core.management import call_command
-
-        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
         before = self.client.get(reverse("monster_builder")).context["generated_mobs"][0]["weapon_cards"][0].effective_aim
         response = self.client.post(
@@ -509,11 +477,14 @@ class MonsterBuilderViewTests(TestCase):
 
 
 class BuilderValidationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
     def setUp(self):
         self.user = User.objects.create_user(username="validator", password="pwd")
         self.client.login(username="validator", password="pwd")
-        from django.core.management import call_command
-        call_command("seed_monster_catalogue", verbosity=0)
 
     def test_validate_one_moves_only_selected_draft_to_table(self):
         from .models import TableMob
