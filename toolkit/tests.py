@@ -271,3 +271,16 @@ class MonsterBuilderViewTests(TestCase):
         )
         mob = response.context["generated_mobs"][0]
         self.assertEqual(mob["armor"], 35)
+
+
+    def test_builder_renders_compact_view_and_opt_in_edit_controls(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 1, "level": 5},
+        )
+        self.assertContains(response, "✎ Modifier")
+        self.assertContains(response, 'class="edit-only')
+        self.assertContains(response, 'class="view-only')
