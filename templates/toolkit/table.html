@@ -22,10 +22,16 @@
             {% for ability in mob.payload.abilities %}
                 <p><strong>{{ ability.name }}</strong>{% if ability.description %} — {{ ability.description }}{% endif %}{% if ability.resolved_effect %} · {{ ability.resolved_effect.label }} +{{ ability.resolved_effect.value }}{% endif %}</p>
             {% endfor %}
-            <form method="post" action="{% url 'table_mob_edit' mob.id %}">
-                {% csrf_token %}
-                <button type="submit">✎ Rééditer</button>
-            </form>
+            <div style="display:flex;gap:.4rem;">
+                <form method="post" action="{% url 'table_mob_edit' mob.id %}">
+                    {% csrf_token %}
+                    <button type="submit">✎ Rééditer</button>
+                </form>
+                <form method="post" action="{% url 'table_mob_delete' mob.id %}" onsubmit="return confirm('Retirer définitivement ce Mob de la Table ?');">
+                    {% csrf_token %}
+                    <button type="submit">× Supprimer</button>
+                </form>
+            </div>
         </article>
     {% endfor %}
     </div>
