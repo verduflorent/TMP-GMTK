@@ -116,6 +116,8 @@ class ResolvedWeapon:
     effective_aim: int
     resolved_property: str
     property_lines: tuple[str, ...] = ()
+    contact_damage: int | None = None
+    distance_damage: int | None = None
 
 
 @dataclass(frozen=True)
@@ -143,7 +145,7 @@ def split_property_lines(text: str) -> tuple[str, ...]:
 
 
 def effective_weapon_power(weapon) -> int:
-    if weapon.name in ("Revolver", "Chakram"):
+    if weapon.name == "Revolver":
         return weapon.power + 5
     return weapon.power
 
@@ -169,7 +171,7 @@ def resolve_weapon(
     elif weapon.name == "Chakram":
         text = "Permet de bondir sur la cible à partir de 4 m. ; Lancer : peut être lancé à Portée Moyenne."
     elif weapon.name == "Fusil à pompe court":
-        text = f"Au Contact : +{round_to_5(5 * level)} Dégâts."
+        text = ""
     elif weapon.name == "Smartgun":
         text = f"+{round_to_5(5 * level)} Dégâts contre une cible Marquée."
     elif weapon.name == "Katana":
@@ -187,8 +189,19 @@ def resolve_weapon(
     elif weapon.name == "Masse de combat":
         text = ""
     neutral_damage = base_damage(level) + power * 2
+    contact_damage = None
+    distance_damage = None
     if weapon.name == "Masse de combat":
         neutral_damage += 5 * level
+    elif weapon.name == "Fusil à pompe court":
+        distance_damage = round_to_5(base_damage(level) + 10 * 2)
+        contact_damage = round_to_5(base_damage(level) + 20 * 2)
+        neutral_damage = distance_damage
+    elif weapon.name == "Chakram":
+        distance_damage = round_to_5(base_damage(level) + 15 * 2)
+        contact_damage = round_to_5(base_damage(level) + 20 * 2)
+        neutral_damage = distance_damage
+
     return ResolvedWeapon(
         weapon,
         power,
@@ -196,6 +209,8 @@ def resolve_weapon(
         weapon.aim + per_bonus,
         text,
         split_property_lines(text),
+        contact_damage,
+        distance_damage,
     )
 
 
