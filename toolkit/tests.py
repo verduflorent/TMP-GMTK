@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from catalogue.models import MobProfile
-from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility
+from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility, UserWeapon
 from .services import save_validated
 
 User = get_user_model()
@@ -157,7 +157,7 @@ class MonsterBuilderViewTests(TestCase):
         replacement = next(
             weapon
             for weapon in MobWeapon.objects.all()
-            if weapon.id != target["weapon_ids"][0] and weapon.supports_profile(profile)
+            if weapon.id != target["weapons"][0]["id"] and weapon.supports_profile(profile)
         )
 
         response = self.client.post(
@@ -169,7 +169,7 @@ class MonsterBuilderViewTests(TestCase):
         after = self.client.session["monster_builder_mobs"]
         self.assertEqual(after[1], untouched[0])
         self.assertEqual(after[2], untouched[1])
-        self.assertEqual(after[0]["weapon_ids"][0], replacement.id)
+        self.assertEqual(after[0]["weapons"][0]["id"], replacement.id)
 
     def test_weapon_switch_allows_mj_profile_override(self):
         from django.core.management import call_command
@@ -192,7 +192,7 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "action": "replace", "weapon_index": 0, "weapon_id": override.id},
         )
         self.assertEqual(
-            self.client.session["monster_builder_mobs"][0]["weapon_ids"][0],
+            self.client.session["monster_builder_mobs"][0]["weapons"][0]["id"],
             override.id,
         )
 
@@ -292,7 +292,7 @@ class MonsterBuilderViewTests(TestCase):
         weapons = list(MobWeapon.objects.all())
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
-        draft["weapon_ids"] = [weapons[0].id, weapons[1].id]
+        draft["weapons"] = [{"source": "catalogue", "id": weapons[0].id}, {"source": "catalogue", "id": weapons[1].id}]
         session["monster_builder_mobs"] = [draft]
         session.save()
 
@@ -313,7 +313,7 @@ class MonsterBuilderViewTests(TestCase):
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
-        draft["weapon_ids"] = [weapons[0].id, weapons[1].id, weapons[2].id]
+        draft["weapons"] = [{"source": "catalogue", "id": weapons[0].id}, {"source": "catalogue", "id": weapons[1].id}, {"source": "catalogue", "id": weapons[2].id}]
         session["monster_builder_mobs"] = [draft]
         session.save()
 
@@ -322,8 +322,8 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "action": "remove", "weapon_index": 1},
         )
         self.assertEqual(
-            self.client.session["monster_builder_mobs"][0]["weapon_ids"],
-            [weapons[0].id, weapons[2].id],
+            self.client.session["monster_builder_mobs"][0]["weapons"],
+            [{"source": "catalogue", "id": weapons[0].id}, {"source": "catalogue", "id": weapons[2].id}],
         )
 
 
@@ -682,3 +682,35 @@ class AbilityLibraryTests(TestCase):
             {"index": 0, "ability_id": ability.id},
         )
         self.assertEqual(self.client.session["monster_builder_mobs"][0]["abilities"], [])
+
+
+class UserWeaponLibraryTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="weaponlib", password="pwd")
+        self.client.login(username="weaponlib", password="pwd")
+
+    def test_personal_weapon_can_be_created_and_added_to_draft(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_user_weapon_create"),
+            {"index": 0, "name": "Boomstick", "hands": 2, "optimal_range": "SHORT", "power": 18, "aim": 1, "property_name": "Test", "property_text": "Perso."},
+            follow=True,
+        )
+        weapon = UserWeapon.objects.get(owner=self.user, name="Boomstick")
+        self.assertIn({"source": "user", "id": weapon.id}, self.client.session["monster_builder_mobs"][0]["weapons"])
+        self.assertTrue(any(card.weapon.name == "Boomstick" for card in response.context["generated_mobs"][0]["weapon_cards"]))
+
+    def test_personal_weapon_can_be_reused_and_is_private(self):
+        weapon = UserWeapon.objects.create(owner=self.user, name="Perso", power=12, aim=2)
+        other = User.objects.create_user(username="weaponother", password="pwd")
+        secret = UserWeapon.objects.create(owner=other, name="Secret", power=99)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_user_weapon_add"), {"index": 0, "weapon_id": weapon.id})
+        self.assertIn({"source": "user", "id": weapon.id}, self.client.session["monster_builder_mobs"][0]["weapons"])
+        self.client.post(reverse("monster_builder_user_weapon_add"), {"index": 0, "weapon_id": secret.id})
+        self.assertNotIn({"source": "user", "id": secret.id}, self.client.session["monster_builder_mobs"][0]["weapons"])
