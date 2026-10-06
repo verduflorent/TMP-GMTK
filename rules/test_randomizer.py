@@ -425,6 +425,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
             self.Implant("AEGIS", "CSK"),
             self.Implant("VELOS", "A"),
             self.Implant("ARGUS", "TS"),
+            self.Implant("ZEPHYR", "AT"),
             self.Implant("MEDUSA", "K"),
         ]
 
