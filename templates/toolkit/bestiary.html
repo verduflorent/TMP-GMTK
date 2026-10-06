@@ -15,9 +15,17 @@
         <form method="post" action="{% url 'bestiary_duplicate' mob.id %}">
             {% csrf_token %}<button type="submit">Dupliquer</button>
         </form>
-        <form method="post" action="{% url 'bestiary_delete' mob.id %}" onsubmit="return confirm('Supprimer ce Mob du Bestiaire ?');">
-            {% csrf_token %}<button type="submit">Supprimer</button>
-        </form>
+        <button type="button" onclick="document.getElementById('delete-bestiary-mob-{{ mob.id }}').showModal()">Supprimer</button>
+        <dialog class="confirm-dialog" id="delete-bestiary-mob-{{ mob.id }}">
+            <strong>Supprimer {{ mob.name }} ?</strong>
+            <p>Le modèle sauvegardé sera retiré du Bestiaire.</p>
+            <div class="confirm-actions">
+                <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                <form method="post" action="{% url 'bestiary_delete' mob.id %}">
+                    {% csrf_token %}<button type="submit">Supprimer</button>
+                </form>
+            </div>
+        </dialog>
     </div>
 </article>
 {% empty %}
