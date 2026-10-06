@@ -497,7 +497,8 @@ class CompleteMobGenerationTests(SimpleTestCase):
             profile=MobProfile.SOUTIEN,
             rng=random.Random(10),
         )
-        self.assertEqual(mob["shield"], 100)
+        # N5 Soutien: 100 PB de profil + TECH14 => +40 Bouclier.
+        self.assertEqual(mob["shield"], 140)
 
     def test_group_generation_applies_profile_quotas(self):
         from rules.randomizer import generate_mobs
