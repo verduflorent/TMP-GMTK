@@ -579,3 +579,15 @@ class BestiaryWorkflowTests(TestCase):
         self.assertTrue(BestiaryMob.objects.filter(owner=self.user, name="Ronin — Copie").exists())
         self.client.post(reverse("bestiary_delete", args=[mob.id]))
         self.assertFalse(BestiaryMob.objects.filter(id=mob.id).exists())
+
+
+    def test_bestiary_page_displays_saved_mob(self):
+        mob = BestiaryMob.objects.create(
+            owner=self.user, name="Tireur Kurogane", profile="T", level=10,
+            draft_payload={"profile": "T", "level": 10},
+        )
+        response = self.client.get(reverse("bestiary"))
+        self.assertContains(response, "Tireur Kurogane")
+        self.assertContains(response, "Charger dans Builder")
+        self.assertContains(response, f"delete-bestiary-mob-{mob.id}")
+        self.assertNotContains(response, "return confirm(")
