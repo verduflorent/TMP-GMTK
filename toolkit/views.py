@@ -9,8 +9,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import BestiaryMob, TableMob
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, TableMob, UserAbility
 from .services import ensure_game_table
 
 
@@ -89,6 +89,7 @@ def monster_builder(request):
             "weapon_groups": weapon_groups,
             "implant_groups": implant_groups,
             "editing_index": editing_index,
+            "user_abilities": UserAbility.objects.filter(owner=request.user),
         },
     )
 
@@ -274,6 +275,16 @@ def monster_builder_ability(request):
                 "value": value,
             }
         abilities.append(ability)
+        if form.cleaned_data.get("save_to_library"):
+            effect = ability.get("effect", {})
+            UserAbility.objects.create(
+                owner=request.user,
+                name=ability["name"],
+                description=ability["description"],
+                effect_type=effect.get("type", ""),
+                scaling=effect.get("scaling", "fixed"),
+                value=effect.get("value", 0),
+            )
     elif action == "remove":
         ability_index = form.cleaned_data.get("ability_index")
         if ability_index is None or not 0 <= ability_index < len(abilities):
@@ -461,3 +472,36 @@ def bestiary_duplicate(request, mob_id):
         source.name = f"{source.name} — Copie"
         source.save()
     return redirect("bestiary")
+
+
+@login_required
+def monster_builder_ability_library(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = MobAbilityLibraryForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+    ability = UserAbility.objects.filter(
+        id=form.cleaned_data["ability_id"], owner=request.user
+    ).first()
+    if ability is None:
+        return _builder_redirect_editing(request, index)
+    data = saved[index]
+    abilities = list(data.get("abilities", []))
+    abilities.append(ability.as_draft())
+    data["abilities"] = abilities
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def ability_library_delete(request, ability_id):
+    if request.method == "POST":
+        UserAbility.objects.filter(id=ability_id, owner=request.user).delete()
+    return redirect("monster_builder")
