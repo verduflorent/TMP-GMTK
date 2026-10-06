@@ -42,22 +42,28 @@
                         <span>N{{ mob.level }}</span>
                     </form>
                 </div>
-                <strong>{{ mob.current_hp }} PV</strong>
+                <form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
             </header>
 
             <dl class="stats">
-                <div><dt>FOR</dt><dd>{{ mob.stats.force }}</dd><small>+{{ mob.stat_modifiers.force }}</small></div>
-                <div><dt>AGI</dt><dd>{{ mob.stats.agility }}</dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
-                <div><dt>PER</dt><dd>{{ mob.stats.perception }}</dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
-                <div><dt>TECH</dt><dd>{{ mob.stats.technique }}</dd></div>
-                <div><dt>CON</dt><dd>{{ mob.stats.constitution }}</dd></div>
-                <div><dt>VOL</dt><dd>{{ mob.stats.willpower }}</dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
+                <div><dt>FOR</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="force"><input type="number" name="value" value="{{ mob.stats.force }}" min="0" onchange="this.form.submit()" aria-label="FOR"></form></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
+                <div><dt>AGI</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="agility"><input type="number" name="value" value="{{ mob.stats.agility }}" min="0" onchange="this.form.submit()" aria-label="AGI"></form></dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
+                <div><dt>PER</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="perception"><input type="number" name="value" value="{{ mob.stats.perception }}" min="0" onchange="this.form.submit()" aria-label="PER"></form></dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
+                <div><dt>TECH</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="technique"><input type="number" name="value" value="{{ mob.stats.technique }}" min="0" onchange="this.form.submit()" aria-label="TECH"></form></dd></div>
+                <div><dt>CON</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="constitution"><input type="number" name="value" value="{{ mob.stats.constitution }}" min="0" onchange="this.form.submit()" aria-label="CON"></form></dd></div>
+                <div><dt>VOL</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="willpower"><input type="number" name="value" value="{{ mob.stats.willpower }}" min="0" onchange="this.form.submit()" aria-label="VOL"></form></dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
             </dl>
 
-            <p>
-                Armure {{ mob.armor }} · PB {{ mob.shield }} ·
-                Réactions {{ mob.reactions }} · Vigilance {{ mob.vigilance }}
-            </p>
+            <div class="derived-edit">
+                {% for field, label, value in mob.editable_derived %}
+                <form method="post" action="{% url 'monster_builder_field' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                    <input type="hidden" name="field" value="{{ field }}">
+                    <label>{{ label }} <input type="number" name="value" value="{{ value }}" min="0" onchange="this.form.submit()"></label>
+                </form>
+                {% endfor %}
+            </div>
 
             <section>
                 <h3>Armement</h3>
