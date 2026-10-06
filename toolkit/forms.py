@@ -28,3 +28,9 @@ class MobRoleForm(forms.Form):
             ("K", "Contrôle"),
         ],
     )
+
+
+class MobWeaponForm(forms.Form):
+    index = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
+    slot = forms.ChoiceField(choices=[("primary", "Principale"), ("secondary", "Secondaire")], widget=forms.HiddenInput)
+    weapon_id = forms.IntegerField(min_value=1)
