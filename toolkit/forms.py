@@ -48,3 +48,10 @@ class MobFieldOverrideForm(forms.Form):
         ]
     )
     value = forms.IntegerField(min_value=0)
+
+
+class MobImplantForm(forms.Form):
+    index = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
+    implant_index = forms.IntegerField(min_value=0, required=False)
+    action = forms.ChoiceField(choices=[("add", "Ajouter"), ("replace", "Remplacer"), ("remove", "Retirer")])
+    implant_id = forms.IntegerField(min_value=1, required=False)
