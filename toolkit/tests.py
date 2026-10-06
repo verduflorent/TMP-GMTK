@@ -561,7 +561,7 @@ class BestiaryWorkflowTests(TestCase):
         session["monster_builder_mobs"] = []
         session.save()
         response = self.client.post(reverse("bestiary_load", args=[saved.id]), follow=True)
-        self.assertEqual(self.client.session["monster_builder_mobs"][0], original)
+        self.assertEqual(self.client.session["monster_builder_mobs"][0], expected)
         self.assertEqual(response.context["editing_index"], 0)
 
     def test_bestiary_is_private_per_user(self):
