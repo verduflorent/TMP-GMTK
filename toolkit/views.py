@@ -9,8 +9,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import MobAbilityForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import TableMob
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, TableMob
 from .services import ensure_game_table
 
 
@@ -379,3 +379,66 @@ def table_mob_delete(request, mob_id):
     table = ensure_game_table(request.user)
     TableMob.objects.filter(id=mob_id, game_table=table).delete()
     return redirect("table")
+
+
+@login_required
+def bestiary_home(request):
+    mobs = BestiaryMob.objects.filter(owner=request.user).order_by("name", "id")
+    return render(request, "toolkit/bestiary.html", {"bestiary_mobs": mobs})
+
+
+@login_required
+def monster_builder_save(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = BestiaryMobSaveForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+
+    data = saved[index]
+    BestiaryMob.objects.create(
+        owner=request.user,
+        name=form.cleaned_data["name"].strip(),
+        profile=data["profile"],
+        level=data["level"],
+        draft_payload=data,
+    )
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def bestiary_load(request, mob_id):
+    if request.method != "POST":
+        return redirect("bestiary")
+    mob = BestiaryMob.objects.filter(id=mob_id, owner=request.user).first()
+    if mob is None or not mob.draft_payload:
+        return redirect("bestiary")
+    saved = request.session.get("monster_builder_mobs", [])
+    saved.append(mob.draft_payload)
+    request.session["monster_builder_mobs"] = saved
+    request.session["monster_builder_editing"] = len(saved) - 1
+    request.session.modified = True
+    return redirect("monster_builder")
+
+
+@login_required
+def bestiary_delete(request, mob_id):
+    if request.method == "POST":
+        BestiaryMob.objects.filter(id=mob_id, owner=request.user).delete()
+    return redirect("bestiary")
+
+
+@login_required
+def bestiary_duplicate(request, mob_id):
+    if request.method != "POST":
+        return redirect("bestiary")
+    source = BestiaryMob.objects.filter(id=mob_id, owner=request.user).first()
+    if source is not None:
+        source.pk = None
+        source.name = f"{source.name} — Copie"
+        source.save()
+    return redirect("bestiary")
