@@ -37,13 +37,26 @@ def monster_builder(request):
         saved = request.session.get("monster_builder_mobs", [])
         generated_mobs = [rebuild_mob(weapons, implants, data) for data in saved]
 
+    profile_labels = {
+        "": "Commun", "C": "Combattant", "A": "Assassin",
+        "T": "Tireur", "S": "Soutien", "K": "Contrôle",
+    }
+    weapon_groups = []
+    for code in ("", "C", "A", "T", "S", "K"):
+        group = sorted(
+            [weapon for weapon in weapons if weapon.allowed_profiles == code],
+            key=lambda weapon: (weapon.tier, weapon.name),
+        )
+        if group:
+            weapon_groups.append((profile_labels[code], group))
+
     return render(
         request,
         "toolkit/monster_builder.html",
         {
             "form": form,
             "generated_mobs": generated_mobs,
-            "weapon_catalogue": weapons,
+            "weapon_groups": weapon_groups,
         },
     )
 
@@ -97,9 +110,6 @@ def monster_builder_weapon(request):
         return redirect("monster_builder")
 
     data = saved[index]
-    if not selected.supports_profile(data["profile"]):
-        return redirect("monster_builder")
-
     slot = form.cleaned_data["slot"]
     if slot == "primary":
         data["primary_id"] = selected.id
