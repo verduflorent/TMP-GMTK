@@ -35,12 +35,12 @@
             </header>
 
             <dl class="stats">
-                <div><dt>FOR</dt><dd>{{ mob.stats.force }}</dd></div>
-                <div><dt>AGI</dt><dd>{{ mob.stats.agility }}</dd></div>
-                <div><dt>PER</dt><dd>{{ mob.stats.perception }}</dd></div>
-                <div><dt>TECH</dt><dd>{{ mob.stats.technique }}</dd></div>
+                <div><dt>FOR</dt><dd>{{ mob.stats.force }}</dd><small>+{{ mob.stat_modifiers.force }}</small></div>
+                <div><dt>AGI</dt><dd>{{ mob.stats.agility }}</dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
+                <div><dt>PER</dt><dd>{{ mob.stats.perception }}</dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
+                <div><dt>TECH</dt><dd>{{ mob.stats.technique }}</dd><small>+{{ mob.stat_modifiers.technique }}</small></div>
                 <div><dt>CON</dt><dd>{{ mob.stats.constitution }}</dd></div>
-                <div><dt>VOL</dt><dd>{{ mob.stats.willpower }}</dd></div>
+                <div><dt>VOL</dt><dd>{{ mob.stats.willpower }}</dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
             </dl>
 
             <p>
@@ -61,6 +61,10 @@
                     {% endif %}
                 {% endif %}
             </section>
+
+            {% if mob.tech_support_bonus %}
+            <p><strong>TECH</strong> — Soins +{{ mob.tech_support_bonus }} · Bouclier +{{ mob.tech_support_bonus }}</p>
+            {% endif %}
 
             {% if mob.implant_cards %}
             <section>
