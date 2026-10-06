@@ -9,7 +9,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import MobRoleForm, MonsterBuilderForm
+from .forms import MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .services import ensure_game_table
 
 
@@ -37,7 +37,15 @@ def monster_builder(request):
         saved = request.session.get("monster_builder_mobs", [])
         generated_mobs = [rebuild_mob(weapons, implants, data) for data in saved]
 
-    return render(request, "toolkit/monster_builder.html", {"form": form, "generated_mobs": generated_mobs})
+    return render(
+        request,
+        "toolkit/monster_builder.html",
+        {
+            "form": form,
+            "generated_mobs": generated_mobs,
+            "weapon_catalogue": weapons,
+        },
+    )
 
 
 @login_required
@@ -63,6 +71,49 @@ def monster_builder_role(request):
         profile=form.cleaned_data["profile"],
     )
     saved[index] = serialize_mob(rerolled)
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return redirect("monster_builder")
+
+
+@login_required
+def monster_builder_weapon(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+
+    form = MobWeaponForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+
+    weapons = list(MobWeapon.objects.all())
+    weapon_by_id = {weapon.id: weapon for weapon in weapons}
+    selected = weapon_by_id.get(form.cleaned_data["weapon_id"])
+    if selected is None:
+        return redirect("monster_builder")
+
+    data = saved[index]
+    if not selected.supports_profile(data["profile"]):
+        return redirect("monster_builder")
+
+    slot = form.cleaned_data["slot"]
+    if slot == "primary":
+        data["primary_id"] = selected.id
+        # Manual primary replacement exits Akimbo; preserve an ordinary secondary.
+        data["akimbo"] = False
+        if data["secondary_id"] == selected.id:
+            data["secondary_id"] = None
+    else:
+        if selected.id == data["primary_id"]:
+            return redirect("monster_builder")
+        data["secondary_id"] = selected.id
+        data["akimbo"] = False
+
+    saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
     return redirect("monster_builder")
