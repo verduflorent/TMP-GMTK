@@ -50,11 +50,11 @@
 
             <section>
                 <h3>Armement</h3>
-                <p><strong>{{ mob.primary.name }}</strong> — T{{ mob.primary.tier }} · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts</p>
+                <p><strong>{{ mob.primary.name }}{% if mob.akimbo_identical %} ×2{% endif %}</strong> — T{{ mob.primary.tier }} · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts</p>
                 {% if mob.primary.property_name %}
                     <p>{{ mob.primary.property_name }} — {{ mob.primary_card.resolved_property }}</p>
                 {% endif %}
-                {% if mob.secondary %}
+                {% if mob.secondary and not mob.akimbo_identical %}
                     <p><strong>{{ mob.secondary.name }}</strong>{% if mob.akimbo %} · Akimbo{% endif %} — T{{ mob.secondary.tier }} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts</p>
                     {% if mob.secondary.property_name %}
                         <p>{{ mob.secondary.property_name }} — {{ mob.secondary_card.resolved_property }}</p>
