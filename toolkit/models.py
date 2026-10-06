@@ -123,6 +123,24 @@ class EncounterMob(models.Model):
         return self.name
 
 
+class TableMob(models.Model):
+    """Validated Monster Builder snapshot owned by one user's live Table."""
+    game_table = models.ForeignKey(GameTable, on_delete=models.CASCADE, related_name="builder_mobs")
+    name = models.CharField(max_length=120)
+    profile = models.CharField(max_length=1, choices=MobProfile.choices)
+    level = models.PositiveSmallIntegerField(default=1)
+    payload = models.JSONField(default=dict)
+    rank = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["rank", "id"]
+
+    def __str__(self):
+        return f"{self.name} — N{self.level}"
+
+
 class TableInstance(models.Model):
     game_table = models.ForeignKey(GameTable, on_delete=models.CASCADE, related_name="instances")
     source = models.ForeignKey(
