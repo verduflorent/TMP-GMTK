@@ -111,25 +111,29 @@ def monster_builder_weapon(request):
     if not 0 <= index < len(saved):
         return redirect("monster_builder")
 
-    weapons = list(MobWeapon.objects.all())
-    weapon_by_id = {weapon.id: weapon for weapon in weapons}
-    selected = weapon_by_id.get(form.cleaned_data["weapon_id"])
-    if selected is None:
-        return redirect("monster_builder")
-
     data = saved[index]
     weapon_ids = list(data.get("weapon_ids", []))
-    if not weapon_ids:
-        return redirect("monster_builder")
+    action = form.cleaned_data["action"]
+    weapon_index = form.cleaned_data.get("weapon_index")
+    weapon_id = form.cleaned_data.get("weapon_id")
 
-    slot = form.cleaned_data["slot"]
-    if slot == "primary":
-        weapon_ids[0] = selected.id
-    else:
-        if len(weapon_ids) >= 2:
-            weapon_ids[1] = selected.id
-        else:
-            weapon_ids.append(selected.id)
+    if action in ("add", "replace"):
+        if weapon_id is None or not MobWeapon.objects.filter(id=weapon_id).exists():
+            return redirect("monster_builder")
+
+    if action == "add":
+        weapon_ids.append(weapon_id)
+    elif action == "replace":
+        if weapon_index is None or not 0 <= weapon_index < len(weapon_ids):
+            return redirect("monster_builder")
+        weapon_ids[weapon_index] = weapon_id
+    elif action == "remove":
+        if weapon_index is None or not 0 <= weapon_index < len(weapon_ids):
+            return redirect("monster_builder")
+        # Keep one weapon until the zero-weapon draft renderer is implemented.
+        if len(weapon_ids) <= 1:
+            return redirect("monster_builder")
+        weapon_ids.pop(weapon_index)
 
     data["weapon_ids"] = weapon_ids
     saved[index] = data
