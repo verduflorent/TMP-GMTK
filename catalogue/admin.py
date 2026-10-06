@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CatalogueEntry, EquipmentDefinition
+from .models import MobImplant, MobWeapon
 
-admin.site.register(EquipmentDefinition)
-admin.site.register(CatalogueEntry)
+admin.site.register(MobWeapon)
+admin.site.register(MobImplant)
