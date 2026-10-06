@@ -8,4 +8,5 @@ urlpatterns = [
     path("monster-builder/role/", views.monster_builder_role, name="monster_builder_role"),
     path("monster-builder/weapon/", views.monster_builder_weapon, name="monster_builder_weapon"),
     path("monster-builder/field/", views.monster_builder_field, name="monster_builder_field"),
+    path("monster-builder/implant/", views.monster_builder_implant, name="monster_builder_implant"),
 ]
