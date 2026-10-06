@@ -181,9 +181,16 @@ def monster_builder_field(request):
         return redirect("monster_builder")
 
     data = saved[index]
-    overrides = dict(data.get("overrides", {}))
-    overrides[form.cleaned_data["field"]] = form.cleaned_data["value"]
-    data["overrides"] = overrides
+    field = form.cleaned_data["field"]
+    value = form.cleaned_data["value"]
+    if field == "level":
+        if value < 1 or value > 99:
+            return _builder_redirect_editing(request, index)
+        data["level"] = value
+    else:
+        overrides = dict(data.get("overrides", {}))
+        overrides[field] = value
+        data["overrides"] = overrides
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
