@@ -10,4 +10,6 @@ urlpatterns = [
     path("monster-builder/field/", views.monster_builder_field, name="monster_builder_field"),
     path("monster-builder/implant/", views.monster_builder_implant, name="monster_builder_implant"),
     path("monster-builder/ability/", views.monster_builder_ability, name="monster_builder_ability"),
+    path("monster-builder/validate/", views.monster_builder_validate, name="monster_builder_validate"),
+    path("table/mob/<int:mob_id>/edit/", views.table_mob_edit, name="table_mob_edit"),
 ]
