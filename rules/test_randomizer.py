@@ -457,8 +457,8 @@ class CompleteMobGenerationTests(SimpleTestCase):
         )
         self.assertEqual(mob["profile"], MobProfile.COMBATANT)
         self.assertEqual(mob["level"], 5)
-        self.assertEqual(mob["max_hp"], 370)
-        self.assertEqual(mob["current_hp"], 370)
+        self.assertEqual(mob["max_hp"], 390)
+        self.assertEqual(mob["current_hp"], 390)
         # N5 Combattant: 25 Armure de profil + AEGIS tiré par ce seed (+25).
         self.assertEqual(mob["armor"], 50)
         self.assertEqual(mob["stats"].force, 14)
@@ -520,7 +520,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
             rng=random.Random(4),
         )
         self.assertEqual(mob["stats"].perception, 20)
-        self.assertEqual(mob["max_hp"], 670)
+        self.assertEqual(mob["max_hp"], 690)
         self.assertGreaterEqual(len(mob["implants"]), 2)
 
     def test_forced_unknown_profile_is_rejected(self):
@@ -591,3 +591,37 @@ class ResolvedLoadoutIntegrationTests(SimpleTestCase):
         )
         self.assertEqual(mob["armor"], 75 + 75)
         self.assertEqual(mob["primary_card"].neutral_damage, 210)
+
+
+class IdenticalAkimboResolutionTests(SimpleTestCase):
+    class Weapon:
+        def __init__(self):
+            self.name = "Pistolet"
+            self.tier = 1
+            self.profiles = ""
+            self.hands = 1
+            self.power = 10
+            self.aim = 2
+            self.property_name = ""
+            self.property_text = ""
+
+        def supports_profile(self, profile):
+            return True
+
+    def test_identical_akimbo_compacts_and_adds_power(self):
+        from rules.randomizer import generate_mob
+
+        # Search deterministic seeds until the 10% Akimbo roll produces identical Akimbo.
+        for seed in range(500):
+            mob = generate_mob(
+                [self.Weapon()],
+                [],
+                level=3,
+                profile=MobProfile.ASSASSIN,
+                rng=random.Random(seed),
+            )
+            if mob["akimbo_identical"]:
+                self.assertEqual(mob["primary_card"].effective_power, 20)
+                self.assertEqual(mob["primary_card"].neutral_damage, 110)
+                return
+        self.fail("Aucun Akimbo identique trouvé dans les seeds de test.")
