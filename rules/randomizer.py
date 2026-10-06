@@ -282,7 +282,8 @@ def choose_implants(implants, *, profile: str, level: int, rng=None):
 
 def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     from rules.engine import (
-        ResolvedWeapon, base_damage, implant_armor_bonus, profile_derived,
+        ResolvedWeapon, apply_weapon_damage_bonuses, base_damage,
+        implant_armor_bonus, implant_damage_bonuses, profile_derived,
         profile_stats, resolve_implant, resolve_weapon, round_to_5,
         stat_modifier, tech_support_bonus,
     )
@@ -301,6 +302,19 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
             primary_card.effective_aim, primary_card.resolved_property,
             primary_card.property_lines,
         )
+    contact_bonus, distance_bonus = implant_damage_bonuses(implants, level)
+    primary_card = apply_weapon_damage_bonuses(
+        primary_card,
+        contact_bonus=contact_bonus,
+        distance_bonus=distance_bonus,
+    )
+    if secondary_card is not None:
+        secondary_card = apply_weapon_damage_bonuses(
+            secondary_card,
+            contact_bonus=contact_bonus,
+            distance_bonus=distance_bonus,
+        )
+
     implant_cards = [
         resolve_implant(item, level, derived.max_hp, technique=stats.technique)
         for item in implants
@@ -340,12 +354,18 @@ def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None):
     stats = mob["stats"]
     from rules.engine import resolve_weapon
     mob["weapons"] = weapons
+    from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses
+    contact_bonus, distance_bonus = implant_damage_bonuses(implants, level)
     mob["weapon_cards"] = [
-        resolve_weapon(
-            weapon,
-            level,
-            perception=stats.perception,
-            technique=stats.technique,
+        apply_weapon_damage_bonuses(
+            resolve_weapon(
+                weapon,
+                level,
+                perception=stats.perception,
+                technique=stats.technique,
+            ),
+            contact_bonus=contact_bonus,
+            distance_bonus=distance_bonus,
         )
         for weapon in weapons
     ]
