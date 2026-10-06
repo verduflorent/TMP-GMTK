@@ -123,9 +123,13 @@ def choose_primary_weapon(weapons, *, profile: str, level: int, rng=None):
 
 
 def should_add_secondary(primary_weapon, rng=None) -> bool:
-    """T4 always gets a sidearm; other tiers have a 20% chance."""
+    """T4 and Med Rifle always get a sidearm; other weapons have a 20% chance."""
     rng = rng or random
-    return primary_weapon.tier == 4 or rng.random() < 0.20
+    return (
+        primary_weapon.tier == 4
+        or primary_weapon.name == "Med Rifle"
+        or rng.random() < 0.20
+    )
 
 
 def choose_secondary_weapon(weapons, *, profile: str, primary_weapon, rng=None):
@@ -274,6 +278,8 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         profile_derived,
         round_to_5,
         profile_stats,
+        stat_modifier,
+        tech_support_bonus,
         resolve_implant,
         resolve_weapon,
     )
@@ -293,9 +299,19 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         implants, profile=selected_profile, level=level, rng=rng
     )
 
-    resolved_primary = resolve_weapon(loadout["primary"], level)
+    resolved_primary = resolve_weapon(
+        loadout["primary"],
+        level,
+        perception=stats.perception,
+        technique=stats.technique,
+    )
     resolved_secondary = (
-        resolve_weapon(loadout["secondary"], level)
+        resolve_weapon(
+            loadout["secondary"],
+            level,
+            perception=stats.perception,
+            technique=stats.technique,
+        )
         if loadout["secondary"] is not None
         else None
     )
@@ -318,7 +334,12 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
             resolved_property=resolved_primary.resolved_property,
         )
     resolved_implants = [
-        resolve_implant(implant, level, derived.max_hp)
+        resolve_implant(
+            implant,
+            level,
+            derived.max_hp,
+            technique=stats.technique,
+        )
         for implant in selected_implants
     ]
 
@@ -326,6 +347,14 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         "profile": selected_profile,
         "level": level,
         "stats": stats,
+        "stat_modifiers": {
+            "force": stat_modifier(stats.force),
+            "agility": stat_modifier(stats.agility),
+            "perception": stat_modifier(stats.perception),
+            "technique": stat_modifier(stats.technique),
+            "willpower": stat_modifier(stats.willpower),
+        },
+        "tech_support_bonus": tech_support_bonus(stats.technique),
         "max_hp": derived.max_hp,
         "current_hp": derived.max_hp,
         "armor": round_to_5(
