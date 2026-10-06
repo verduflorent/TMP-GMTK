@@ -9,8 +9,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import BestiaryMob, TableMob, UserAbility, UserWeapon
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, TableMob, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
 
@@ -36,6 +36,7 @@ def monster_builder(request):
     weapons = list(MobWeapon.objects.all())
     implants = list(MobImplant.objects.all())
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
+    user_implants = list(UserImplant.objects.filter(owner=request.user))
     generated_mobs = []
     editing_index = request.session.pop("monster_builder_editing", None)
     form = MonsterBuilderForm(request.POST or None)
@@ -49,7 +50,7 @@ def monster_builder(request):
         request.session["monster_builder_mobs"] = [serialize_mob(mob) for mob in generated_mobs]
     else:
         saved = request.session.get("monster_builder_mobs", [])
-        generated_mobs = [rebuild_mob(weapons, implants, data, user_weapons) for data in saved]
+        generated_mobs = [rebuild_mob(weapons, implants, data, user_weapons, user_implants) for data in saved]
 
     for mob in generated_mobs:
         mob["editable_derived"] = (
@@ -92,6 +93,7 @@ def monster_builder(request):
             "editing_index": editing_index,
             "user_abilities": UserAbility.objects.filter(owner=request.user),
             "user_weapons": user_weapons,
+            "user_implants": user_implants,
         },
     )
 
@@ -355,6 +357,7 @@ def monster_builder_validate(request):
     weapons = list(MobWeapon.objects.all())
     implants = list(MobImplant.objects.all())
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
+    user_implants = list(UserImplant.objects.filter(owner=request.user))
     table = ensure_game_table(request.user)
     valid_indexes = [index for index in indexes if 0 <= index < len(saved)]
 
@@ -564,6 +567,60 @@ def monster_builder_user_weapon_add(request):
     refs.append({"source": "user", "id": weapon.id})
     data["weapons"] = refs
     data.pop("weapon_ids", None)
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def monster_builder_user_implant_create(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = UserImplantForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+    implant = UserImplant.objects.create(
+        owner=request.user, name=form.cleaned_data["name"].strip(),
+        property_name=(form.cleaned_data.get("property_name") or "").strip(),
+        property_text=(form.cleaned_data.get("property_text") or "").strip(),
+    )
+    data = saved[index]
+    refs = list(data.get("implants", []))
+    refs.append({"source": "user", "id": implant.id})
+    data["implants"] = refs
+    data.pop("implant_ids", None)
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def monster_builder_user_implant_add(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = UserImplantLibraryForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+    implant = UserImplant.objects.filter(
+        id=form.cleaned_data["implant_id"], owner=request.user
+    ).first()
+    if implant is None:
+        return _builder_redirect_editing(request, index)
+    data = saved[index]
+    refs = list(data.get("implants", []))
+    refs.append({"source": "user", "id": implant.id})
+    data["implants"] = refs
+    data.pop("implant_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
