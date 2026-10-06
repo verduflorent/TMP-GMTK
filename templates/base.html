@@ -11,6 +11,18 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .panel { border: 1px solid #333; border-radius: .5rem; padding: 1rem; min-height: 12rem; }
         button, input { font: inherit; }
+        nav { display: flex; gap: 1rem; align-items: center; }
+        .builder-form { display: flex; gap: 1rem; align-items: end; min-height: auto; margin-bottom: 1.5rem; }
+        .builder-form div { display: grid; gap: .35rem; }
+        .mob-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+        .mob-card { min-height: auto; }
+        .mob-card > .mob-card-header { padding: 0 0 .75rem; border: 0; border-bottom: 1px solid #333; }
+        .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: .4rem; }
+        .stats div { text-align: center; border: 1px solid #333; border-radius: .35rem; padding: .4rem; }
+        .stats dt { font-size: .75rem; opacity: .7; }
+        .stats dd { margin: .2rem 0 0; font-weight: 700; }
+        .mob-card h3 { margin-bottom: .4rem; }
+        .mob-card p { margin: .35rem 0; }
         a { color: inherit; }
         @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
     </style>
@@ -19,6 +31,10 @@
 <header>
     <strong>TMP — Game Master Toolkit</strong>
     {% if user.is_authenticated %}
+    <nav>
+        <a href="{% url 'table' %}">Table</a>
+        <a href="{% url 'monster_builder' %}">Monster Builder</a>
+    </nav>
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button type="submit">Déconnexion</button>
