@@ -218,6 +218,28 @@
                     </dialog>
                 </div>
             </section>
+            <section>
+                <h3>Capacité(s)</h3>
+                {% for ability in mob.abilities %}
+                <div class="ability-entry">
+                    <p><strong>{{ ability.name }}</strong>{% if ability.description %} — {{ ability.description }}{% endif %}</p>
+                    {% if ability.resolved_effect %}
+                    <p>{{ ability.resolved_effect.label }} : +{{ ability.resolved_effect.value }}</p>
+                    {% endif %}
+                    <form class="edit-only block" method="post" action="{% url 'monster_builder_ability' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                        <input type="hidden" name="ability_index" value="{{ forloop.counter0 }}">
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit">Retirer</button>
+                    </form>
+                </div>
+                {% endfor %}
+                <div class="edit-only block">
+                    <button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">+ Créer une capacité</button>
+                    <dialog id="ability-modal-{{ forloop.counter0 }}"></dialog>
+                </div>
+            </section>
         </article>
         {% endfor %}
     </div>
