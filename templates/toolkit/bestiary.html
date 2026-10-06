@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Bestiaire — TMP-GMTK{% endblock %}
+{% block content %}
+<h1>Bestiaire</h1>
+<p>Mobs sauvegardés et réutilisables.</p>
+<div class="mob-grid">
+{% for mob in bestiary_mobs %}
+<article class="panel mob-card">
+    <h3>{{ mob.name }}</h3>
+    <p>{{ mob.get_profile_display }} · N{{ mob.level }}</p>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        <form method="post" action="{% url 'bestiary_load' mob.id %}">
+            {% csrf_token %}<button type="submit">Charger dans Builder</button>
+        </form>
+        <form method="post" action="{% url 'bestiary_duplicate' mob.id %}">
+            {% csrf_token %}<button type="submit">Dupliquer</button>
+        </form>
+        <form method="post" action="{% url 'bestiary_delete' mob.id %}" onsubmit="return confirm('Supprimer ce Mob du Bestiaire ?');">
+            {% csrf_token %}<button type="submit">Supprimer</button>
+        </form>
+    </div>
+</article>
+{% empty %}
+<p>Aucun Mob sauvegardé.</p>
+{% endfor %}
+</div>
+{% endblock %}
