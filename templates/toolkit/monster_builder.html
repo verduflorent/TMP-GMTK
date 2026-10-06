@@ -61,14 +61,37 @@
 
             <section>
                 <h3>Armement</h3>
-                <p><strong>{{ mob.primary.name }}{% if mob.akimbo_identical %} ×2{% endif %}</strong> · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts</p>
+                <form method="post" action="{% url 'monster_builder_weapon' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                    <input type="hidden" name="slot" value="primary">
+                    <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme principale">
+                        {% for weapon in weapon_catalogue %}
+                            {% if weapon.supports_profile|default:True %}
+                            <option value="{{ weapon.id }}"{% if weapon.id == mob.primary.id %} selected{% endif %}>{{ weapon.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% if mob.akimbo_identical %}<strong> ×2</strong>{% endif %}
+                    · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts
+                </form>
                 {% if mob.primary.property_name and mob.primary_card.property_lines %}
                     {% for line in mob.primary_card.property_lines %}
                         <p>{% if forloop.first %}{{ mob.primary.property_name }} — {% endif %}{{ line }}</p>
                     {% endfor %}
                 {% endif %}
                 {% if mob.secondary and not mob.akimbo_identical %}
-                    <p><strong>{{ mob.secondary.name }}</strong>{% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts</p>
+                    <form method="post" action="{% url 'monster_builder_weapon' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                        <input type="hidden" name="slot" value="secondary">
+                        <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme secondaire">
+                            {% for weapon in weapon_catalogue %}
+                                <option value="{{ weapon.id }}"{% if weapon.id == mob.secondary.id %} selected{% endif %}>{{ weapon.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts
+                    </form>
                     {% if mob.secondary.property_name and mob.secondary_card.property_lines %}
                         {% for line in mob.secondary_card.property_lines %}
                             <p>{% if forloop.first %}{{ mob.secondary.property_name }} — {% endif %}{{ line }}</p>
