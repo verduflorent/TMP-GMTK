@@ -90,3 +90,19 @@ class BestiaryMobSaveForm(forms.Form):
 class MobAbilityLibraryForm(forms.Form):
     index = forms.IntegerField(min_value=0)
     ability_id = forms.IntegerField(min_value=1)
+
+
+class UserWeaponForm(forms.Form):
+    index = forms.IntegerField(min_value=0)
+    name = forms.CharField(max_length=120)
+    hands = forms.ChoiceField(choices=[(1, "1 main"), (2, "2 mains")])
+    optimal_range = forms.ChoiceField(choices=[("CONTACT", "Contact"), ("SHORT", "Courte"), ("MEDIUM", "Moyenne"), ("LONG", "Longue")])
+    power = forms.IntegerField()
+    aim = forms.IntegerField()
+    property_name = forms.CharField(max_length=120, required=False)
+    property_text = forms.CharField(required=False, widget=forms.Textarea)
+
+
+class UserWeaponLibraryForm(forms.Form):
+    index = forms.IntegerField(min_value=0)
+    weapon_id = forms.IntegerField(min_value=1)
