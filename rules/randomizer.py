@@ -401,12 +401,12 @@ def resolve_abilities(abilities, level):
 
 
 def _apply_draft_overrides(mob):
-    """Apply MJ-entered source values, then recalculate every derived modifier."""
+    """Apply MJ sources and custom ability effects, then recalculate the draft."""
     from dataclasses import replace
     from rules.engine import (
+        ResolvedWeapon, apply_weapon_damage_bonuses, implant_damage_bonuses,
         max_hp, resolve_implant, resolve_weapon, round_to_5,
-        stat_modifier, tech_support_bonus, implant_damage_bonuses,
-        apply_weapon_damage_bonuses,
+        stat_modifier, tech_support_bonus,
     )
 
     overrides = mob.get("overrides", {})
@@ -421,40 +421,55 @@ def _apply_draft_overrides(mob):
             stat_fields[field] = overrides[field]
     stats = replace(stats, **stat_fields)
     mob["stats"] = stats
-
     mob["stat_modifiers"] = {
-        "force": stat_modifier(stats.force),
-        "agility": stat_modifier(stats.agility),
-        "perception": stat_modifier(stats.perception),
-        "technique": None,
+        "force": stat_modifier(stats.force), "agility": stat_modifier(stats.agility),
+        "perception": stat_modifier(stats.perception), "technique": None,
         "willpower": stat_modifier(stats.willpower),
     }
     mob["tech_support_bonus"] = tech_support_bonus(stats.technique)
 
+    effects = {}
+    for ability in mob.get("abilities", []):
+        resolved = ability.get("resolved_effect")
+        effect = ability.get("effect")
+        if resolved and effect:
+            effects[effect["type"]] = effects.get(effect["type"], 0) + resolved["value"]
+
     calculated_hp = max_hp(mob["level"], stats.constitution)
-    mob["max_hp"] = overrides.get("max_hp", calculated_hp)
+    mob["max_hp"] = overrides.get("max_hp", calculated_hp) + effects.get("max_hp", 0)
     mob["current_hp"] = overrides.get("current_hp", mob["max_hp"])
-    for field in ("armor", "shield", "reactions", "vigilance"):
-        if field in overrides:
-            mob[field] = overrides[field]
+    mob["armor"] = overrides.get("armor", mob["armor"]) + effects.get("armor", 0)
+    mob["shield"] = overrides.get("shield", mob["shield"]) + effects.get("shield", 0)
+    mob["reactions"] = overrides.get("reactions", mob["reactions"]) + effects.get("reactions", 0)
+    mob["vigilance"] = overrides.get("vigilance", mob["vigilance"]) + effects.get("vigilance", 0)
+    mob["ability_healing_bonus"] = effects.get("healing", 0)
 
     contact_bonus, distance_bonus = implant_damage_bonuses(mob["implants"], mob["level"])
-    mob["weapon_cards"] = [
-        apply_weapon_damage_bonuses(
-            resolve_weapon(
-                weapon, mob["level"],
-                perception=stats.perception,
-                technique=stats.technique,
-            ),
-            contact_bonus=contact_bonus,
-            distance_bonus=distance_bonus,
+    contact_bonus += effects.get("damage_contact", 0)
+    distance_bonus += effects.get("damage_distance", 0)
+    aim_bonus = effects.get("aim", 0)
+
+    cards = []
+    for weapon in mob["weapons"]:
+        card = resolve_weapon(
+            weapon, mob["level"],
+            perception=stats.perception,
+            technique=stats.technique,
         )
-        for weapon in mob["weapons"]
-    ]
+        card = apply_weapon_damage_bonuses(
+            card, contact_bonus=contact_bonus, distance_bonus=distance_bonus,
+        )
+        if aim_bonus:
+            card = ResolvedWeapon(
+                card.weapon, card.effective_power, card.neutral_damage,
+                card.effective_aim + aim_bonus, card.resolved_property,
+                card.property_lines, card.contact_damage, card.distance_damage,
+            )
+        cards.append(card)
+    mob["weapon_cards"] = cards
+
     mob["implant_cards"] = [
-        resolve_implant(
-            implant, mob["level"], mob["max_hp"], technique=stats.technique
-        )
+        resolve_implant(implant, mob["level"], mob["max_hp"], technique=stats.technique)
         for implant in mob["implants"]
     ]
 
