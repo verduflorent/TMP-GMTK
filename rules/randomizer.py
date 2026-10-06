@@ -271,111 +271,84 @@ def choose_implants(implants, *, profile: str, level: int, rng=None):
     return selected
 
 
-def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
-    """Assemble one complete transient Mob proposal without persistence."""
+def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     from rules.engine import (
-        implant_armor_bonus,
-        profile_derived,
-        round_to_5,
-        profile_stats,
-        stat_modifier,
-        tech_support_bonus,
-        resolve_implant,
-        resolve_weapon,
+        ResolvedWeapon, base_damage, implant_armor_bonus, profile_derived,
+        profile_stats, resolve_implant, resolve_weapon, round_to_5,
+        stat_modifier, tech_support_bonus,
+    )
+    stats = profile_stats(profile, level)
+    derived = profile_derived(profile, level)
+    primary_card = resolve_weapon(primary, level, perception=stats.perception, technique=stats.technique)
+    secondary_card = (
+        resolve_weapon(secondary, level, perception=stats.perception, technique=stats.technique)
+        if secondary is not None else None
+    )
+    akimbo_identical = bool(akimbo and secondary is not None and primary.name == secondary.name)
+    if akimbo_identical:
+        combined_power = primary_card.effective_power + secondary_card.effective_power
+        primary_card = ResolvedWeapon(
+            primary, combined_power, round_to_5(base_damage(level) + combined_power * 2),
+            primary_card.effective_aim, primary_card.resolved_property,
+        )
+    implant_cards = [
+        resolve_implant(item, level, derived.max_hp, technique=stats.technique)
+        for item in implants
+    ]
+    return {
+        "profile": profile, "level": level, "stats": stats,
+        "stat_modifiers": {
+            "force": stat_modifier(stats.force), "agility": stat_modifier(stats.agility),
+            "perception": stat_modifier(stats.perception), "technique": None,
+            "willpower": stat_modifier(stats.willpower),
+        },
+        "tech_support_bonus": tech_support_bonus(stats.technique),
+        "max_hp": derived.max_hp, "current_hp": derived.max_hp,
+        "armor": round_to_5(derived.armor + implant_armor_bonus(implants, level)),
+        "shield": round_to_5(derived.shield + (tech_support_bonus(stats.technique) if derived.shield else 0)),
+        "reactions": derived.reactions, "vigilance": derived.vigilance,
+        "primary": primary, "secondary": secondary,
+        "primary_card": primary_card, "secondary_card": secondary_card,
+        "akimbo": akimbo, "akimbo_identical": akimbo_identical,
+        "implants": implants, "implant_cards": implant_cards,
+    }
+
+
+def serialize_mob(mob):
+    return {
+        "level": mob["level"], "profile": str(mob["profile"]),
+        "primary_id": mob["primary"].id,
+        "secondary_id": mob["secondary"].id if mob["secondary"] else None,
+        "akimbo": mob["akimbo"],
+        "implant_ids": [item.id for item in mob["implants"]],
+    }
+
+
+def rebuild_mob(weapons, implants, data):
+    weapon_by_id = {item.id: item for item in weapons}
+    implant_by_id = {item.id: item for item in implants}
+    return _assemble_mob(
+        level=data["level"], profile=data["profile"],
+        primary=weapon_by_id[data["primary_id"]],
+        secondary=weapon_by_id.get(data["secondary_id"]),
+        akimbo=data["akimbo"],
+        implants=[implant_by_id[item_id] for item_id in data["implant_ids"] if item_id in implant_by_id],
     )
 
+
+def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
     _validate_level(level)
     rng = rng or random
     selected_profile = profile or generate_profiles(1, rng)[0]
     if selected_profile not in PROFILE_WEIGHTS:
         raise ValueError(f"Profil Mob inconnu : {selected_profile}")
-
-    stats = profile_stats(selected_profile, level)
-    derived = profile_derived(selected_profile, level)
-    loadout = choose_weapon_loadout(
-        weapons, profile=selected_profile, level=level, rng=rng
+    loadout = choose_weapon_loadout(weapons, profile=selected_profile, level=level, rng=rng)
+    selected_implants = choose_implants(implants, profile=selected_profile, level=level, rng=rng)
+    return _assemble_mob(
+        level=level, profile=selected_profile,
+        primary=loadout["primary"], secondary=loadout["secondary"],
+        akimbo=loadout["akimbo"], implants=selected_implants,
     )
-    selected_implants = choose_implants(
-        implants, profile=selected_profile, level=level, rng=rng
-    )
-
-    resolved_primary = resolve_weapon(
-        loadout["primary"],
-        level,
-        perception=stats.perception,
-        technique=stats.technique,
-    )
-    resolved_secondary = (
-        resolve_weapon(
-            loadout["secondary"],
-            level,
-            perception=stats.perception,
-            technique=stats.technique,
-        )
-        if loadout["secondary"] is not None
-        else None
-    )
-
-    akimbo_identical = (
-        loadout["akimbo"]
-        and loadout["secondary"] is not None
-        and loadout["primary"].name == loadout["secondary"].name
-    )
-    if akimbo_identical:
-        from rules.engine import ResolvedWeapon, base_damage
-        combined_power = (
-            resolved_primary.effective_power + resolved_secondary.effective_power
-        )
-        resolved_primary = ResolvedWeapon(
-            weapon=loadout["primary"],
-            effective_power=combined_power,
-            neutral_damage=round_to_5(base_damage(level) + combined_power * 2),
-            effective_aim=resolved_primary.effective_aim,
-            resolved_property=resolved_primary.resolved_property,
-        )
-    resolved_implants = [
-        resolve_implant(
-            implant,
-            level,
-            derived.max_hp,
-            technique=stats.technique,
-        )
-        for implant in selected_implants
-    ]
-
-    return {
-        "profile": selected_profile,
-        "level": level,
-        "stats": stats,
-        "stat_modifiers": {
-            "force": stat_modifier(stats.force),
-            "agility": stat_modifier(stats.agility),
-            "perception": stat_modifier(stats.perception),
-            "technique": None,
-            "willpower": stat_modifier(stats.willpower),
-        },
-        "tech_support_bonus": tech_support_bonus(stats.technique),
-        "max_hp": derived.max_hp,
-        "current_hp": derived.max_hp,
-        "armor": round_to_5(
-            derived.armor + implant_armor_bonus(selected_implants, level)
-        ),
-        "shield": round_to_5(
-            derived.shield
-            + (tech_support_bonus(stats.technique) if derived.shield else 0)
-        ),
-        "reactions": derived.reactions,
-        "vigilance": derived.vigilance,
-        "primary": loadout["primary"],
-        "secondary": loadout["secondary"],
-        "primary_card": resolved_primary,
-        "secondary_card": resolved_secondary,
-        "akimbo": loadout["akimbo"],
-        "akimbo_identical": akimbo_identical,
-        "implants": selected_implants,
-        "implant_cards": resolved_implants,
-    }
-
 
 def generate_mobs(weapons, implants, *, quantity: int, level: int, rng=None):
     """Generate a group while applying profile quotas once for the whole batch."""
