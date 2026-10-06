@@ -79,6 +79,11 @@ def profile_stats(profile: str, level: int) -> MobStats:
     return MobStats(*values)
 
 
+def round_to_5(value: int | float) -> int:
+    """Round a final scaled/gained value to the nearest 5, halves upward."""
+    return int((value + 2.5) // 5 * 5)
+
+
 def max_hp(level: int, constitution: int = 10) -> int:
     _validate_level(level)
     return 250 + 30 * (level - 1) + (constitution - 10) * 10
@@ -125,7 +130,7 @@ def effective_weapon_power(weapon) -> int:
 
 
 def neutral_weapon_damage(level: int, weapon) -> int:
-    return base_damage(level) + effective_weapon_power(weapon) * 2
+    return round_to_5(base_damage(level) + effective_weapon_power(weapon) * 2)
 
 
 def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
@@ -135,41 +140,41 @@ def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
     if weapon.name == "Revolver":
         text = "Puissance +5 intégrée."
     elif weapon.name == "Fusil à pompe court":
-        text = f"Au Contact : +{5 * level} Dégâts."
+        text = f"Au Contact : +{round_to_5(5 * level)} Dégâts."
     elif weapon.name == "Smartgun":
-        text = f"+{5 * level} Dégâts contre une cible Marquée."
+        text = f"+{round_to_5(5 * level)} Dégâts contre une cible Marquée."
     elif weapon.name == "Katana":
-        text = f"Après une Esquive réussie contre une attaque à distance, renvoie {5 * level} Dégâts à l'attaquant."
+        text = f"Après une Esquive réussie contre une attaque à distance, renvoie {round_to_5(5 * level)} Dégâts à l'attaquant."
     elif weapon.name == "Powerfist":
-        text = f"Une attaque réussie génère {5 * level} PB, non cumulables."
+        text = f"Une attaque réussie génère {round_to_5(5 * level)} PB, non cumulables."
     elif weapon.name == "Arbalète":
-        text = f"Une attaque réussie soigne le porteur de {5 * level} PV."
+        text = f"Une attaque réussie soigne le porteur de {round_to_5(5 * level)} PV."
     elif weapon.name == "Carabine":
         text = f"Vigilance : +{level // 5} Visée."
     elif weapon.name == "Med Rifle":
-        text = f"Soigne un allié de {20 * level} PV."
+        text = f"Soigne un allié de {round_to_5(20 * level)} PV."
     elif weapon.name == "Smart Rifle":
-        text = f"+{10 * level} Dégâts contre une cible Marquée."
+        text = f"+{round_to_5(10 * level)} Dégâts contre une cible Marquée."
     elif weapon.name == "Masse de combat":
-        text = f"+{5 * level} Dégâts."
-    return ResolvedWeapon(weapon, power, base_damage(level) + power * 2, weapon.aim, text)
+        text = f"+{round_to_5(5 * level)} Dégâts."
+    return ResolvedWeapon(weapon, power, round_to_5(base_damage(level) + power * 2), weapon.aim, text)
 
 
 def resolve_implant(implant, level: int, max_hp_value: int) -> ResolvedImplant:
     _validate_level(level)
     text = implant.property_text
     if implant.name == "AEGIS":
-        text = f"+{5 * level} Armure."
+        text = f"+{round_to_5(5 * level)} Armure."
     elif implant.name == "ANCHOR":
-        text = f"+{2 * level} Armure ; résistance aux Poussées."
+        text = f"+{round_to_5(2 * level)} Armure ; résistance aux Poussées."
     elif implant.name == "COLOSSUS":
-        text = f"+{2 * level} Armure ; Propulsion : +{round(max_hp_value * 0.05)} dégâts + test FOR → Étourdi."
+        text = f"+{round_to_5(2 * level)} Armure ; Propulsion : +{round_to_5(max_hp_value * 0.05)} dégâts + test FOR → Étourdi."
     elif implant.name == "MINOS":
-        text = f"+50 % Vitesse de Déplacement vers un ennemi ; attaques au Contact : +{5 * level} Dégâts."
+        text = f"+50 % Vitesse de Déplacement vers un ennemi ; attaques au Contact : +{round_to_5(5 * level)} Dégâts."
     elif implant.name == "ZEPHYR":
-        text = f"Attaques à distance : +{(level // 2) * 5} Dégâts."
+        text = f"Attaques à distance : +{round_to_5((level // 2) * 5)} Dégâts."
     elif implant.name == "PHALANX":
-        text = f"Réaction : déploie une barrière à {10 * level} PV."
+        text = f"Réaction : déploie une barrière à {round_to_5(10 * level)} PV."
     return ResolvedImplant(implant, text)
 
 
