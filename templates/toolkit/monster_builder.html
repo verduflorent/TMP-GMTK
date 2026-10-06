@@ -264,8 +264,26 @@
                                 {% endfor %}
                             </select>
                             <button type="submit">Ajouter</button>
-                            <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
                         </form>
+                        {% if user_implants %}
+                        <hr><h4>Mes implants</h4>
+                        <form method="post" action="{% url 'monster_builder_user_implant_add' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <select name="implant_id">{% for implant in user_implants %}<option value="{{ implant.id }}">{{ implant.name }}</option>{% endfor %}</select>
+                            <button type="submit">Ajouter mon implant</button>
+                        </form>
+                        {% endif %}
+                        <hr><h4>Créer un implant</h4>
+                        <form method="post" action="{% url 'monster_builder_user_implant_create' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <p><label>Nom <input name="name" required maxlength="120"></label></p>
+                            <p><label>Propriété <input name="property_name"></label></p>
+                            <p><label>Description <textarea name="property_text"></textarea></label></p>
+                            <button type="submit">Créer et ajouter</button>
+                        </form>
+                        <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
                     </dialog>
                 </div>
             </section>
