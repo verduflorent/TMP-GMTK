@@ -237,7 +237,39 @@
                 {% endfor %}
                 <div class="edit-only block">
                     <button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">+ Créer une capacité</button>
-                    <dialog id="ability-modal-{{ forloop.counter0 }}"></dialog>
+                    <dialog id="ability-modal-{{ forloop.counter0 }}">
+                        <form method="post" action="{% url 'monster_builder_ability' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <input type="hidden" name="action" value="add">
+                            <h3>Créer une capacité</h3>
+                            <p><label>Nom <input type="text" name="name" maxlength="120" required></label></p>
+                            <p><label>Description <textarea name="description"></textarea></label></p>
+                            <p><label>Effet
+                                <select name="effect_type">
+                                    <option value="">Aucun effet mécanique</option>
+                                    <option value="damage_contact">Dégâts Contact</option>
+                                    <option value="damage_distance">Dégâts Distance</option>
+                                    <option value="aim">Visée</option>
+                                    <option value="armor">Armure</option>
+                                    <option value="shield">PB</option>
+                                    <option value="healing">Soin</option>
+                                    <option value="max_hp">PV</option>
+                                    <option value="reactions">Réactions</option>
+                                    <option value="vigilance">Vigilance</option>
+                                </select>
+                            </label></p>
+                            <p><label>Calcul
+                                <select name="scaling">
+                                    <option value="fixed">Fixe</option>
+                                    <option value="level">Par niveau</option>
+                                </select>
+                            </label></p>
+                            <p><label>Valeur <input type="number" name="value" value="0"></label></p>
+                            <button type="submit">Créer</button>
+                            <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                        </form>
+                    </dialog>
                 </div>
             </section>
         </article>
