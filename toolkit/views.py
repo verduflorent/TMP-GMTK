@@ -9,7 +9,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import MobFieldOverrideForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .services import ensure_game_table
 
 
@@ -58,6 +58,15 @@ def monster_builder(request):
         if group:
             weapon_groups.append((profile_labels[code], group))
 
+    implant_groups = []
+    for code in ("C", "A", "T", "S", "K"):
+        group = sorted(
+            [implant for implant in implants if code in implant.allowed_profiles],
+            key=lambda implant: implant.name,
+        )
+        if group:
+            implant_groups.append((profile_labels[code], group))
+
     return render(
         request,
         "toolkit/monster_builder.html",
@@ -65,6 +74,7 @@ def monster_builder(request):
             "form": form,
             "generated_mobs": generated_mobs,
             "weapon_groups": weapon_groups,
+            "implant_groups": implant_groups,
         },
     )
 
@@ -160,6 +170,48 @@ def monster_builder_field(request):
     overrides = dict(data.get("overrides", {}))
     overrides[form.cleaned_data["field"]] = form.cleaned_data["value"]
     data["overrides"] = overrides
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return redirect("monster_builder")
+
+
+@login_required
+def monster_builder_implant(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+
+    form = MobImplantForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+
+    data = saved[index]
+    implant_ids = list(data.get("implant_ids", []))
+    action = form.cleaned_data["action"]
+    implant_index = form.cleaned_data.get("implant_index")
+    implant_id = form.cleaned_data.get("implant_id")
+
+    if action in ("add", "replace"):
+        if implant_id is None or not MobImplant.objects.filter(id=implant_id).exists():
+            return redirect("monster_builder")
+
+    if action == "add":
+        implant_ids.append(implant_id)
+    elif action == "replace":
+        if implant_index is None or not 0 <= implant_index < len(implant_ids):
+            return redirect("monster_builder")
+        implant_ids[implant_index] = implant_id
+    elif action == "remove":
+        if implant_index is None or not 0 <= implant_index < len(implant_ids):
+            return redirect("monster_builder")
+        implant_ids.pop(implant_index)
+
+    data["implant_ids"] = implant_ids
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
