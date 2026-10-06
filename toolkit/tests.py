@@ -416,3 +416,58 @@ class MonsterBuilderViewTests(TestCase):
         )
         self.assertEqual(response.context["editing_index"], 1)
         self.assertContains(response, "mob-card is-editing", count=1)
+
+
+    def test_custom_ability_fixed_effect_is_rendered(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        response = self.client.post(
+            reverse("monster_builder_ability"),
+            {
+                "index": 0, "action": "add", "name": "Tension",
+                "description": "Les cibles à distance sont renforcées.",
+                "effect_type": "damage_distance", "scaling": "fixed", "value": 35,
+            },
+            follow=True,
+        )
+        ability = response.context["generated_mobs"][0]["abilities"][0]
+        self.assertEqual(ability["name"], "Tension")
+        self.assertEqual(ability["resolved_effect"]["value"], 35)
+        self.assertContains(response, "Tension")
+        self.assertContains(response, "Dégâts Distance")
+
+    def test_custom_ability_level_effect_scales_with_mob_level(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        response = self.client.post(
+            reverse("monster_builder_ability"),
+            {
+                "index": 0, "action": "add", "name": "Tension",
+                "effect_type": "damage_distance", "scaling": "level", "value": 5,
+            },
+            follow=True,
+        )
+        self.assertEqual(
+            response.context["generated_mobs"][0]["abilities"][0]["resolved_effect"]["value"],
+            50,
+        )
+
+    def test_custom_ability_can_be_removed(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(
+            reverse("monster_builder_ability"),
+            {"index": 0, "action": "add", "name": "Test", "effect_type": "", "scaling": "", "value": ""},
+        )
+        response = self.client.post(
+            reverse("monster_builder_ability"),
+            {"index": 0, "action": "remove", "ability_index": 0},
+            follow=True,
+        )
+        self.assertEqual(response.context["generated_mobs"][0]["abilities"], [])
