@@ -553,7 +553,9 @@ class BestiaryWorkflowTests(TestCase):
             {"index": 0, "name": "Tireur Kurogane"},
         )
         saved = BestiaryMob.objects.get(owner=self.user, name="Tireur Kurogane")
-        self.assertEqual(saved.draft_payload, original)
+        expected = dict(original)
+        expected["name"] = "Tireur Kurogane"
+        self.assertEqual(saved.draft_payload, expected)
 
         session = self.client.session
         session["monster_builder_mobs"] = []
