@@ -66,10 +66,12 @@
                     <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                     <input type="hidden" name="slot" value="primary">
                     <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme principale">
-                        {% for weapon in weapon_catalogue %}
-                            {% if weapon.supports_profile|default:True %}
-                            <option value="{{ weapon.id }}"{% if weapon.id == mob.primary.id %} selected{% endif %}>{{ weapon.name }}</option>
-                            {% endif %}
+                        {% for group_name, weapons in weapon_groups %}
+                        <optgroup label="{{ group_name }}">
+                            {% for weapon in weapons %}
+                            <option value="{{ weapon.id }}"{% if weapon.id == mob.primary.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
+                            {% endfor %}
+                        </optgroup>
                         {% endfor %}
                     </select>
                     {% if mob.akimbo_identical %}<strong> ×2</strong>{% endif %}
@@ -80,16 +82,39 @@
                         <p>{% if forloop.first %}{{ mob.primary.property_name }} — {% endif %}{{ line }}</p>
                     {% endfor %}
                 {% endif %}
+                {% if not mob.secondary %}
+                <form method="post" action="{% url 'monster_builder_weapon' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                    <input type="hidden" name="slot" value="secondary">
+                    <label>+ Arme
+                        <select name="weapon_id" onchange="if(this.value){this.form.submit();}" aria-label="Ajouter une arme">
+                            <option value="">— choisir —</option>
+                            {% for group_name, weapons in weapon_groups %}
+                            <optgroup label="{{ group_name }}">
+                                {% for weapon in weapons %}
+                                <option value="{{ weapon.id }}">T{{ weapon.tier }} — {{ weapon.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </form>
+                {% endif %}
                 {% if mob.secondary and not mob.akimbo_identical %}
                     <form method="post" action="{% url 'monster_builder_weapon' %}">
                         {% csrf_token %}
                         <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
                         <input type="hidden" name="slot" value="secondary">
                         <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme secondaire">
-                            {% for weapon in weapon_catalogue %}
-                                <option value="{{ weapon.id }}"{% if weapon.id == mob.secondary.id %} selected{% endif %}>{{ weapon.name }}</option>
+                        {% for group_name, weapons in weapon_groups %}
+                        <optgroup label="{{ group_name }}">
+                            {% for weapon in weapons %}
+                            <option value="{{ weapon.id }}"{% if weapon.id == mob.secondary.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
                             {% endfor %}
-                        </select>
+                        </optgroup>
+                        {% endfor %}
+                    </select>
                         {% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts
                     </form>
                     {% if mob.secondary.property_name and mob.secondary_card.property_lines %}
