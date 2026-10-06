@@ -258,6 +258,71 @@ def choose_implants(implants, *, profile: str, level: int, rng=None):
 
     return selected
 
+
+def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
+    """Assemble one complete transient Mob proposal without persistence."""
+    from rules.engine import profile_derived, profile_stats
+
+    _validate_level(level)
+    rng = rng or random
+    selected_profile = profile or generate_profiles(1, rng)[0]
+    if selected_profile not in PROFILE_WEIGHTS:
+        raise ValueError(f"Profil Mob inconnu : {selected_profile}")
+
+    stats = profile_stats(selected_profile, level)
+    derived = profile_derived(selected_profile, level)
+    loadout = choose_weapon_loadout(
+        weapons, profile=selected_profile, level=level, rng=rng
+    )
+    selected_implants = choose_implants(
+        implants, profile=selected_profile, level=level, rng=rng
+    )
+
+    return {
+        "profile": selected_profile,
+        "level": level,
+        "stats": stats,
+        "max_hp": derived.max_hp,
+        "current_hp": derived.max_hp,
+        "armor": derived.armor,
+        "shield": derived.shield,
+        "reactions": derived.reactions,
+        "vigilance": derived.vigilance,
+        "primary": loadout["primary"],
+        "secondary": loadout["secondary"],
+        "akimbo": loadout["akimbo"],
+        "implants": selected_implants,
+    }
+
+
+def generate_mobs(weapons, implants, *, quantity: int, level: int, rng=None):
+    """Generate a group while applying profile quotas once for the whole batch."""
+    _validate_quantity(quantity)
+    _validate_level(level)
+    rng = rng or random
+    profiles = generate_profiles(quantity, rng)
+    return [
+        generate_mob(
+            weapons,
+            implants,
+            level=level,
+            profile=profile,
+            rng=rng,
+        )
+        for profile in profiles
+    ]
+
+
+def reroll_mob_role(weapons, implants, *, level: int, profile: str, rng=None):
+    """Regenerate one Mob at the same level while forcing its new role."""
+    return generate_mob(
+        weapons,
+        implants,
+        level=level,
+        profile=profile,
+        rng=rng,
+    )
+
 def _interpolate(start, end, progress):
     values = tuple(a + (b - a) * progress for a, b in zip(start, end))
     # Floating arithmetic can drift microscopically from 100; normalize defensively.
