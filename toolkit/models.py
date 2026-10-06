@@ -124,6 +124,28 @@ class EncounterMob(models.Model):
         return self.name
 
 
+class UserWeapon(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="monster_weapons"
+    )
+    name = models.CharField(max_length=120)
+    hands = models.PositiveSmallIntegerField(default=1)
+    optimal_range = models.CharField(max_length=10, default="SHORT")
+    power = models.IntegerField(default=0)
+    aim = models.IntegerField(default=0)
+    property_name = models.CharField(max_length=120, blank=True)
+    property_text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def tier(self):
+        return 0
+
+    def __str__(self):
+        return self.name
+
+
 class UserAbility(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="monster_abilities"
