@@ -61,3 +61,43 @@ class MobAttackTests(SimpleTestCase):
         result = resolve_attack(level=1, perception=10, weapon_power=10, weapon_aim=2, roll=1)
         self.assertTrue(result.success)
         self.assertEqual(result.damage, 115)
+
+
+class ResolvedCombatCardTests(SimpleTestCase):
+    class Item:
+        def __init__(self, name, power=0, aim=0, property_text=""):
+            self.name = name
+            self.power = power
+            self.aim = aim
+            self.property_text = property_text
+
+    def test_revolver_integrates_power_bonus_and_neutral_damage(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Revolver", 10, 2, "+5 Puissance."), 3)
+        self.assertEqual(card.effective_power, 15)
+        self.assertEqual(card.neutral_damage, 100)
+
+    def test_arc_level_33_displays_neutral_damage(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Arc", 15, 1, "Ignore les Couvertures légères."), 33)
+        self.assertEqual(card.neutral_damage, 400)
+
+    def test_scaled_weapon_property_is_resolved(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Smart Rifle", 15, 1, ""), 33)
+        self.assertEqual(card.resolved_property, "+330 Dégâts contre une cible Marquée.")
+
+    def test_zephyr_level_33_resolves_every_two_levels(self):
+        from rules.engine import resolve_implant
+
+        card = resolve_implant(self.Item("ZEPHYR", property_text=""), 33, 1210)
+        self.assertEqual(card.resolved_property, "Attaques à distance : +80 Dégâts.")
+
+    def test_armor_implants_modify_displayed_armor(self):
+        from rules.engine import implant_armor_bonus
+
+        implants = [self.Item("AEGIS"), self.Item("ANCHOR")]
+        self.assertEqual(implant_armor_bonus(implants, 3), 21)
