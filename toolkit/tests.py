@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from catalogue.models import MobProfile
-from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility, UserWeapon
+from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility, UserWeapon, UserImplant
 from .services import save_validated
 
 User = get_user_model()
@@ -210,7 +210,7 @@ class MonsterBuilderViewTests(TestCase):
         draft = self.client.session["monster_builder_mobs"][0]
         self.assertIsInstance(draft["weapons"], list)
         self.assertTrue(all("source" in ref and "id" in ref for ref in draft["weapons"]))
-        self.assertIsInstance(draft["implant_ids"], list)
+        self.assertIsInstance(draft["implants"], list)
         self.assertEqual(draft["abilities"], [])
         self.assertEqual(draft["overrides"], {})
 
@@ -357,7 +357,7 @@ class MonsterBuilderViewTests(TestCase):
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
-        draft["implant_ids"] = [implant.id]
+        draft["implants"] = [{"source": "catalogue", "id": implant.id}]
         session["monster_builder_mobs"] = [draft]
         session.save()
 
@@ -366,7 +366,7 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "action": "remove", "implant_index": 0},
             follow=True,
         )
-        self.assertEqual(self.client.session["monster_builder_mobs"][0]["implant_ids"], [])
+        self.assertEqual(self.client.session["monster_builder_mobs"][0]["implants"], [])
         self.assertEqual(response.context["generated_mobs"][0]["implant_cards"], [])
 
     def test_manual_implant_list_can_exceed_randomizer_slot_limit(self):
@@ -378,7 +378,7 @@ class MonsterBuilderViewTests(TestCase):
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 1})
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
-        draft["implant_ids"] = []
+        draft["implants"] = []
         session["monster_builder_mobs"] = [draft]
         session.save()
 
@@ -387,7 +387,7 @@ class MonsterBuilderViewTests(TestCase):
                 reverse("monster_builder_implant"),
                 {"index": 0, "action": "add", "implant_id": implant.id},
             )
-        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["implant_ids"]), 4)
+        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["implants"]), 4)
 
 
     def test_edit_mode_survives_field_post_redirect(self):
@@ -715,3 +715,35 @@ class UserWeaponLibraryTests(TestCase):
         self.assertIn({"source": "user", "id": weapon.id}, self.client.session["monster_builder_mobs"][0]["weapons"])
         self.client.post(reverse("monster_builder_user_weapon_add"), {"index": 0, "weapon_id": secret.id})
         self.assertNotIn({"source": "user", "id": secret.id}, self.client.session["monster_builder_mobs"][0]["weapons"])
+
+
+class UserImplantLibraryTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="implantlib", password="pwd")
+        self.client.login(username="implantlib", password="pwd")
+
+    def test_personal_implant_can_be_created_and_added_to_draft(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_user_implant_create"),
+            {"index": 0, "name": "ARES-X", "property_name": "Prototype", "property_text": "Effet personnel."},
+            follow=True,
+        )
+        implant = UserImplant.objects.get(owner=self.user, name="ARES-X")
+        self.assertIn({"source": "user", "id": implant.id}, self.client.session["monster_builder_mobs"][0]["implants"])
+        self.assertTrue(any(card.implant.name == "ARES-X" for card in response.context["generated_mobs"][0]["implant_cards"]))
+
+    def test_personal_implant_can_be_reused_and_is_private(self):
+        implant = UserImplant.objects.create(owner=self.user, name="Perso")
+        other = User.objects.create_user(username="implantother", password="pwd")
+        secret = UserImplant.objects.create(owner=other, name="Secret")
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_user_implant_add"), {"index": 0, "implant_id": implant.id})
+        self.assertIn({"source": "user", "id": implant.id}, self.client.session["monster_builder_mobs"][0]["implants"])
+        self.client.post(reverse("monster_builder_user_implant_add"), {"index": 0, "implant_id": secret.id})
+        self.assertNotIn({"source": "user", "id": secret.id}, self.client.session["monster_builder_mobs"][0]["implants"])
