@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from catalogue.models import MobProfile
-from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance
+from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility
 from .services import save_validated
 
 User = get_user_model()
@@ -629,3 +629,56 @@ class BestiaryWorkflowTests(TestCase):
         self.assertEqual(mob["level"], 10)
         self.assertEqual(mob["abilities"][0]["resolved_effect"]["value"], 50)
         self.assertEqual(self.client.session["monster_builder_mobs"][0]["level"], 10)
+
+
+class AbilityLibraryTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="abilitylib", password="pwd")
+        self.client.login(username="abilitylib", password="pwd")
+
+    def test_created_ability_can_be_saved_to_personal_library(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        self.client.post(
+            reverse("monster_builder_ability"),
+            {
+                "index": 0, "action": "add", "name": "Tension",
+                "description": "Renforce la distance.",
+                "effect_type": "damage_distance", "scaling": "level", "value": 5,
+                "save_to_library": "on",
+            },
+        )
+        ability = UserAbility.objects.get(owner=self.user, name="Tension")
+        self.assertEqual(ability.effect_type, "damage_distance")
+        self.assertEqual(ability.scaling, "level")
+        self.assertEqual(ability.value, 5)
+
+    def test_saved_ability_can_be_added_to_another_draft(self):
+        ability = UserAbility.objects.create(
+            owner=self.user, name="Thor", effect_type="aim", scaling="fixed", value=5
+        )
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_ability_library"),
+            {"index": 0, "ability_id": ability.id},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["abilities"][0]["name"], "Thor")
+        self.assertEqual(mob["abilities"][0]["resolved_effect"]["value"], 5)
+
+    def test_user_cannot_reuse_another_users_saved_ability(self):
+        other = User.objects.create_user(username="abilityother", password="pwd")
+        ability = UserAbility.objects.create(
+            owner=other, name="Secret", effect_type="aim", value=99
+        )
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(
+            reverse("monster_builder_ability_library"),
+            {"index": 0, "ability_id": ability.id},
+        )
+        self.assertEqual(self.client.session["monster_builder_mobs"][0]["abilities"], [])
