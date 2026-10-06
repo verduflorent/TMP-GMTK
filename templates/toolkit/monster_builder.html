@@ -17,6 +17,7 @@
         {{ form.level }}
         {{ form.level.errors }}
     </div>
+    <input type="hidden" name="action" value="generate">
     <button type="submit">Générer</button>
 </form>
 
@@ -28,8 +29,18 @@
         <article class="panel mob-card">
             <header class="mob-card-header">
                 <div>
-                    <strong>{{ mob.profile.label }}</strong>
-                    <span>N{{ mob.level }}</span>
+                    <form method="post" action="{% url 'monster_builder_role' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                        <select name="profile" onchange="this.form.submit()" aria-label="Changer le rôle">
+                            <option value="C"{% if mob.profile == "C" %} selected{% endif %}>Combattant</option>
+                            <option value="A"{% if mob.profile == "A" %} selected{% endif %}>Assassin</option>
+                            <option value="T"{% if mob.profile == "T" %} selected{% endif %}>Tireur</option>
+                            <option value="S"{% if mob.profile == "S" %} selected{% endif %}>Soutien</option>
+                            <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
+                        </select>
+                        <span>N{{ mob.level }}</span>
+                    </form>
                 </div>
                 <strong>{{ mob.current_hp }} PV</strong>
             </header>
