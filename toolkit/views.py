@@ -37,6 +37,14 @@ def monster_builder(request):
         saved = request.session.get("monster_builder_mobs", [])
         generated_mobs = [rebuild_mob(weapons, implants, data) for data in saved]
 
+    for mob in generated_mobs:
+        mob["editable_derived"] = (
+            ("armor", "Armure", mob["armor"]),
+            ("shield", "PB", mob["shield"]),
+            ("reactions", "Réactions", mob["reactions"]),
+            ("vigilance", "Vigilance", mob["vigilance"]),
+        )
+
     profile_labels = {
         "": "Commun", "C": "Combattant", "A": "Assassin",
         "T": "Tireur", "S": "Soutien", "K": "Contrôle",
