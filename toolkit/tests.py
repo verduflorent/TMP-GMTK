@@ -612,3 +612,20 @@ class BestiaryWorkflowTests(TestCase):
         self.assertEqual(len(drafts), 3)
         self.assertTrue(all(draft["name"] == "Garde Kurogane" for draft in drafts))
         self.assertContains(response, "Garde Kurogane", count=3)
+
+
+    def test_manual_level_edit_recalculates_level_scaled_values(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(
+            reverse("monster_builder_ability"),
+            {"index": 0, "action": "add", "name": "Tension", "effect_type": "damage_distance", "scaling": "level", "value": 5},
+        )
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 0, "field": "level", "value": 10},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["level"], 10)
+        self.assertEqual(mob["abilities"][0]["resolved_effect"]["value"], 50)
+        self.assertEqual(self.client.session["monster_builder_mobs"][0]["level"], 10)
