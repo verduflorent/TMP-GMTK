@@ -517,3 +517,60 @@ class CompleteMobGenerationTests(SimpleTestCase):
                 profile="X",
                 rng=random.Random(1),
             )
+
+
+class ResolvedLoadoutIntegrationTests(SimpleTestCase):
+    class Weapon:
+        def __init__(self, name, tier, profiles="", hands=1, power=10, aim=2, property_name="", property_text=""):
+            self.name = name
+            self.tier = tier
+            self.profiles = profiles
+            self.hands = hands
+            self.power = power
+            self.aim = aim
+            self.property_name = property_name
+            self.property_text = property_text
+
+        def supports_profile(self, profile):
+            return not self.profiles or profile in self.profiles
+
+    class Implant:
+        def __init__(self, name, profiles, property_text=""):
+            self.name = name
+            self.profiles = profiles
+            self.property_name = name
+            self.property_text = property_text
+
+        def supports_profile(self, profile):
+            return profile in self.profiles
+
+    def test_non_akimbo_secondary_cannot_duplicate_primary(self):
+        from rules.randomizer import choose_secondary_weapon
+
+        pistol = self.Weapon("Pistolet", 1)
+        revolver = self.Weapon("Revolver", 2, "T")
+        for seed in range(50):
+            secondary = choose_secondary_weapon(
+                [pistol, revolver],
+                profile=MobProfile.TIREUR,
+                primary_weapon=pistol,
+                rng=random.Random(seed),
+            )
+            if secondary is not None:
+                self.assertNotEqual(secondary.name, pistol.name)
+
+    def test_generated_card_integrates_implant_armor(self):
+        from rules.randomizer import generate_mob
+
+        pistol = self.Weapon("Pistolet", 1)
+        aegis = self.Implant("AEGIS", "C", "+5 Armure × Niveau.")
+        # At N15 slots 1 and 2 proc, but only one compatible implant exists.
+        mob = generate_mob(
+            [pistol],
+            [aegis],
+            level=15,
+            profile=MobProfile.COMBATANT,
+            rng=random.Random(1),
+        )
+        self.assertEqual(mob["armor"], 75 + 75)
+        self.assertEqual(mob["primary_card"].neutral_damage, 210)
