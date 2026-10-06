@@ -196,14 +196,12 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2_two_hands,
-            level=6,
             rng=self.FixedRng([0.19]),
         )
         no = choose_secondary_weapon(
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2_two_hands,
-            level=6,
             rng=self.FixedRng([0.20]),
         )
         self.assertIsNotNone(yes)
