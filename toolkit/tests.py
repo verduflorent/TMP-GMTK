@@ -115,3 +115,28 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["generated_mobs"], [])
         self.assertContains(response, "Assurez-vous que cette valeur est supérieure ou égale à 1")
+
+
+    def test_role_switch_rerolls_only_selected_mob_and_keeps_level(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 3, "level": 5},
+        )
+        before = self.client.session["monster_builder_mobs"]
+        untouched = [before[0].copy(), before[2].copy()]
+
+        response = self.client.post(
+            reverse("monster_builder_role"),
+            {"index": 1, "profile": "S"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        after = self.client.session["monster_builder_mobs"]
+        self.assertEqual(after[0], untouched[0])
+        self.assertEqual(after[2], untouched[1])
+        self.assertEqual(after[1]["profile"], "S")
+        self.assertEqual(after[1]["level"], 5)
+        self.assertEqual(len(response.context["generated_mobs"]), 3)
