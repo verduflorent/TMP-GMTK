@@ -294,6 +294,24 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         if loadout["secondary"] is not None
         else None
     )
+
+    akimbo_identical = (
+        loadout["akimbo"]
+        and loadout["secondary"] is not None
+        and loadout["primary"].name == loadout["secondary"].name
+    )
+    if akimbo_identical:
+        from rules.engine import ResolvedWeapon, base_damage
+        combined_power = (
+            resolved_primary.effective_power + resolved_secondary.effective_power
+        )
+        resolved_primary = ResolvedWeapon(
+            weapon=loadout["primary"],
+            effective_power=combined_power,
+            neutral_damage=base_damage(level) + combined_power * 2,
+            effective_aim=resolved_primary.effective_aim,
+            resolved_property=resolved_primary.resolved_property,
+        )
     resolved_implants = [
         resolve_implant(implant, level, derived.max_hp)
         for implant in selected_implants
@@ -314,6 +332,7 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         "primary_card": resolved_primary,
         "secondary_card": resolved_secondary,
         "akimbo": loadout["akimbo"],
+        "akimbo_identical": akimbo_identical,
         "implants": selected_implants,
         "implant_cards": resolved_implants,
     }
