@@ -156,8 +156,11 @@ def resolve_weapon(weapon, level: int) -> ResolvedWeapon:
     elif weapon.name == "Smart Rifle":
         text = f"+{round_to_5(10 * level)} Dégâts contre une cible Marquée."
     elif weapon.name == "Masse de combat":
-        text = f"+{round_to_5(5 * level)} Dégâts."
-    return ResolvedWeapon(weapon, power, round_to_5(base_damage(level) + power * 2), weapon.aim, text)
+        text = ""
+    neutral_damage = base_damage(level) + power * 2
+    if weapon.name == "Masse de combat":
+        neutral_damage += 5 * level
+    return ResolvedWeapon(weapon, power, round_to_5(neutral_damage), weapon.aim, text)
 
 
 def resolve_implant(implant, level: int, max_hp_value: int) -> ResolvedImplant:
