@@ -11,11 +11,11 @@ class ProfileRandomizerTests(SimpleTestCase):
         self.assertEqual(
             PROFILE_WEIGHTS,
             {
-                MobProfile.COMBATANT: 5,
-                MobProfile.ASSASSIN: 3,
+                MobProfile.COMBATANT: 3,
+                MobProfile.ASSASSIN: 4,
                 MobProfile.TIREUR: 5,
                 MobProfile.SOUTIEN: 2,
-                MobProfile.CONTROLE: 1,
+                MobProfile.CONTROLE: 2,
             },
         )
 
@@ -46,10 +46,16 @@ class ProfileRandomizerTests(SimpleTestCase):
     def test_large_sample_tracks_expected_weight_order(self):
         profiles = generate_profiles(10000, random.Random(2026))
         counts = {profile: profiles.count(profile) for profile in PROFILE_WEIGHTS}
-        self.assertGreater(counts[MobProfile.COMBATANT], counts[MobProfile.ASSASSIN])
         self.assertGreater(counts[MobProfile.TIREUR], counts[MobProfile.ASSASSIN])
-        self.assertGreater(counts[MobProfile.ASSASSIN], counts[MobProfile.SOUTIEN])
-        self.assertGreater(counts[MobProfile.SOUTIEN], counts[MobProfile.CONTROLE])
+        self.assertGreater(counts[MobProfile.ASSASSIN], counts[MobProfile.COMBATANT])
+        self.assertGreater(counts[MobProfile.COMBATANT], counts[MobProfile.SOUTIEN])
+
+
+
+    def test_group_of_five_has_at_most_two_combatants(self):
+        for seed in range(200):
+            profiles = generate_profiles(5, random.Random(seed))
+            self.assertLessEqual(profiles.count(MobProfile.COMBATANT), 2)
 
     def test_quantity_must_be_positive(self):
         with self.assertRaises(ValueError):
