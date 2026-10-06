@@ -402,3 +402,17 @@ class MonsterBuilderViewTests(TestCase):
                 {"index": 0, "action": "add", "implant_id": implant.id},
             )
         self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["implant_ids"]), 4)
+
+
+    def test_edit_mode_survives_field_post_redirect(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 1, "field": "armor", "value": 35},
+            follow=True,
+        )
+        self.assertEqual(response.context["editing_index"], 1)
+        self.assertContains(response, "mob-card is-editing", count=1)
