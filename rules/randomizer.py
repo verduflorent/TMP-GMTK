@@ -133,7 +133,11 @@ def choose_secondary_weapon(weapons, *, profile: str, primary_weapon, rng=None):
     candidates = [
         weapon
         for weapon in weapons
-        if weapon.tier in (1, 2) and weapon.supports_profile(profile)
+        if (
+            weapon.tier in (1, 2)
+            and weapon.supports_profile(profile)
+            and weapon.name != primary_weapon.name
+        )
     ]
     if not candidates:
         return None
@@ -261,7 +265,13 @@ def choose_implants(implants, *, profile: str, level: int, rng=None):
 
 def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
     """Assemble one complete transient Mob proposal without persistence."""
-    from rules.engine import profile_derived, profile_stats
+    from rules.engine import (
+        implant_armor_bonus,
+        profile_derived,
+        profile_stats,
+        resolve_implant,
+        resolve_weapon,
+    )
 
     _validate_level(level)
     rng = rng or random
@@ -278,20 +288,34 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         implants, profile=selected_profile, level=level, rng=rng
     )
 
+    resolved_primary = resolve_weapon(loadout["primary"], level)
+    resolved_secondary = (
+        resolve_weapon(loadout["secondary"], level)
+        if loadout["secondary"] is not None
+        else None
+    )
+    resolved_implants = [
+        resolve_implant(implant, level, derived.max_hp)
+        for implant in selected_implants
+    ]
+
     return {
         "profile": selected_profile,
         "level": level,
         "stats": stats,
         "max_hp": derived.max_hp,
         "current_hp": derived.max_hp,
-        "armor": derived.armor,
+        "armor": derived.armor + implant_armor_bonus(selected_implants, level),
         "shield": derived.shield,
         "reactions": derived.reactions,
         "vigilance": derived.vigilance,
         "primary": loadout["primary"],
         "secondary": loadout["secondary"],
+        "primary_card": resolved_primary,
+        "secondary_card": resolved_secondary,
         "akimbo": loadout["akimbo"],
         "implants": selected_implants,
+        "implant_cards": resolved_implants,
     }
 
 
