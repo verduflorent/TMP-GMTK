@@ -4,7 +4,10 @@ import sys
 
 
 def main():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    # The test command automatically opts into test-only settings (fast password
+    # hashing, etc.). Explicit --settings still wins when supplied by the caller.
+    default_settings = "config.settings_test" if len(sys.argv) > 1 and sys.argv[1] == "test" else "config.settings"
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", default_settings)
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
