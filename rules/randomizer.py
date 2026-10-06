@@ -324,27 +324,78 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     }
 
 
+def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None):
+    """Build an editable draft from unrestricted equipment lists."""
+    if not weapons:
+        raise ValueError("Un brouillon Mob doit conserver au moins une arme pour le moment.")
+
+    mob = _assemble_mob(
+        level=level,
+        profile=profile,
+        primary=weapons[0],
+        secondary=weapons[1] if len(weapons) > 1 else None,
+        akimbo=False,
+        implants=implants,
+    )
+    stats = mob["stats"]
+    from rules.engine import resolve_weapon
+    mob["weapons"] = weapons
+    mob["weapon_cards"] = [
+        resolve_weapon(
+            weapon,
+            level,
+            perception=stats.perception,
+            technique=stats.technique,
+        )
+        for weapon in weapons
+    ]
+    mob["abilities"] = list(abilities or [])
+    return mob
+
+
 def serialize_mob(mob):
+    weapons = mob.get("weapons")
+    if weapons is None:
+        weapons = [mob["primary"]]
+        if mob["secondary"] is not None:
+            weapons.append(mob["secondary"])
     return {
-        "level": mob["level"], "profile": str(mob["profile"]),
-        "primary_id": mob["primary"].id,
-        "secondary_id": mob["secondary"].id if mob["secondary"] else None,
-        "akimbo": mob["akimbo"],
+        "level": mob["level"],
+        "profile": str(mob["profile"]),
+        "weapon_ids": [weapon.id for weapon in weapons],
         "implant_ids": [item.id for item in mob["implants"]],
+        "abilities": list(mob.get("abilities", [])),
+        "overrides": dict(mob.get("overrides", {})),
     }
 
 
 def rebuild_mob(weapons, implants, data):
     weapon_by_id = {item.id: item for item in weapons}
     implant_by_id = {item.id: item for item in implants}
-    return _assemble_mob(
-        level=data["level"], profile=data["profile"],
-        primary=weapon_by_id[data["primary_id"]],
-        secondary=weapon_by_id.get(data["secondary_id"]),
-        akimbo=data["akimbo"],
-        implants=[implant_by_id[item_id] for item_id in data["implant_ids"] if item_id in implant_by_id],
-    )
 
+    # Transitional compatibility with drafts created before list-based equipment.
+    weapon_ids = data.get("weapon_ids")
+    if weapon_ids is None:
+        weapon_ids = [data["primary_id"]]
+        if data.get("secondary_id") is not None:
+            weapon_ids.append(data["secondary_id"])
+
+    selected_weapons = [
+        weapon_by_id[item_id]
+        for item_id in weapon_ids
+        if item_id in weapon_by_id
+    ]
+    return assemble_draft_mob(
+        level=data["level"],
+        profile=data["profile"],
+        weapons=selected_weapons,
+        implants=[
+            implant_by_id[item_id]
+            for item_id in data.get("implant_ids", [])
+            if item_id in implant_by_id
+        ],
+        abilities=data.get("abilities", []),
+    )
 
 def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
     _validate_level(level)
@@ -354,11 +405,20 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         raise ValueError(f"Profil Mob inconnu : {selected_profile}")
     loadout = choose_weapon_loadout(weapons, profile=selected_profile, level=level, rng=rng)
     selected_implants = choose_implants(implants, profile=selected_profile, level=level, rng=rng)
-    return _assemble_mob(
+    mob = _assemble_mob(
         level=level, profile=selected_profile,
         primary=loadout["primary"], secondary=loadout["secondary"],
         akimbo=loadout["akimbo"], implants=selected_implants,
     )
+    mob["weapons"] = [loadout["primary"]] + (
+        [loadout["secondary"]] if loadout["secondary"] is not None else []
+    )
+    mob["weapon_cards"] = [mob["primary_card"]] + (
+        [mob["secondary_card"]] if mob["secondary_card"] is not None else []
+    )
+    mob["abilities"] = []
+    mob["overrides"] = {}
+    return mob
 
 def generate_mobs(weapons, implants, *, quantity: int, level: int, rng=None):
     """Generate a group while applying profile quotas once for the whole batch."""
