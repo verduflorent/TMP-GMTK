@@ -491,8 +491,9 @@ def serialize_mob(mob):
     }
 
 
-def rebuild_mob(weapons, implants, data):
+def rebuild_mob(weapons, implants, data, user_weapons=None):
     weapon_by_id = {item.id: item for item in weapons}
+    user_weapon_by_id = {item.id: item for item in (user_weapons or [])}
     implant_by_id = {item.id: item for item in implants}
 
     # Transitional compatibility with drafts created before list-based equipment.
@@ -502,11 +503,17 @@ def rebuild_mob(weapons, implants, data):
         if data.get("secondary_id") is not None:
             weapon_ids.append(data["secondary_id"])
 
-    selected_weapons = [
-        weapon_by_id[item_id]
-        for item_id in weapon_ids
-        if item_id in weapon_by_id
-    ]
+    selected_weapons = []
+    for item_id in weapon_ids:
+        if isinstance(item_id, str) and item_id.startswith("u:"):
+            try:
+                user_id = int(item_id[2:])
+            except ValueError:
+                continue
+            if user_id in user_weapon_by_id:
+                selected_weapons.append(user_weapon_by_id[user_id])
+        elif item_id in weapon_by_id:
+            selected_weapons.append(weapon_by_id[item_id])
     mob = assemble_draft_mob(
         level=data["level"],
         profile=data["profile"],
