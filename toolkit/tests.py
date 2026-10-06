@@ -158,7 +158,7 @@ class MonsterBuilderViewTests(TestCase):
         replacement = next(
             weapon
             for weapon in MobWeapon.objects.all()
-            if weapon.id != target["primary_id"] and weapon.supports_profile(profile)
+            if weapon.id != target["weapon_ids"][0] and weapon.supports_profile(profile)
         )
 
         response = self.client.post(
@@ -170,7 +170,7 @@ class MonsterBuilderViewTests(TestCase):
         after = self.client.session["monster_builder_mobs"]
         self.assertEqual(after[1], untouched[0])
         self.assertEqual(after[2], untouched[1])
-        self.assertEqual(after[0]["primary_id"], replacement.id)
+        self.assertEqual(after[0]["weapon_ids"][0], replacement.id)
         self.assertFalse(after[0]["akimbo"])
 
     def test_weapon_switch_allows_mj_profile_override(self):
@@ -194,7 +194,7 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "slot": "primary", "weapon_id": override.id},
         )
         self.assertEqual(
-            self.client.session["monster_builder_mobs"][0]["primary_id"],
+            self.client.session["monster_builder_mobs"][0]["weapon_ids"][0],
             override.id,
         )
 
@@ -208,3 +208,14 @@ class MonsterBuilderViewTests(TestCase):
         for _name, weapons in groups:
             keys = [(weapon.tier, weapon.name) for weapon in weapons]
             self.assertEqual(keys, sorted(keys))
+
+
+    def test_generated_draft_uses_equipment_lists(self):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        draft = self.client.session["monster_builder_mobs"][0]
+        self.assertIsInstance(draft["weapon_ids"], list)
+        self.assertIsInstance(draft["implant_ids"], list)
+        self.assertEqual(draft["abilities"], [])
+        self.assertEqual(draft["overrides"], {})
