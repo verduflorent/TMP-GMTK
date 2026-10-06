@@ -239,6 +239,49 @@ def resolve_implant(
     return ResolvedImplant(implant, text, split_property_lines(text))
 
 
+def implant_damage_bonuses(implants, level: int) -> tuple[int, int]:
+    """Return (contact, distance) bonuses that can be integrated into weapon cards."""
+    names = {implant.name for implant in implants}
+    contact = round_to_5(5 * level) if "MINOS" in names else 0
+    distance = round_to_5((level // 2) * 5) if "ZEPHYR" in names else 0
+    return contact, distance
+
+
+def apply_weapon_damage_bonuses(
+    card: ResolvedWeapon,
+    *,
+    contact_bonus: int = 0,
+    distance_bonus: int = 0,
+) -> ResolvedWeapon:
+    """Integrate contextual implant bonuses while keeping implant text visible."""
+    contact_damage = card.contact_damage
+    distance_damage = card.distance_damage
+    neutral_damage = card.neutral_damage
+
+    if contact_damage is not None:
+        contact_damage = round_to_5(contact_damage + contact_bonus)
+    if distance_damage is not None:
+        distance_damage = round_to_5(distance_damage + distance_bonus)
+
+    # Ordinary weapons use their catalogue range to decide which contextual bonus is native.
+    if contact_damage is None and distance_damage is None:
+        if getattr(card.weapon, "optimal_range", None) == "CONTACT":
+            neutral_damage = round_to_5(neutral_damage + contact_bonus)
+        else:
+            neutral_damage = round_to_5(neutral_damage + distance_bonus)
+
+    return ResolvedWeapon(
+        card.weapon,
+        card.effective_power,
+        neutral_damage,
+        card.effective_aim,
+        card.resolved_property,
+        card.property_lines,
+        contact_damage,
+        distance_damage,
+    )
+
+
 def implant_armor_bonus(implants, level: int) -> int:
     bonuses = {"AEGIS": 5, "ANCHOR": 2, "COLOSSUS": 2}
     return sum(bonuses.get(implant.name, 0) * level for implant in implants)
