@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Monster Builder — TMP-GMTK{% endblock %}
+{% block content %}
+<h1>Monster Builder</h1>
+<p>Génère un groupe de Mobs à partir du référentiel MONSTER.</p>
+
+<form method="post" class="panel builder-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div>
+        {{ form.quantity.label_tag }}
+        {{ form.quantity }}
+        {{ form.quantity.errors }}
+    </div>
+    <div>
+        {{ form.level.label_tag }}
+        {{ form.level }}
+        {{ form.level.errors }}
+    </div>
+    <button type="submit">Générer</button>
+</form>
+
+{% if generated_mobs %}
+<section>
+    <h2>{{ generated_mobs|length }} Mob{{ generated_mobs|length|pluralize }}</h2>
+    <div class="mob-grid">
+        {% for mob in generated_mobs %}
+        <article class="panel mob-card">
+            <header class="mob-card-header">
+                <div>
+                    <strong>{{ mob.profile.label }}</strong>
+                    <span>N{{ mob.level }}</span>
+                </div>
+                <strong>{{ mob.current_hp }} PV</strong>
+            </header>
+
+            <dl class="stats">
+                <div><dt>FOR</dt><dd>{{ mob.stats.force }}</dd></div>
+                <div><dt>AGI</dt><dd>{{ mob.stats.agility }}</dd></div>
+                <div><dt>PER</dt><dd>{{ mob.stats.perception }}</dd></div>
+                <div><dt>TECH</dt><dd>{{ mob.stats.technique }}</dd></div>
+                <div><dt>CON</dt><dd>{{ mob.stats.constitution }}</dd></div>
+                <div><dt>VOL</dt><dd>{{ mob.stats.willpower }}</dd></div>
+            </dl>
+
+            <p>
+                Armure {{ mob.armor }} · PB {{ mob.shield }} ·
+                Réactions {{ mob.reactions }} · Vigilance {{ mob.vigilance }}
+            </p>
+
+            <section>
+                <h3>Armement</h3>
+                <p><strong>{{ mob.primary.name }}</strong> — T{{ mob.primary.tier }} · P{{ mob.primary.power }} · Visée {{ mob.primary.aim|stringformat:"+d" }}</p>
+                {% if mob.primary.property_name %}
+                    <p>{{ mob.primary.property_name }} — {{ mob.primary.property_text }}</p>
+                {% endif %}
+                {% if mob.secondary %}
+                    <p><strong>{{ mob.secondary.name }}</strong>{% if mob.akimbo %} · Akimbo{% endif %} — T{{ mob.secondary.tier }}</p>
+                {% endif %}
+            </section>
+
+            <section>
+                <h3>Implants</h3>
+                {% for implant in mob.implants %}
+                    <p><strong>{{ implant.name }}</strong> — {{ implant.property_name }}{% if implant.property_text %} : {{ implant.property_text }}{% endif %}</p>
+                {% empty %}
+                    <p>Aucun implant.</p>
+                {% endfor %}
+            </section>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
