@@ -140,3 +140,61 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(after[1]["profile"], "S")
         self.assertEqual(after[1]["level"], 5)
         self.assertEqual(len(response.context["generated_mobs"]), 3)
+
+
+    def test_weapon_switch_changes_only_selected_mob_weapon(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 3, "level": 5},
+        )
+        before = self.client.session["monster_builder_mobs"]
+        untouched = [before[1].copy(), before[2].copy()]
+        target = before[0]
+        profile = target["profile"]
+        replacement = next(
+            weapon
+            for weapon in MobWeapon.objects.all()
+            if weapon.id != target["primary_id"] and weapon.supports_profile(profile)
+        )
+
+        response = self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "slot": "primary", "weapon_id": replacement.id},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        after = self.client.session["monster_builder_mobs"]
+        self.assertEqual(after[1], untouched[0])
+        self.assertEqual(after[2], untouched[1])
+        self.assertEqual(after[0]["primary_id"], replacement.id)
+        self.assertFalse(after[0]["akimbo"])
+
+    def test_weapon_switch_rejects_profile_incompatible_weapon(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 1, "level": 5},
+        )
+        saved = self.client.session["monster_builder_mobs"]
+        profile = saved[0]["profile"]
+        incompatible = next(
+            weapon for weapon in MobWeapon.objects.all()
+            if not weapon.supports_profile(profile)
+        )
+        original = saved[0]["primary_id"]
+
+        self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "slot": "primary", "weapon_id": incompatible.id},
+        )
+        self.assertEqual(
+            self.client.session["monster_builder_mobs"][0]["primary_id"],
+            original,
+        )
