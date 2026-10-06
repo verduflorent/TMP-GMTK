@@ -97,7 +97,7 @@ class MonsterBuilderViewTests(TestCase):
         call_command("seed_monster_catalogue", verbosity=0)
         response = self.client.post(
             reverse("monster_builder"),
-            {"quantity": 3, "level": 5},
+            {"action": "generate", "quantity": 3, "level": 5},
         )
         self.assertEqual(response.status_code, 200)
         mobs = response.context["generated_mobs"]
