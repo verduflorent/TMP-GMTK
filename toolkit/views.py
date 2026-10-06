@@ -9,7 +9,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import MobAbilityForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .services import ensure_game_table
 
 
@@ -221,6 +221,54 @@ def monster_builder_implant(request):
         implant_ids.pop(implant_index)
 
     data["implant_ids"] = implant_ids
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def monster_builder_ability(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+
+    form = MobAbilityForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+
+    data = saved[index]
+    abilities = list(data.get("abilities", []))
+    action = form.cleaned_data["action"]
+
+    if action == "add":
+        name = (form.cleaned_data.get("name") or "").strip()
+        if not name:
+            return _builder_redirect_editing(request, index)
+        ability = {
+            "name": name,
+            "description": (form.cleaned_data.get("description") or "").strip(),
+        }
+        effect_type = form.cleaned_data.get("effect_type")
+        value = form.cleaned_data.get("value")
+        if effect_type and value is not None:
+            ability["effect"] = {
+                "type": effect_type,
+                "scaling": form.cleaned_data.get("scaling") or "fixed",
+                "value": value,
+            }
+        abilities.append(ability)
+    elif action == "remove":
+        ability_index = form.cleaned_data.get("ability_index")
+        if ability_index is None or not 0 <= ability_index < len(abilities):
+            return _builder_redirect_editing(request, index)
+        abilities.pop(ability_index)
+
+    data["abilities"] = abilities
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
