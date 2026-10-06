@@ -2,10 +2,10 @@
 {% block title %}Monster Builder — TMP-GMTK{% endblock %}
 {% block content %}
 <style>
-.mob-card .edit-only { display: none; }
-.mob-card.is-editing .view-only { display: none; }
-.mob-card.is-editing .edit-only { display: initial; }
-.mob-card.is-editing .edit-only.block { display: block; }
+.mob-card:not(.is-editing) .edit-only { display: none !important; }
+.mob-card.is-editing .view-only { display: none !important; }
+.mob-card.is-editing .edit-only { display: inline !important; }
+.mob-card.is-editing .edit-only.block { display: block !important; }
 .mob-card input[type="number"] { box-sizing: border-box; max-width: 100%; }
 .mob-card .stats input[type="number"] { width: 3.2rem; text-align: center; }
 .mob-card .derived-edit { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin: .55rem 0; }
@@ -52,14 +52,13 @@
                             <option value="S"{% if mob.profile == "S" %} selected{% endif %}>Soutien</option>
                             <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
                         </select>
-                        <span>N{{ mob.level }}</span>
                     </form>
                 </div>
                 <strong class="view-only">{{ mob.max_hp }} PV</strong><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
             </header>
             <div class="card-edit-actions">
                 <button type="button" class="view-only" onclick="this.closest('.mob-card').classList.add('is-editing')">✎ Modifier</button>
-                <button type="button" class="edit-only" onclick="this.closest('.mob-card').classList.remove('is-editing')">Fermer l’édition</button>
+                <button type="button" class="edit-only" onclick="this.closest('.mob-card').classList.remove('is-editing')">✓ Terminer</button>
             </div>
 
             <dl class="stats">
