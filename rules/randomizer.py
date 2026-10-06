@@ -484,7 +484,7 @@ def serialize_mob(mob):
         "level": mob["level"],
         "profile": str(mob["profile"]),
         "name": mob.get("name", ""),
-        "weapon_ids": [weapon.id for weapon in weapons],
+        "weapon_ids": [("u:" + str(weapon.id) if weapon.__class__.__name__ == "UserWeapon" else weapon.id) for weapon in weapons],
         "implant_ids": [item.id for item in mob["implants"]],
         "abilities": list(mob.get("abilities", [])),
         "overrides": dict(mob.get("overrides", {})),
