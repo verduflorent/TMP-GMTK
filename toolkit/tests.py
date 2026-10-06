@@ -533,3 +533,49 @@ class BuilderValidationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(TableMob.objects.filter(id=table_mob.id).exists())
         self.assertEqual(self.client.session.get("monster_builder_mobs", []), [])
+
+
+class BestiaryWorkflowTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="bestiary", password="pwd")
+        self.client.login(username="bestiary", password="pwd")
+
+    def test_builder_draft_can_be_saved_and_loaded_from_bestiary(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        original = self.client.session["monster_builder_mobs"][0]
+        self.client.post(
+            reverse("monster_builder_save"),
+            {"index": 0, "name": "Tireur Kurogane"},
+        )
+        saved = BestiaryMob.objects.get(owner=self.user, name="Tireur Kurogane")
+        self.assertEqual(saved.draft_payload, original)
+
+        session = self.client.session
+        session["monster_builder_mobs"] = []
+        session.save()
+        response = self.client.post(reverse("bestiary_load", args=[saved.id]), follow=True)
+        self.assertEqual(self.client.session["monster_builder_mobs"][0], original)
+        self.assertEqual(response.context["editing_index"], 0)
+
+    def test_bestiary_is_private_per_user(self):
+        other = User.objects.create_user(username="other", password="pwd")
+        BestiaryMob.objects.create(
+            owner=other, name="Secret", profile="C", level=1, draft_payload={"profile": "C", "level": 1}
+        )
+        response = self.client.get(reverse("bestiary"))
+        self.assertNotContains(response, "Secret")
+
+    def test_bestiary_mob_can_be_duplicated_and_deleted(self):
+        mob = BestiaryMob.objects.create(
+            owner=self.user, name="Ronin", profile="A", level=10,
+            draft_payload={"profile": "A", "level": 10},
+        )
+        self.client.post(reverse("bestiary_duplicate", args=[mob.id]))
+        self.assertTrue(BestiaryMob.objects.filter(owner=self.user, name="Ronin — Copie").exists())
+        self.client.post(reverse("bestiary_delete", args=[mob.id]))
+        self.assertFalse(BestiaryMob.objects.filter(id=mob.id).exists())
