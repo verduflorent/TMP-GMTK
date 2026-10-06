@@ -369,10 +369,35 @@ def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, ove
         )
         for weapon in weapons
     ]
-    mob["abilities"] = list(abilities or [])
+    mob["abilities"] = resolve_abilities(list(abilities or []), level)
     mob["overrides"] = dict(overrides or {})
     _apply_draft_overrides(mob)
     return mob
+
+
+ABILITY_EFFECT_LABELS = {
+    "damage_contact": "Dégâts Contact", "damage_distance": "Dégâts Distance",
+    "aim": "Visée", "armor": "Armure", "shield": "PB", "healing": "Soin",
+    "max_hp": "PV", "reactions": "Réactions", "vigilance": "Vigilance",
+}
+
+def resolve_abilities(abilities, level):
+    result = []
+    for source in abilities:
+        item = dict(source)
+        effect = item.get("effect")
+        if effect:
+            value = effect.get("value", 0)
+            if effect.get("scaling") == "level":
+                value *= level
+            item["resolved_effect"] = {
+                "label": ABILITY_EFFECT_LABELS.get(effect.get("type"), effect.get("type", "")),
+                "value": value,
+            }
+        else:
+            item["resolved_effect"] = None
+        result.append(item)
+    return result
 
 
 def _apply_draft_overrides(mob):
