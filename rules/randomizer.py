@@ -158,16 +158,25 @@ def should_use_akimbo(primary_weapon, rng=None) -> bool:
     return primary_weapon.hands == 1 and rng.random() < 0.10
 
 
-def choose_akimbo_pair(weapons, *, profile: str, primary_weapon, rng=None):
+def choose_akimbo_pair(weapons, *, profile: str, primary_weapon, level: int, rng=None):
     """Return an Akimbo pair, 80% identical and 20% mixed, or None."""
     rng = rng or random
     if not should_use_akimbo(primary_weapon, rng):
         return None
 
+    unlocked_tiers = {
+        tier
+        for tier, weight in enumerate(tier_weights(level), start=1)
+        if weight > 0
+    }
     candidates = [
         weapon
         for weapon in weapons
-        if weapon.hands == 1 and weapon.supports_profile(profile)
+        if (
+            weapon.hands == 1
+            and weapon.tier in unlocked_tiers
+            and weapon.supports_profile(profile)
+        )
     ]
     if not candidates:
         return None
@@ -189,7 +198,7 @@ def choose_weapon_loadout(weapons, *, profile: str, level: int, rng=None):
     primary = choose_primary_weapon(weapons, profile=profile, level=level, rng=rng)
 
     akimbo = choose_akimbo_pair(
-        weapons, profile=profile, primary_weapon=primary, rng=rng
+        weapons, profile=profile, primary_weapon=primary, level=level, rng=rng
     )
     if akimbo is not None:
         return {"primary": akimbo[0], "secondary": akimbo[1], "akimbo": True}
