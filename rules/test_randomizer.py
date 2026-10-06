@@ -393,13 +393,25 @@ class ImplantRandomizerTests(SimpleTestCase):
 
 class CompleteMobGenerationTests(SimpleTestCase):
     class Weapon:
-        def __init__(self, name, tier, profiles="", hands=2, power=15, aim=1):
+        def __init__(
+            self,
+            name,
+            tier,
+            profiles="",
+            hands=2,
+            power=15,
+            aim=1,
+            property_name="",
+            property_text="",
+        ):
             self.name = name
             self.tier = tier
             self.profiles = profiles
             self.hands = hands
             self.power = power
             self.aim = aim
+            self.property_name = property_name
+            self.property_text = property_text
 
         def supports_profile(self, profile):
             return not self.profiles or profile in self.profiles
