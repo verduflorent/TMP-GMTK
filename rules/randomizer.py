@@ -474,6 +474,13 @@ def _apply_draft_overrides(mob):
     ]
 
 
+def _implant_ref(implant):
+    return {
+        "source": "user" if implant.__class__.__name__ == "UserImplant" else "catalogue",
+        "id": implant.id,
+    }
+
+
 def _weapon_ref(weapon):
     return {
         "source": "user" if weapon.__class__.__name__ == "UserWeapon" else "catalogue",
@@ -492,16 +499,17 @@ def serialize_mob(mob):
         "profile": str(mob["profile"]),
         "name": mob.get("name", ""),
         "weapons": [_weapon_ref(weapon) for weapon in weapons],
-        "implant_ids": [item.id for item in mob["implants"]],
+        "implants": [_implant_ref(item) for item in mob["implants"]],
         "abilities": list(mob.get("abilities", [])),
         "overrides": dict(mob.get("overrides", {})),
     }
 
 
-def rebuild_mob(weapons, implants, data, user_weapons=None):
+def rebuild_mob(weapons, implants, data, user_weapons=None, user_implants=None):
     weapon_by_id = {item.id: item for item in weapons}
     user_weapon_by_id = {item.id: item for item in (user_weapons or [])}
     implant_by_id = {item.id: item for item in implants}
+    user_implant_by_id = {item.id: item for item in (user_implants or [])}
 
     refs = data.get("weapons")
     if refs is None:
@@ -529,8 +537,15 @@ def rebuild_mob(weapons, implants, data, user_weapons=None):
     mob = assemble_draft_mob(
         level=data["level"], profile=data["profile"], weapons=selected_weapons,
         implants=[
-            implant_by_id[item_id] for item_id in data.get("implant_ids", [])
-            if item_id in implant_by_id
+            (user_implant_by_id[ref["id"]] if ref.get("source") == "user" else implant_by_id[ref["id"]])
+            for ref in (
+                data.get("implants")
+                or [{"source": "catalogue", "id": item_id} for item_id in data.get("implant_ids", [])]
+            )
+            if (
+                (ref.get("source") == "user" and ref.get("id") in user_implant_by_id)
+                or (ref.get("source") == "catalogue" and ref.get("id") in implant_by_id)
+            )
         ],
         abilities=data.get("abilities", []), overrides=data.get("overrides", {}),
     )
