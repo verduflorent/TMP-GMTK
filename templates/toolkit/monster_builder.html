@@ -60,6 +60,12 @@
                             <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
                         </select>
                     </form>
+                    <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                        <input type="hidden" name="field" value="level">
+                        <label>N <input type="number" name="value" value="{{ mob.level }}" min="1" max="99" style="width:3.5rem;" onchange="this.form.submit()"></label>
+                    </form>
                 </div>
                 <strong class="view-only">{{ mob.max_hp }} PV</strong><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
             </header>
