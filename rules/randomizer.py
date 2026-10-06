@@ -351,7 +351,7 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
             "force": stat_modifier(stats.force),
             "agility": stat_modifier(stats.agility),
             "perception": stat_modifier(stats.perception),
-            "technique": stat_modifier(stats.technique),
+            "technique": None,
             "willpower": stat_modifier(stats.willpower),
         },
         "tech_support_bonus": tech_support_bonus(stats.technique),
@@ -360,7 +360,10 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         "armor": round_to_5(
             derived.armor + implant_armor_bonus(selected_implants, level)
         ),
-        "shield": derived.shield,
+        "shield": round_to_5(
+            derived.shield
+            + (tech_support_bonus(stats.technique) if derived.shield else 0)
+        ),
         "reactions": derived.reactions,
         "vigilance": derived.vigilance,
         "primary": loadout["primary"],
