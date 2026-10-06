@@ -340,3 +340,65 @@ class MonsterBuilderViewTests(TestCase):
             self.client.session["monster_builder_mobs"][0]["weapon_ids"],
             [weapons[0].id, weapons[2].id],
         )
+
+
+    def test_manual_implant_addition_is_unrestricted_and_recalculates_card(self):
+        from django.core.management import call_command
+        from catalogue.models import MobImplant
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        draft = self.client.session["monster_builder_mobs"][0]
+        profile = draft["profile"]
+        override = next(
+            implant for implant in MobImplant.objects.all()
+            if not implant.supports_profile(profile)
+        )
+        response = self.client.post(
+            reverse("monster_builder_implant"),
+            {"index": 0, "action": "add", "implant_id": override.id},
+            follow=True,
+        )
+        self.assertIn(override.id, self.client.session["monster_builder_mobs"][0]["implant_ids"])
+        self.assertTrue(any(card.implant.id == override.id for card in response.context["generated_mobs"][0]["implant_cards"]))
+
+    def test_manual_implant_remove_can_leave_zero_implants(self):
+        from django.core.management import call_command
+        from catalogue.models import MobImplant
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        implant = MobImplant.objects.first()
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["implant_ids"] = [implant.id]
+        session["monster_builder_mobs"] = [draft]
+        session.save()
+
+        response = self.client.post(
+            reverse("monster_builder_implant"),
+            {"index": 0, "action": "remove", "implant_index": 0},
+            follow=True,
+        )
+        self.assertEqual(self.client.session["monster_builder_mobs"][0]["implant_ids"], [])
+        self.assertEqual(response.context["generated_mobs"][0]["implant_cards"], [])
+
+    def test_manual_implant_list_can_exceed_randomizer_slot_limit(self):
+        from django.core.management import call_command
+        from catalogue.models import MobImplant
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        implants = list(MobImplant.objects.all()[:4])
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 1})
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["implant_ids"] = []
+        session["monster_builder_mobs"] = [draft]
+        session.save()
+
+        for implant in implants:
+            self.client.post(
+                reverse("monster_builder_implant"),
+                {"index": 0, "action": "add", "implant_id": implant.id},
+            )
+        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["implant_ids"]), 4)
