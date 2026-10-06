@@ -110,19 +110,20 @@ def monster_builder_weapon(request):
         return redirect("monster_builder")
 
     data = saved[index]
+    weapon_ids = list(data.get("weapon_ids", []))
+    if not weapon_ids:
+        return redirect("monster_builder")
+
     slot = form.cleaned_data["slot"]
     if slot == "primary":
-        data["primary_id"] = selected.id
-        # Manual primary replacement exits Akimbo; preserve an ordinary secondary.
-        data["akimbo"] = False
-        if data["secondary_id"] == selected.id:
-            data["secondary_id"] = None
+        weapon_ids[0] = selected.id
     else:
-        if selected.id == data["primary_id"]:
-            return redirect("monster_builder")
-        data["secondary_id"] = selected.id
-        data["akimbo"] = False
+        if len(weapon_ids) >= 2:
+            weapon_ids[1] = selected.id
+        else:
+            weapon_ids.append(selected.id)
 
+    data["weapon_ids"] = weapon_ids
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
