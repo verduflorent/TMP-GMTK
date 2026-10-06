@@ -84,81 +84,71 @@
 
             <section>
                 <h3>Armement</h3>
-                <div class="view-only"><strong>{{ mob.primary.name }}{% if mob.akimbo_identical %} ×2{% endif %}</strong> · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }}{% if mob.primary_card.contact_damage != None %}<br><strong>Dégâts Contact</strong> : {{ mob.primary_card.contact_damage }}<br><strong>Dégâts Distance</strong> : {{ mob.primary_card.distance_damage }}{% else %} · {{ mob.primary_card.neutral_damage }} Dégâts{% endif %}</div>
-                <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                    <input type="hidden" name="slot" value="primary">
-                    <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme principale">
-                        {% for group_name, weapons in weapon_groups %}
-                        <optgroup label="{{ group_name }}">
-                            {% for weapon in weapons %}
-                            <option value="{{ weapon.id }}"{% if weapon.id == mob.primary.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
+                {% for card in mob.weapon_cards %}
+                    <div class="weapon-entry">
+                        <div>
+                            <strong>{{ card.weapon.name }}</strong> · P{{ card.effective_power }} · Visée {{ card.effective_aim|stringformat:"+d" }}
+                            {% if card.contact_damage != None %}
+                                <br><strong>Dégâts Contact</strong> : {{ card.contact_damage }}
+                                <br><strong>Dégâts Distance</strong> : {{ card.distance_damage }}
+                            {% else %}
+                                · {{ card.neutral_damage }} Dégâts
+                            {% endif %}
+                        </div>
+                        {% if card.weapon.property_name and card.property_lines %}
+                            {% for line in card.property_lines %}
+                                <p>{% if forloop.first %}{{ card.weapon.property_name }} — {% endif %}{{ line }}</p>
                             {% endfor %}
-                        </optgroup>
-                        {% endfor %}
-                    </select>
-                    {% if mob.akimbo_identical %}<strong> ×2</strong>{% endif %}
-                    · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }}
-                    {% if mob.primary_card.contact_damage != None %}
-                        <br><strong>Dégâts Contact</strong> : {{ mob.primary_card.contact_damage }}
-                        <br><strong>Dégâts Distance</strong> : {{ mob.primary_card.distance_damage }}
-                    {% else %}
-                        · {{ mob.primary_card.neutral_damage }} Dégâts
-                    {% endif %}
-                </form>
-                {% if mob.primary.property_name and mob.primary_card.property_lines %}
-                    {% for line in mob.primary_card.property_lines %}
-                        <p>{% if forloop.first %}{{ mob.primary.property_name }} — {% endif %}{{ line }}</p>
-                    {% endfor %}
-                {% endif %}
-                {% if not mob.secondary %}
-                <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                    <input type="hidden" name="slot" value="secondary">
-                    <label>+ Arme
-                        <select name="weapon_id" onchange="if(this.value){this.form.submit();}" aria-label="Ajouter une arme">
-                            <option value="">— choisir —</option>
-                            {% for group_name, weapons in weapon_groups %}
-                            <optgroup label="{{ group_name }}">
-                                {% for weapon in weapons %}
-                                <option value="{{ weapon.id }}">T{{ weapon.tier }} — {{ weapon.name }}</option>
-                                {% endfor %}
-                            </optgroup>
-                            {% endfor %}
-                        </select>
-                    </label>
-                </form>
-                {% endif %}
-                {% if mob.secondary and not mob.akimbo_identical %}
-                    <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                        <input type="hidden" name="slot" value="secondary">
-                        <select name="weapon_id" onchange="this.form.submit()" aria-label="Changer l'arme secondaire">
-                        {% for group_name, weapons in weapon_groups %}
-                        <optgroup label="{{ group_name }}">
-                            {% for weapon in weapons %}
-                            <option value="{{ weapon.id }}"{% if weapon.id == mob.secondary.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
-                            {% endfor %}
-                        </optgroup>
-                        {% endfor %}
-                    </select>
-                        {% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }}
-                        {% if mob.secondary_card.contact_damage != None %}
-                            <br><strong>Dégâts Contact</strong> : {{ mob.secondary_card.contact_damage }}
-                            <br><strong>Dégâts Distance</strong> : {{ mob.secondary_card.distance_damage }}
-                        {% else %}
-                            · {{ mob.secondary_card.neutral_damage }} Dégâts
                         {% endif %}
-                    </form>
-                    {% if mob.secondary.property_name and mob.secondary_card.property_lines %}
-                        {% for line in mob.secondary_card.property_lines %}
-                            <p>{% if forloop.first %}{{ mob.secondary.property_name }} — {% endif %}{{ line }}</p>
-                        {% endfor %}
-                    {% endif %}
-                {% endif %}
+                        <div class="edit-only block">
+                            <form method="post" action="{% url 'monster_builder_weapon' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                                <input type="hidden" name="weapon_index" value="{{ forloop.counter0 }}">
+                                <input type="hidden" name="action" value="replace">
+                                <select name="weapon_id" onchange="this.form.submit()" aria-label="Remplacer l'arme">
+                                    {% for group_name, weapons in weapon_groups %}
+                                    <optgroup label="{{ group_name }}">
+                                        {% for weapon in weapons %}
+                                        <option value="{{ weapon.id }}"{% if weapon.id == card.weapon.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            <form method="post" action="{% url 'monster_builder_weapon' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+                                <input type="hidden" name="weapon_index" value="{{ forloop.counter0 }}">
+                                <input type="hidden" name="action" value="remove">
+                                <button type="submit">× Retirer</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="edit-only block">
+                    <button type="button" onclick="document.getElementById('weapon-modal-{{ forloop.counter0 }}').showModal()">+ Arme</button>
+                    <dialog id="weapon-modal-{{ forloop.counter0 }}">
+                        <form method="post" action="{% url 'monster_builder_weapon' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <input type="hidden" name="action" value="add">
+                            <h3>Ajouter une arme</h3>
+                            <select name="weapon_id" required>
+                                {% for group_name, weapons in weapon_groups %}
+                                <optgroup label="{{ group_name }}">
+                                    {% for weapon in weapons %}
+                                    <option value="{{ weapon.id }}">T{{ weapon.tier }} — {{ weapon.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Ajouter</button>
+                            <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                        </form>
+                    </dialog>
+                </div>
             </section>
 
             {% if mob.tech_support_bonus %}
