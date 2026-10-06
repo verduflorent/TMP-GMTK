@@ -118,6 +118,76 @@ def choose_primary_weapon(weapons, *, profile: str, level: int, rng=None):
     raise ValueError(f"Aucune arme compatible disponible pour le profil {profile}.")
 
 
+def should_add_secondary(primary_weapon, rng=None) -> bool:
+    """T4 always gets a sidearm; other tiers have a 20% chance."""
+    rng = rng or random
+    return primary_weapon.tier == 4 or rng.random() < 0.20
+
+
+def choose_secondary_weapon(weapons, *, profile: str, primary_weapon, rng=None):
+    """Choose a simple T1/T2 sidearm compatible with the Mob profile."""
+    rng = rng or random
+    if not should_add_secondary(primary_weapon, rng):
+        return None
+
+    candidates = [
+        weapon
+        for weapon in weapons
+        if weapon.tier in (1, 2) and weapon.supports_profile(profile)
+    ]
+    if not candidates:
+        return None
+    return rng.choice(candidates)
+
+
+def should_use_akimbo(primary_weapon, rng=None) -> bool:
+    """Akimbo has a 10% chance and requires a one-handed primary weapon."""
+    rng = rng or random
+    return primary_weapon.hands == 1 and rng.random() < 0.10
+
+
+def choose_akimbo_pair(weapons, *, profile: str, primary_weapon, rng=None):
+    """Return an Akimbo pair, 80% identical and 20% mixed, or None."""
+    rng = rng or random
+    if not should_use_akimbo(primary_weapon, rng):
+        return None
+
+    candidates = [
+        weapon
+        for weapon in weapons
+        if weapon.hands == 1 and weapon.supports_profile(profile)
+    ]
+    if not candidates:
+        return None
+
+    # 80%: same weapon twice.
+    if rng.random() < 0.80:
+        return primary_weapon, primary_weapon
+
+    # 20%: mixed pair. The second weapon must actually differ.
+    different = [weapon for weapon in candidates if weapon.name != primary_weapon.name]
+    if not different:
+        return primary_weapon, primary_weapon
+    return primary_weapon, rng.choice(different)
+
+
+def choose_weapon_loadout(weapons, *, profile: str, level: int, rng=None):
+    """Generate primary + optional secondary/Akimbo without stacking both modes."""
+    rng = rng or random
+    primary = choose_primary_weapon(weapons, profile=profile, level=level, rng=rng)
+
+    akimbo = choose_akimbo_pair(
+        weapons, profile=profile, primary_weapon=primary, rng=rng
+    )
+    if akimbo is not None:
+        return {"primary": akimbo[0], "secondary": akimbo[1], "akimbo": True}
+
+    secondary = choose_secondary_weapon(
+        weapons, profile=profile, primary_weapon=primary, rng=rng
+    )
+    return {"primary": primary, "secondary": secondary, "akimbo": False}
+
+
 def _interpolate(start, end, progress):
     values = tuple(a + (b - a) * progress for a, b in zip(start, end))
     # Floating arithmetic can drift microscopically from 100; normalize defensively.
