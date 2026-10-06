@@ -218,6 +218,22 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
         )
         self.assertEqual(secondary.name, "Pistolet")
 
+
+
+    def test_med_rifle_always_requests_secondary(self):
+        from rules.randomizer import choose_secondary_weapon
+
+        med_rifle = self.Weapon("Med Rifle", 2, "S", 2)
+        pistol = self.Weapon("Pistolet", 1, "", 1)
+        secondary = choose_secondary_weapon(
+            [med_rifle, pistol],
+            profile=MobProfile.SOUTIEN,
+            primary_weapon=med_rifle,
+            rng=self.FixedRng(choice_index=0),
+        )
+        self.assertIsNotNone(secondary)
+        self.assertEqual(secondary.name, "Pistolet")
+
     def test_akimbo_requires_one_handed_primary(self):
         from rules.randomizer import choose_akimbo_pair
 
