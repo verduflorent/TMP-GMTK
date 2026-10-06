@@ -173,7 +173,7 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(after[0]["primary_id"], replacement.id)
         self.assertFalse(after[0]["akimbo"])
 
-    def test_weapon_switch_rejects_profile_incompatible_weapon(self):
+    def test_weapon_switch_allows_mj_profile_override(self):
         from django.core.management import call_command
         from catalogue.models import MobWeapon
 
@@ -184,17 +184,27 @@ class MonsterBuilderViewTests(TestCase):
         )
         saved = self.client.session["monster_builder_mobs"]
         profile = saved[0]["profile"]
-        incompatible = next(
+        override = next(
             weapon for weapon in MobWeapon.objects.all()
             if not weapon.supports_profile(profile)
         )
-        original = saved[0]["primary_id"]
 
         self.client.post(
             reverse("monster_builder_weapon"),
-            {"index": 0, "slot": "primary", "weapon_id": incompatible.id},
+            {"index": 0, "slot": "primary", "weapon_id": override.id},
         )
         self.assertEqual(
             self.client.session["monster_builder_mobs"][0]["primary_id"],
-            original,
+            override.id,
         )
+
+    def test_weapon_groups_are_family_then_tier_sorted(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.get(reverse("monster_builder"))
+        groups = response.context["weapon_groups"]
+        self.assertEqual([name for name, _ in groups][:3], ["Commun", "Combattant", "Assassin"])
+        for _name, weapons in groups:
+            keys = [(weapon.tier, weapon.name) for weapon in weapons]
+            self.assertEqual(keys, sorted(keys))
