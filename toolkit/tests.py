@@ -471,3 +471,38 @@ class MonsterBuilderViewTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.context["generated_mobs"][0]["abilities"], [])
+
+
+    def test_custom_aim_effect_applies_live_before_validation(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        before = self.client.get(reverse("monster_builder")).context["generated_mobs"][0]["weapon_cards"][0].effective_aim
+        response = self.client.post(
+            reverse("monster_builder_ability"),
+            {"index": 0, "action": "add", "name": "Thor", "effect_type": "aim", "scaling": "fixed", "value": 5},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["weapon_cards"][0].effective_aim, before + 5)
+
+    def test_custom_distance_damage_effect_applies_live_and_scales(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        pistol = MobWeapon.objects.get(name="Pistolet")
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["weapon_ids"] = [pistol.id]
+        session["monster_builder_mobs"] = [draft]
+        session.save()
+        before = self.client.get(reverse("monster_builder")).context["generated_mobs"][0]["weapon_cards"][0].neutral_damage
+        response = self.client.post(
+            reverse("monster_builder_ability"),
+            {"index": 0, "action": "add", "name": "Tension", "effect_type": "damage_distance", "scaling": "level", "value": 5},
+            follow=True,
+        )
+        self.assertEqual(response.context["generated_mobs"][0]["weapon_cards"][0].neutral_damage, before + 50)
