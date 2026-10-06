@@ -10,6 +10,7 @@ from rules.randomizer import (
 )
 
 from .forms import MobAbilityForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import TableMob
 from .services import ensure_game_table
 
 
@@ -23,7 +24,11 @@ def _builder_redirect_editing(request, index):
 @login_required
 def table_home(request):
     game_table = ensure_game_table(request.user)
-    return render(request, "toolkit/table.html", {"game_table": game_table, "instances": game_table.instances.all()})
+    return render(request, "toolkit/table.html", {
+        "game_table": game_table,
+        "instances": game_table.instances.all(),
+        "builder_mobs": game_table.builder_mobs.all(),
+    })
 
 
 @login_required
@@ -273,3 +278,95 @@ def monster_builder_ability(request):
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
     return _builder_redirect_editing(request, index)
+
+
+def _table_payload(mob):
+    return {
+        "max_hp": mob["max_hp"],
+        "current_hp": mob["current_hp"],
+        "armor": mob["armor"],
+        "shield": mob["shield"],
+        "reactions": mob["reactions"],
+        "vigilance": mob["vigilance"],
+        "stats": {
+            "force": mob["stats"].force, "agility": mob["stats"].agility,
+            "perception": mob["stats"].perception, "technique": mob["stats"].technique,
+            "constitution": mob["stats"].constitution, "willpower": mob["stats"].willpower,
+        },
+        "stat_modifiers": mob["stat_modifiers"],
+        "weapons": [
+            {
+                "name": card.weapon.name, "power": card.effective_power,
+                "aim": card.effective_aim, "damage": card.neutral_damage,
+                "contact_damage": card.contact_damage, "distance_damage": card.distance_damage,
+                "property_name": card.weapon.property_name,
+                "property_lines": list(card.property_lines),
+            }
+            for card in mob["weapon_cards"]
+        ],
+        "implants": [
+            {
+                "name": card.implant.name, "property_name": card.implant.property_name,
+                "property_lines": list(card.property_lines),
+            }
+            for card in mob["implant_cards"]
+        ],
+        "abilities": mob["abilities"],
+        "draft": serialize_mob(mob),
+    }
+
+
+@login_required
+def monster_builder_validate(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+
+    saved = request.session.get("monster_builder_mobs", [])
+    action = request.POST.get("action")
+    if action == "all":
+        indexes = list(range(len(saved)))
+    else:
+        try:
+            indexes = [int(request.POST.get("index", "-1"))]
+        except ValueError:
+            return redirect("monster_builder")
+
+    weapons = list(MobWeapon.objects.all())
+    implants = list(MobImplant.objects.all())
+    table = ensure_game_table(request.user)
+    valid_indexes = [index for index in indexes if 0 <= index < len(saved)]
+
+    for index in valid_indexes:
+        mob = rebuild_mob(weapons, implants, saved[index])
+        TableMob.objects.create(
+            game_table=table,
+            name=f"{mob['profile'].label if hasattr(mob['profile'], 'label') else mob['profile']} N{mob['level']}",
+            profile=str(mob["profile"]),
+            level=mob["level"],
+            payload=_table_payload(mob),
+            rank=table.builder_mobs.count(),
+        )
+
+    for index in sorted(valid_indexes, reverse=True):
+        saved.pop(index)
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return redirect("monster_builder")
+
+
+@login_required
+def table_mob_edit(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    if mob is None:
+        return redirect("table")
+
+    saved = request.session.get("monster_builder_mobs", [])
+    saved.append(mob.payload["draft"])
+    request.session["monster_builder_mobs"] = saved
+    request.session["monster_builder_editing"] = len(saved) - 1
+    request.session.modified = True
+    mob.delete()
+    return redirect("monster_builder")
