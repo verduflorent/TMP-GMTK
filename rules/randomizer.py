@@ -299,6 +299,7 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
         primary_card = ResolvedWeapon(
             primary, combined_power, round_to_5(base_damage(level) + combined_power * 2),
             primary_card.effective_aim, primary_card.resolved_property,
+            primary_card.property_lines,
         )
     implant_cards = [
         resolve_implant(item, level, derived.max_hp, technique=stats.technique)
