@@ -48,7 +48,7 @@
         <article class="panel mob-card{% if editing_index == forloop.counter0 %} is-editing{% endif %}">
             <header class="mob-card-header">
                 <div>
-                    <span class="view-only"><strong>{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
+                    <span class="view-only"><strong>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
                     <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_role' %}">
                         {% csrf_token %}
                         <input type="hidden" name="index" value="{{ forloop.counter0 }}">
