@@ -184,3 +184,23 @@ class PropertyLineTests(SimpleTestCase):
         self.assertEqual(len(card.property_lines), 2)
         self.assertIn("bondir", card.property_lines[0])
         self.assertIn("Portée Moyenne", card.property_lines[1])
+
+
+class HybridWeaponDamageTests(SimpleTestCase):
+    class Item:
+        def __init__(self, name, power, aim=0, property_text=""):
+            self.name = name
+            self.power = power
+            self.aim = aim
+            self.property_text = property_text
+
+    def test_short_shotgun_contextual_damage(self):
+        from rules.engine import resolve_weapon
+        card = resolve_weapon(self.Item("Fusil à pompe court", 10, 2), 5)
+        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (10, 110, 130))
+
+    def test_chakram_contextual_damage(self):
+        from rules.engine import resolve_weapon
+        card = resolve_weapon(self.Item("Chakram", 15, 1), 6)
+        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (15, 130, 140))
+        self.assertEqual(len(card.property_lines), 2)
