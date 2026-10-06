@@ -1,137 +1,24 @@
-from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
 
 
-class EquipmentDefinition(models.Model):
-    class Kind(models.TextChoices):
-        WEAPON = "WEAPON", "Arme"
-        ACCESSORY = "ACCESSORY", "Accessoire"
-        IMPLANT = "IMPLANT", "Implant"
-        GADGET = "GADGET", "Gadget"
-        PERK = "PERK", "Perk"
-        ARMOR = "ARMOR", "GPB"
-        BIOCHIP = "BIOCHIP", "Biopuce"
-        DRUG = "DRUG", "D.R.U.G."
-
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="equipment_definitions",
-        null=True,
-        blank=True,
-    )
-    kind = models.CharField(max_length=20, choices=Kind.choices)
-    name = models.CharField(max_length=120)
-    description = models.TextField(blank=True)
-    is_native_reference = models.BooleanField(default=False)
-    source_key = models.CharField(max_length=120, null=True, blank=True, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["kind", "name"]
-        constraints = [
-            models.CheckConstraint(
-                condition=(Q(is_native_reference=False) | Q(owner__isnull=True)),
-                name="native_definition_has_no_owner",
-            )
-        ]
-
-    def clean(self):
-        super().clean()
-        if self.is_native_reference and self.owner_id is not None:
-            raise ValidationError("Une référence native TMP ne peut appartenir à un compte privé.")
-        if not self.is_native_reference and self.owner_id is None:
-            raise ValidationError("Une définition locale doit appartenir à un utilisateur.")
-
-    def __str__(self):
-        return self.name
+class MobProfile(models.TextChoices):
+    COMBATANT = "C", "Combattant"
+    ASSASSIN = "A", "Assassin"
+    TIREUR = "T", "Tireur"
+    SOUTIEN = "S", "Soutien"
+    CONTROLE = "K", "Contrôle"
 
 
-class CatalogueEntry(models.Model):
-    class Rarity(models.TextChoices):
-        COMMON = "COMMON", "Commun"
-        UNCOMMON = "UNCOMMON", "Peu commun"
-        RARE = "RARE", "Rare"
-        VERY_RARE = "VERY_RARE", "Très rare"
+class MobWeapon(models.Model):
+    class Tier(models.IntegerChoices):
+        T1 = 1, "T1"
+        T2 = 2, "T2"
+        T3 = 3, "T3"
+        T4 = 4, "T4"
 
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="catalogue_entries")
-    native_definition = models.ForeignKey(
-        EquipmentDefinition,
-        on_delete=models.PROTECT,
-        related_name="native_entries",
-        null=True,
-        blank=True,
-    )
-    local_definition = models.OneToOneField(
-        EquipmentDefinition,
-        on_delete=models.PROTECT,
-        related_name="local_entry",
-        null=True,
-        blank=True,
-    )
-    allow_mob = models.BooleanField(default=False)
-    allow_elite = models.BooleanField(default=False)
-    mob_rarity = models.CharField(max_length=20, choices=Rarity.choices, default=Rarity.COMMON)
-    elite_rarity = models.CharField(max_length=20, choices=Rarity.choices, default=Rarity.COMMON)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=Q(native_definition__isnull=False) | Q(local_definition__isnull=False),
-                name="catalogue_entry_has_definition",
-            ),
-            models.UniqueConstraint(
-                fields=["owner", "native_definition"],
-                condition=Q(native_definition__isnull=False),
-                name="unique_native_entry_per_owner",
-            ),
-        ]
-
-    @property
-    def active_definition(self):
-        return self.local_definition or self.native_definition
-
-    def clean(self):
-        super().clean()
-        if not self.native_definition_id and not self.local_definition_id:
-            raise ValidationError("Une entrée de catalogue doit avoir une définition active ou native.")
-        if self.native_definition_id and not self.native_definition.is_native_reference:
-            raise ValidationError("native_definition doit référencer une définition native TMP.")
-        if self.local_definition_id:
-            if self.local_definition.is_native_reference:
-                raise ValidationError("local_definition ne peut pas être une référence native.")
-            if self.local_definition.owner_id != self.owner_id:
-                raise ValidationError("La définition locale doit appartenir au même utilisateur.")
-        if self.native_definition_id and self.local_definition_id and self.native_definition.kind != self.local_definition.kind:
-            raise ValidationError("Une personnalisation locale doit conserver la nature de sa référence native.")
-
-    def __str__(self):
-        definition = self.active_definition
-        return definition.name if definition else f"CatalogueEntry #{self.pk}"
-
-
-class WeaponProfile(models.Model):
-    """Structured mechanical profile; values come from the catalogue, not the rules engine."""
-
-    class Stat(models.TextChoices):
-        FORCE = "FOR", "Force"
-        AGILITY = "AGI", "Agilité"
-        PERCEPTION = "PER", "Perception"
-        TECHNIQUE = "TEC", "Technique"
-
-    class Weight(models.TextChoices):
-        LIGHT = "LIGHT", "Légère"
-        MEDIUM = "MEDIUM", "Moyenne"
-        HEAVY = "HEAVY", "Lourde"
-
-    class Slot(models.TextChoices):
-        PRIMARY = "PRIMARY", "Principale"
-        SECONDARY = "SECONDARY", "Secondaire"
+    class Hands(models.IntegerChoices):
+        ONE = 1, "1 main"
+        TWO = 2, "2 mains"
 
     class Range(models.TextChoices):
         CONTACT = "CONTACT", "Contact"
@@ -139,69 +26,45 @@ class WeaponProfile(models.Model):
         MEDIUM = "MEDIUM", "Moyenne"
         LONG = "LONG", "Longue"
 
-    definition = models.OneToOneField(
-        EquipmentDefinition, on_delete=models.CASCADE, related_name="weapon_profile"
+    name = models.CharField(max_length=120, unique=True)
+    tier = models.PositiveSmallIntegerField(choices=Tier.choices)
+    allowed_profiles = models.CharField(
+        max_length=5,
+        blank=True,
+        help_text="Profils autorisés parmi C/A/T/S/K. Vide = universel.",
     )
-    stat = models.CharField(max_length=3, choices=Stat.choices)
-    weight = models.CharField(max_length=10, choices=Weight.choices)
-    slot = models.CharField(max_length=10, choices=Slot.choices)
+    hands = models.PositiveSmallIntegerField(choices=Hands.choices)
     optimal_range = models.CharField(max_length=10, choices=Range.choices)
     power = models.IntegerField(default=0)
-    minimum_force = models.PositiveSmallIntegerField(null=True, blank=True)
-    profile_label = models.CharField(max_length=40, blank=True)
-
-    def clean(self):
-        super().clean()
-        if self.definition.kind != EquipmentDefinition.Kind.WEAPON:
-            raise ValidationError("Un profil d’arme doit appartenir à une définition d’arme.")
-
-
-class WeaponVariant(models.Model):
-    """Ascend/Overcome configuration of the same weapon definition."""
-
-    class Path(models.TextChoices):
-        ASCEND = "ASCEND", "Ascend"
-        OVERCOME = "OVERCOME", "Overcome"
-
-    weapon = models.ForeignKey(WeaponProfile, on_delete=models.CASCADE, related_name="variants")
-    path = models.CharField(max_length=10, choices=Path.choices)
-    name = models.CharField(max_length=120)
-    description = models.TextField(blank=True)
-    stat = models.CharField(max_length=3, choices=WeaponProfile.Stat.choices, blank=True)
-    weight = models.CharField(max_length=10, choices=WeaponProfile.Weight.choices, blank=True)
-    slot = models.CharField(max_length=10, choices=WeaponProfile.Slot.choices, blank=True)
-    optimal_range = models.CharField(max_length=10, choices=WeaponProfile.Range.choices, blank=True)
-    power = models.IntegerField(null=True, blank=True)
-    minimum_force = models.PositiveSmallIntegerField(null=True, blank=True)
+    aim = models.IntegerField(default=0)
+    property_name = models.CharField(max_length=120, blank=True)
+    property_text = models.TextField(blank=True)
+    is_control = models.BooleanField(default=False)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["weapon", "path"], name="unique_weapon_variant_path")
-        ]
+        ordering = ["tier", "name"]
+
+    def supports_profile(self, profile: str) -> bool:
+        return not self.allowed_profiles or profile in self.allowed_profiles
+
+    def __str__(self):
+        return self.name
 
 
-class StructuredEffect(models.Model):
-    """Small, explicit effects GMTK can calculate; tactical prose remains descriptive."""
-
-    class Target(models.TextChoices):
-        POWER = "POWER", "Puissance"
-        AIM = "AIM", "Visée"
-        CRITICAL = "CRITICAL", "Critique"
-        DELTA = "DELTA", "Coefficient Delta"
-        MAX_HP = "MAX_HP", "PV max"
-        ARMOR = "ARMOR", "Armure"
-        CRITICAL_RESISTANCE = "CRITICAL_RESISTANCE", "Résistance critique"
-        REACTIONS = "REACTIONS", "Réactions"
-        IGNORED_ARMOR = "IGNORED_ARMOR", "Armure ignorée"
-
-    definition = models.ForeignKey(
-        EquipmentDefinition, on_delete=models.CASCADE, related_name="structured_effects"
+class MobImplant(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    allowed_profiles = models.CharField(
+        max_length=5,
+        help_text="Profils autorisés parmi C/A/T/S/K.",
     )
-    target = models.CharField(max_length=30, choices=Target.choices)
-    value = models.IntegerField()
-    condition_key = models.CharField(
-        max_length=80,
-        blank=True,
-        help_text="Condition explicite du jet, ex. target_marked, target_robot, toggle_icarus.",
-    )
-    description = models.CharField(max_length=200, blank=True)
+    property_name = models.CharField(max_length=120, blank=True)
+    property_text = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def supports_profile(self, profile: str) -> bool:
+        return profile in self.allowed_profiles
+
+    def __str__(self):
+        return self.name
