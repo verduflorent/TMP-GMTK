@@ -268,6 +268,7 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
     from rules.engine import (
         implant_armor_bonus,
         profile_derived,
+        round_to_5,
         profile_stats,
         resolve_implant,
         resolve_weapon,
@@ -308,7 +309,7 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         resolved_primary = ResolvedWeapon(
             weapon=loadout["primary"],
             effective_power=combined_power,
-            neutral_damage=base_damage(level) + combined_power * 2,
+            neutral_damage=round_to_5(base_damage(level) + combined_power * 2),
             effective_aim=resolved_primary.effective_aim,
             resolved_property=resolved_primary.resolved_property,
         )
@@ -323,7 +324,9 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
         "stats": stats,
         "max_hp": derived.max_hp,
         "current_hp": derived.max_hp,
-        "armor": derived.armor + implant_armor_bonus(selected_implants, level),
+        "armor": round_to_5(
+            derived.armor + implant_armor_bonus(selected_implants, level)
+        ),
         "shield": derived.shield,
         "reactions": derived.reactions,
         "vigilance": derived.vigilance,
