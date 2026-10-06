@@ -106,3 +106,15 @@ class UserWeaponForm(forms.Form):
 class UserWeaponLibraryForm(forms.Form):
     index = forms.IntegerField(min_value=0)
     weapon_id = forms.IntegerField(min_value=1)
+
+
+class UserImplantForm(forms.Form):
+    index = forms.IntegerField(min_value=0)
+    name = forms.CharField(max_length=120)
+    property_name = forms.CharField(max_length=120, required=False)
+    property_text = forms.CharField(required=False, widget=forms.Textarea)
+
+
+class UserImplantLibraryForm(forms.Form):
+    index = forms.IntegerField(min_value=0)
+    implant_id = forms.IntegerField(min_value=1)
