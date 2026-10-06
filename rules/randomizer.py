@@ -483,6 +483,7 @@ def serialize_mob(mob):
     return {
         "level": mob["level"],
         "profile": str(mob["profile"]),
+        "name": mob.get("name", ""),
         "weapon_ids": [weapon.id for weapon in weapons],
         "implant_ids": [item.id for item in mob["implants"]],
         "abilities": list(mob.get("abilities", [])),
@@ -506,7 +507,7 @@ def rebuild_mob(weapons, implants, data):
         for item_id in weapon_ids
         if item_id in weapon_by_id
     ]
-    return assemble_draft_mob(
+    mob = assemble_draft_mob(
         level=data["level"],
         profile=data["profile"],
         weapons=selected_weapons,
@@ -518,6 +519,8 @@ def rebuild_mob(weapons, implants, data):
         abilities=data.get("abilities", []),
         overrides=data.get("overrides", {}),
     )
+    mob["name"] = data.get("name", "")
+    return mob
 
 def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
     _validate_level(level)
