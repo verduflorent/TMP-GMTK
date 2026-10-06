@@ -43,7 +43,7 @@ class MobFieldOverrideForm(forms.Form):
         choices=[
             ("force", "FOR"), ("agility", "AGI"), ("perception", "PER"),
             ("technique", "TECH"), ("constitution", "CON"), ("willpower", "VOL"),
-            ("max_hp", "PV"), ("armor", "Armure"), ("shield", "PB"),
+            ("level", "Niveau"), ("max_hp", "PV"), ("armor", "Armure"), ("shield", "PB"),
             ("reactions", "Réactions"), ("vigilance", "Vigilance"),
         ]
     )
