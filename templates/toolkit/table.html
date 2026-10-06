@@ -2,13 +2,38 @@
 {% block title %}Table de jeu — TMP-GMTK{% endblock %}
 {% block content %}
 <h1>Table de jeu</h1>
-<p>Socle Monster Builder : les instances de rencontre apparaîtront ici.</p>
-<section class="panel">
+
+<section>
     <h2>Mobs</h2>
+    <div class="mob-grid">
+    {% for mob in builder_mobs %}
+        <article class="panel mob-card">
+            <header class="mob-card-header">
+                <strong>{{ mob.name }}</strong>
+                <strong>{{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} PV</strong>
+            </header>
+            <p>Armure {{ mob.payload.armor }} · PB {{ mob.payload.shield }} · Réactions {{ mob.payload.reactions }} · Vigilance {{ mob.payload.vigilance }}</p>
+            {% for weapon in mob.payload.weapons %}
+                <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée +{{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
+            {% endfor %}
+            {% for implant in mob.payload.implants %}
+                <p><strong>{{ implant.name }}</strong>{% if implant.property_lines %} — {{ implant.property_lines|join:" · " }}{% endif %}</p>
+            {% endfor %}
+            {% for ability in mob.payload.abilities %}
+                <p><strong>{{ ability.name }}</strong>{% if ability.description %} — {{ ability.description }}{% endif %}{% if ability.resolved_effect %} · {{ ability.resolved_effect.label }} +{{ ability.resolved_effect.value }}{% endif %}</p>
+            {% endfor %}
+            <form method="post" action="{% url 'table_mob_edit' mob.id %}">
+                {% csrf_token %}
+                <button type="submit">✎ Rééditer</button>
+            </form>
+        </article>
+    {% endfor %}
+    </div>
+
     {% for instance in instances %}
         <p>{{ instance.name }} — N{{ instance.level }} — {{ instance.current_hp }}/{{ instance.max_hp }} PV</p>
     {% empty %}
-        <p>Aucun Mob sur la Table.</p>
+        {% if not builder_mobs %}<p>Aucun Mob sur la Table.</p>{% endif %}
     {% endfor %}
 </section>
 {% endblock %}
