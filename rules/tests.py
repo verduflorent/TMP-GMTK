@@ -180,7 +180,10 @@ class PropertyLineTests(SimpleTestCase):
             property_text = ""
 
         card = resolve_weapon(Item(), 6)
-        self.assertEqual(card.effective_power, 20)
+        # Chakram is P15 at distance and P20 at Contact.
+        self.assertEqual(card.effective_power, 15)
+        self.assertEqual(card.distance_damage, 130)
+        self.assertEqual(card.contact_damage, 140)
         self.assertEqual(len(card.property_lines), 2)
         self.assertIn("bondir", card.property_lines[0])
         self.assertIn("Portée Moyenne", card.property_lines[1])
