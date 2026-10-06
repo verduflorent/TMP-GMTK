@@ -5,7 +5,7 @@ from catalogue.models import MobImplant, MobWeapon
 
 WEAPONS = [
     ("Arme de lancer", 2, "A", 1, "SHORT", 10, 2, "Léger", "+50 % Vitesse de Déplacement.", False),
-    ("Fusil à pompe court", 2, "C", 1, "SHORT", 10, 2, "Première ligne", "Au Contact : +5 Dégâts × Niveau.", False),
+    ("Fusil à pompe court", 2, "C", 1, "SHORT", 10, 2, "Double portée", "Puissance 10 à distance ; Puissance 20 au Contact.", False),
     ("Hardpoint", 3, "S", 1, "MEDIUM", 10, 2, "Ralliement", "+50 % Vitesse de Déplacement vers un allié.", False),
     ("Pistolet", 1, "", 1, "SHORT", 10, 2, "", "", False),
     ("Pistolet-mitrailleur", 1, "", 1, "SHORT", 10, 2, "Rafale", "Une cible touchée ne peut plus effectuer d'Attaque d'opportunité pendant 1 tour.", False),
