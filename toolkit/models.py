@@ -48,6 +48,7 @@ class BestiaryMob(models.Model):
         related_name="bestiary_mobs",
     )
     notes = models.TextField(blank=True)
+    draft_payload = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
