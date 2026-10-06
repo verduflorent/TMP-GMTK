@@ -1,38 +1,6 @@
 from django.contrib import admin
 
-from .models import (
-    AbilityException,
-    CharacterProfile,
-    CharacterVersion,
-    Encounter,
-    EncounterEntry,
-    EquipmentAssignment,
-    Folder,
-    GameTable,
-    Override,
-    RandomizerSettings,
-    RollContribution,
-    RollDie,
-    RollHistoryEntry,
-    TableInstance,
-    TechniqueSpecialization,
-)
+from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance
 
-for model in (
-    Folder,
-    CharacterProfile,
-    CharacterVersion,
-    TechniqueSpecialization,
-    GameTable,
-    TableInstance,
-    Encounter,
-    EncounterEntry,
-    EquipmentAssignment,
-    AbilityException,
-    Override,
-    RollHistoryEntry,
-    RollDie,
-    RollContribution,
-    RandomizerSettings,
-):
+for model in (BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance):
     admin.site.register(model)
