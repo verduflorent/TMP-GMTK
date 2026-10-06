@@ -9,7 +9,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import MobFieldOverrideForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .services import ensure_game_table
 
 
@@ -124,6 +124,30 @@ def monster_builder_weapon(request):
             weapon_ids.append(selected.id)
 
     data["weapon_ids"] = weapon_ids
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return redirect("monster_builder")
+
+
+@login_required
+def monster_builder_field(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+
+    form = MobFieldOverrideForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+
+    data = saved[index]
+    overrides = dict(data.get("overrides", {}))
+    overrides[form.cleaned_data["field"]] = form.cleaned_data["value"]
+    data["overrides"] = overrides
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
