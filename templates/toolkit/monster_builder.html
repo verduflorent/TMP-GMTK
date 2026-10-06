@@ -38,7 +38,7 @@
     <h2>{{ generated_mobs|length }} Mob{{ generated_mobs|length|pluralize }}</h2>
     <div class="mob-grid">
         {% for mob in generated_mobs %}
-        <article class="panel mob-card">
+        <article class="panel mob-card{% if editing_index == forloop.counter0 %} is-editing{% endif %}">
             <header class="mob-card-header">
                 <div>
                     <span class="view-only"><strong>{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
