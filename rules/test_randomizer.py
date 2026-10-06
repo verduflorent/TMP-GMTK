@@ -286,3 +286,106 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
         self.assertTrue(loadout["akimbo"])
         self.assertEqual(loadout["primary"].name, "Pistolet")
         self.assertEqual(loadout["secondary"].name, "Pistolet")
+
+
+class ImplantRandomizerTests(SimpleTestCase):
+    class Implant:
+        def __init__(self, name, profiles):
+            self.name = name
+            self.profiles = profiles
+
+        def supports_profile(self, profile):
+            return profile in self.profiles
+
+    class FixedRng:
+        def __init__(self, random_values=None):
+            self.random_values = iter(random_values or [])
+
+        def random(self):
+            return next(self.random_values)
+
+        def choice(self, values):
+            return values[0]
+
+    def test_implant_slot_anchor_chances_match_design(self):
+        from rules.randomizer import implant_slot_chances
+
+        self.assertEqual(implant_slot_chances(1), (0.20, 0.00, 0.00))
+        self.assertEqual(implant_slot_chances(4), (0.50, 0.10, 0.00))
+        self.assertEqual(implant_slot_chances(7), (0.85, 0.50, 0.10))
+        self.assertEqual(implant_slot_chances(15), (1.00, 1.00, 0.50))
+
+    def test_locked_implant_slots_cannot_proc(self):
+        from rules.randomizer import roll_implant_slots
+
+        self.assertEqual(roll_implant_slots(3, self.FixedRng([0.0])), [1])
+        self.assertEqual(roll_implant_slots(6, self.FixedRng([0.0, 0.0])), [1, 2])
+
+    def test_slots_are_rolled_independently_and_compacted(self):
+        from rules.randomizer import roll_implant_slots
+
+        # N7: slot 1 fails, slot 2 succeeds, slot 3 succeeds.
+        self.assertEqual(
+            roll_implant_slots(7, self.FixedRng([0.90, 0.40, 0.05])),
+            [2, 3],
+        )
+
+    def test_level_fifteen_always_has_first_two_slots(self):
+        from rules.randomizer import roll_implant_slots
+
+        for seed in range(100):
+            slots = roll_implant_slots(15, random.Random(seed))
+            self.assertIn(1, slots)
+            self.assertIn(2, slots)
+
+    def test_high_level_chances_cap_instead_of_growing_forever(self):
+        from rules.randomizer import implant_slot_chances
+
+        self.assertEqual(implant_slot_chances(20), (1.0, 1.0, 0.75))
+        self.assertEqual(implant_slot_chances(50), (1.0, 1.0, 0.75))
+
+    def test_implants_respect_profile_compatibility(self):
+        from rules.randomizer import choose_implants
+
+        implants = [
+            self.Implant("AEGIS", "CSK"),
+            self.Implant("VELOS", "A"),
+            self.Implant("MINOS", "AC"),
+        ]
+        selected = choose_implants(
+            implants,
+            profile=MobProfile.COMBATANT,
+            level=15,
+            rng=self.FixedRng([0.0, 0.0, 0.9]),
+        )
+        self.assertEqual([implant.name for implant in selected], ["AEGIS", "MINOS"])
+
+    def test_implant_selection_avoids_duplicates(self):
+        from rules.randomizer import choose_implants
+
+        implants = [
+            self.Implant("AEGIS", "C"),
+            self.Implant("MINOS", "C"),
+            self.Implant("PHALANX", "C"),
+        ]
+        selected = choose_implants(
+            implants,
+            profile=MobProfile.COMBATANT,
+            level=20,
+            rng=self.FixedRng([0.0, 0.0, 0.0]),
+        )
+        names = [implant.name for implant in selected]
+        self.assertEqual(len(names), 3)
+        self.assertEqual(len(set(names)), 3)
+
+    def test_not_enough_compatible_implants_returns_available_only(self):
+        from rules.randomizer import choose_implants
+
+        implants = [self.Implant("VELOS", "A")]
+        selected = choose_implants(
+            implants,
+            profile=MobProfile.ASSASSIN,
+            level=20,
+            rng=self.FixedRng([0.0, 0.0, 0.0]),
+        )
+        self.assertEqual([implant.name for implant in selected], ["VELOS"])
