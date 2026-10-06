@@ -16,7 +16,7 @@ from .services import ensure_game_table
 def _builder_redirect_editing(request, index):
     request.session["monster_builder_editing"] = index
     request.session.modified = True
-    return _builder_redirect_editing(request, index)
+    return redirect("monster_builder")
 
 
 
