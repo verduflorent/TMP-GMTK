@@ -1,16 +1,47 @@
 from dataclasses import dataclass
-from math import floor
 
 
-OFFENSIVE_STATS = ("force", "agility", "perception", "technique")
-
-
-class RuleCalculationError(ValueError):
-    """Raised when an explicit override makes a TMP calculation impossible."""
+PROFILE_STATS = {
+    "C": (
+        (11, 10, 10, 10, 11, 10), (12, 10, 10, 10, 12, 10),
+        (13, 11, 10, 10, 12, 10), (14, 12, 10, 10, 12, 10),
+        (14, 12, 12, 10, 12, 10), (15, 12, 12, 10, 13, 10),
+        (16, 12, 12, 10, 14, 10), (16, 13, 12, 10, 15, 10),
+        (16, 14, 12, 10, 16, 10), (16, 14, 14, 10, 16, 10),
+    ),
+    "A": (
+        (10, 11, 11, 10, 10, 10), (10, 12, 12, 10, 10, 10),
+        (10, 13, 12, 10, 10, 11), (10, 14, 12, 10, 10, 12),
+        (10, 15, 13, 10, 10, 12), (10, 16, 14, 10, 10, 12),
+        (11, 16, 14, 10, 10, 13), (12, 16, 14, 10, 10, 14),
+        (12, 16, 16, 10, 10, 14), (14, 16, 16, 10, 10, 14),
+    ),
+    "T": (
+        (10, 10, 12, 10, 10, 10), (10, 11, 12, 10, 11, 10),
+        (10, 12, 12, 10, 12, 10), (10, 12, 14, 10, 12, 10),
+        (11, 12, 14, 10, 12, 11), (12, 12, 14, 10, 12, 12),
+        (12, 12, 16, 10, 12, 12), (12, 12, 18, 10, 12, 12),
+        (12, 12, 20, 10, 12, 12), (12, 12, 20, 10, 12, 14),
+    ),
+    "S": (
+        (11, 10, 10, 11, 10, 10), (12, 10, 10, 12, 10, 10),
+        (12, 10, 11, 13, 10, 10), (12, 10, 12, 14, 10, 10),
+        (12, 10, 12, 14, 12, 10), (13, 10, 12, 15, 12, 10),
+        (14, 10, 12, 16, 12, 10), (15, 10, 12, 16, 13, 10),
+        (16, 10, 13, 16, 13, 10), (16, 10, 14, 16, 14, 10),
+    ),
+    "K": (
+        (11, 10, 10, 10, 10, 11), (12, 10, 10, 10, 10, 12),
+        (13, 10, 10, 10, 10, 13), (14, 10, 10, 10, 10, 14),
+        (14, 10, 11, 10, 11, 14), (14, 10, 12, 10, 12, 14),
+        (15, 10, 12, 10, 12, 15), (16, 10, 12, 10, 12, 16),
+        (16, 10, 13, 10, 13, 16), (18, 10, 14, 10, 14, 18),
+    ),
+}
 
 
 @dataclass(frozen=True)
-class BuildStats:
+class MobStats:
     force: int
     agility: int
     perception: int
@@ -20,175 +51,98 @@ class BuildStats:
 
 
 @dataclass(frozen=True)
-class BuildDerived:
+class MobDerived:
     max_hp: int
-    max_reactions: int
-    main_slots: int
-    secondary_slots: int
-    gadget_slots: int
-    implant_slots: int
+    armor: int
+    shield: int
+    reactions: int
+    vigilance: int
 
 
 @dataclass(frozen=True)
-class AttackResult:
+class MobAttackResult:
     threshold: int
     roll: int
-    verdict: str
-    delta_coefficient: int
-    delta_bonus: int | None
+    success: bool
+    base_damage: int
+    weapon_damage: int
+    roll_modifier: int
     damage: int | None
 
 
-def offensive_budget(level: int) -> int:
+def profile_stats(profile: str, level: int) -> MobStats:
     _validate_level(level)
-    return 36 + 2 * (level - 1)
+    try:
+        values = PROFILE_STATS[profile][min(level, 10) - 1]
+    except KeyError as exc:
+        raise ValueError(f"Profil Mob inconnu : {profile}") from exc
+    return MobStats(*values)
 
 
-def defensive_budget(level: int) -> int:
+def max_hp(level: int) -> int:
     _validate_level(level)
-    return 23 + (level - 1)
+    return 250 + 30 * (level - 1)
 
 
-def is_legal_level_one(stats: BuildStats) -> bool:
-    offensive = sorted((stats.force, stats.agility, stats.perception, stats.technique))
-    defensive = (stats.constitution, stats.willpower)
-    return offensive == [5, 8, 10, 13] and sum(defensive) == 23 and all(8 <= value <= 13 for value in defensive)
+def base_damage(level: int) -> int:
+    _validate_level(level)
+    return 50 + 10 * (level - 1)
 
 
-def delta_coefficient(stat_value: int, explicit_modifier: int = 0) -> int:
-    native = 3 if stat_value >= 18 else 4 if stat_value >= 12 else 5
-    effective = native + explicit_modifier
-    if effective <= 0:
-        raise RuleCalculationError(f"Coefficient Delta invalide ({effective}).")
-    return effective
-
-
-def critical_upper_bound(critical_bonus: int = 0) -> int:
-    return max(1, 1 + critical_bonus)
-
-
-def max_hp(constitution: int, permanent_bonus: int = 0, gpb_bonus: int = 0) -> int:
-    progression = (5 if constitution >= 12 else 0) + (5 if constitution >= 16 else 0)
-    return constitution + progression + permanent_bonus + gpb_bonus
-
-
-def max_reactions(agility: int, permanent_bonus: int = 0) -> int:
-    return 1 + (1 if agility >= 16 else 0) + permanent_bonus
-
-
-def main_slots(force: int, permanent_bonus: int = 0) -> int:
-    return 1 + (1 if force >= 18 else 0) + permanent_bonus
-
-
-def secondary_slots(permanent_bonus: int = 0) -> int:
-    return 1 + permanent_bonus
-
-
-def gadget_slots(technique: int, permanent_bonus: int = 0) -> int:
-    return 1 + (2 if technique >= 16 else 0) + permanent_bonus
-
-
-def implant_slots(willpower: int, permanent_bonus: int = 0) -> int:
-    native = 2 if willpower >= 16 else 1 if willpower >= 12 else 0
-    return native + permanent_bonus
-
-
-def biopuce_bonuses(willpower: int) -> tuple[int, int]:
-    if willpower >= 18:
-        return 2, 2
-    if willpower >= 16:
-        return 1, 1
-    if willpower >= 14:
-        return 1, 0
-    return 0, 0
-
-
-def derive_build(stats: BuildStats, *, gpb_hp_bonus: int = 0) -> BuildDerived:
-    return BuildDerived(
-        max_hp=max_hp(stats.constitution, gpb_bonus=gpb_hp_bonus),
-        max_reactions=max_reactions(stats.agility),
-        main_slots=main_slots(stats.force),
-        secondary_slots=secondary_slots(),
-        gadget_slots=gadget_slots(stats.technique),
-        implant_slots=implant_slots(stats.willpower),
+def profile_derived(profile: str, level: int) -> MobDerived:
+    _validate_level(level)
+    if profile not in PROFILE_STATS:
+        raise ValueError(f"Profil Mob inconnu : {profile}")
+    return MobDerived(
+        max_hp=max_hp(level),
+        armor=5 * level if profile == "C" else 0,
+        shield=20 * level if profile == "S" else 0,
+        reactions=2 if profile == "A" else 1,
+        vigilance=2 if profile == "T" and level >= 10 else 1,
     )
 
 
-def force_shortfall_penalty(force: int, minimum_force: int | None) -> int:
-    if minimum_force is None:
-        return 0
-    return -max(0, minimum_force - force)
+def attack_threshold(perception: int, weapon_aim: int, context_modifier: int = 0) -> int:
+    return 10 + (perception - 10) + weapon_aim + context_modifier
 
 
-def net_advantage(advantage: int = 0, disadvantage: int = 0) -> int:
-    return advantage - disadvantage
-
-
-def effective_armor(armor: int, ignored_armor: int = 0) -> int:
-    return max(0, armor - ignored_armor)
+def roll_damage_modifier(roll: int) -> int:
+    _validate_roll(roll)
+    return (10 - roll) * 5
 
 
 def resolve_attack(
     *,
-    stat_value: int,
+    level: int,
+    perception: int,
+    weapon_power: int,
+    weapon_aim: int,
     roll: int,
-    power: int,
-    test_modifier: int = 0,
-    delta_modifier: int = 0,
-    critical_bonus: int = 0,
-    annihilation: bool = False,
-) -> AttackResult:
-    threshold = stat_value + test_modifier
-    coefficient = delta_coefficient(stat_value, delta_modifier)
-    critical_max = critical_upper_bound(critical_bonus)
-
-    if roll == 20:
-        return AttackResult(threshold, roll, "critical_failure", coefficient, None, None)
-
-    critical = 1 <= roll <= critical_max
-    success = critical or roll <= threshold
-    if not success:
-        return AttackResult(threshold, roll, "failure", coefficient, None, None)
-
-    margin = threshold - roll
-    delta = max(0, floor(margin / coefficient))
-    multiplier = (3 if annihilation else 2) if critical else 1
-    damage = power * multiplier + delta
-    return AttackResult(threshold, roll, "critical_success" if critical else "success", coefficient, delta, damage)
-
-
-def apply_damage_reductions(
-    damage: int,
-    *,
-    armor: int = 0,
-    ignored_armor: int = 0,
-    critical_resistance: int = 0,
-    is_critical: bool = False,
-) -> int:
-    reduction = effective_armor(armor, ignored_armor)
-    if is_critical:
-        reduction += max(0, critical_resistance)
-    return max(0, damage - reduction)
-
-
-def fulgurance_strikes(first_damage: int, second_damage: int | None = None) -> tuple[int, int]:
-    """Same weapon reuses one calculated strike; different weapons supply both values."""
-    return first_damage, first_damage if second_damage is None else second_damage
-
-
-def apply_concentrated_fulgurance(
-    first_damage: int,
-    armor: int,
-    *,
-    second_damage: int | None = None,
-    ignored_armor: int = 0,
-) -> int:
-    first, second = fulgurance_strikes(first_damage, second_damage)
-    return apply_damage_reductions(first, armor=armor, ignored_armor=ignored_armor) + apply_damage_reductions(
-        second, armor=armor, ignored_armor=ignored_armor
+    context_modifier: int = 0,
+) -> MobAttackResult:
+    _validate_level(level)
+    _validate_roll(roll)
+    threshold = attack_threshold(perception, weapon_aim, context_modifier)
+    base = base_damage(level)
+    weapon = weapon_power * 2
+    modifier = roll_damage_modifier(roll)
+    success = roll <= threshold
+    return MobAttackResult(
+        threshold=threshold,
+        roll=roll,
+        success=success,
+        base_damage=base,
+        weapon_damage=weapon,
+        roll_modifier=modifier,
+        damage=base + weapon + modifier if success else None,
     )
 
 
 def _validate_level(level: int) -> None:
-    if not 1 <= level <= 10:
-        raise ValueError("Le niveau doit être compris entre 1 et 10.")
+    if level < 1:
+        raise ValueError("Le niveau Mob doit être supérieur ou égal à 1.")
+
+
+def _validate_roll(roll: int) -> None:
+    if not 1 <= roll <= 20:
+        raise ValueError("Le résultat du d20 doit être compris entre 1 et 20.")
