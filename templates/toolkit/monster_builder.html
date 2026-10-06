@@ -62,13 +62,17 @@
             <section>
                 <h3>Armement</h3>
                 <p><strong>{{ mob.primary.name }}{% if mob.akimbo_identical %} ×2{% endif %}</strong> · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts</p>
-                {% if mob.primary.property_name %}
-                    <p>{{ mob.primary.property_name }} — {{ mob.primary_card.resolved_property }}</p>
+                {% if mob.primary.property_name and mob.primary_card.property_lines %}
+                    {% for line in mob.primary_card.property_lines %}
+                        <p>{% if forloop.first %}{{ mob.primary.property_name }} — {% endif %}{{ line }}</p>
+                    {% endfor %}
                 {% endif %}
                 {% if mob.secondary and not mob.akimbo_identical %}
                     <p><strong>{{ mob.secondary.name }}</strong>{% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts</p>
-                    {% if mob.secondary.property_name %}
-                        <p>{{ mob.secondary.property_name }} — {{ mob.secondary_card.resolved_property }}</p>
+                    {% if mob.secondary.property_name and mob.secondary_card.property_lines %}
+                        {% for line in mob.secondary_card.property_lines %}
+                            <p>{% if forloop.first %}{{ mob.secondary.property_name }} — {% endif %}{{ line }}</p>
+                        {% endfor %}
                     {% endif %}
                 {% endif %}
             </section>
@@ -81,7 +85,13 @@
             <section>
                 <h3>Implants</h3>
                 {% for card in mob.implant_cards %}
-                    <p><strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }}{% if card.resolved_property %} : {{ card.resolved_property }}{% endif %}</p>
+                    {% if card.property_lines %}
+                        {% for line in card.property_lines %}
+                            <p>{% if forloop.first %}<strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }} : {% endif %}{{ line }}</p>
+                        {% endfor %}
+                    {% else %}
+                        <p><strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }}</p>
+                    {% endif %}
                 {% endfor %}
             </section>
             {% endif %}
