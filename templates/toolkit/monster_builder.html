@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Monster Builder — TMP-GMTK{% endblock %}
 {% block content %}
+<style>
+.mob-card .edit-only { display: none; }
+.mob-card.is-editing .view-only { display: none; }
+.mob-card.is-editing .edit-only { display: initial; }
+.mob-card.is-editing .edit-only.block { display: block; }
+.mob-card input[type="number"] { box-sizing: border-box; max-width: 100%; }
+.mob-card .stats input[type="number"] { width: 3.2rem; text-align: center; }
+.mob-card .derived-edit { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin: .55rem 0; }
+.mob-card .derived-edit input { width: 4rem; }
+.mob-card .card-edit-actions { display: flex; gap: .4rem; align-items: center; }
+.mob-card .inline-edit-form { display: inline; }
+</style>
 <h1>Monster Builder</h1>
 <p>Génère un groupe de Mobs à partir du référentiel MONSTER.</p>
 
@@ -29,7 +41,8 @@
         <article class="panel mob-card">
             <header class="mob-card-header">
                 <div>
-                    <form method="post" action="{% url 'monster_builder_role' %}">
+                    <span class="view-only"><strong>{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
+                    <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_role' %}">
                         {% csrf_token %}
                         <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                         <select name="profile" onchange="this.form.submit()" aria-label="Changer le rôle">
@@ -42,19 +55,24 @@
                         <span>N{{ mob.level }}</span>
                     </form>
                 </div>
-                <form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
+                <strong class="view-only">{{ mob.max_hp }} PV</strong><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
             </header>
+            <div class="card-edit-actions">
+                <button type="button" class="view-only" onclick="this.closest('.mob-card').classList.add('is-editing')">✎ Modifier</button>
+                <button type="button" class="edit-only" onclick="this.closest('.mob-card').classList.remove('is-editing')">Fermer l’édition</button>
+            </div>
 
             <dl class="stats">
-                <div><dt>FOR</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="force"><input type="number" name="value" value="{{ mob.stats.force }}" min="0" onchange="this.form.submit()" aria-label="FOR"></form></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
-                <div><dt>AGI</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="agility"><input type="number" name="value" value="{{ mob.stats.agility }}" min="0" onchange="this.form.submit()" aria-label="AGI"></form></dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
-                <div><dt>PER</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="perception"><input type="number" name="value" value="{{ mob.stats.perception }}" min="0" onchange="this.form.submit()" aria-label="PER"></form></dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
-                <div><dt>TECH</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="technique"><input type="number" name="value" value="{{ mob.stats.technique }}" min="0" onchange="this.form.submit()" aria-label="TECH"></form></dd></div>
-                <div><dt>CON</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="constitution"><input type="number" name="value" value="{{ mob.stats.constitution }}" min="0" onchange="this.form.submit()" aria-label="CON"></form></dd></div>
-                <div><dt>VOL</dt><dd><form method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="willpower"><input type="number" name="value" value="{{ mob.stats.willpower }}" min="0" onchange="this.form.submit()" aria-label="VOL"></form></dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
+                <div><dt>FOR</dt><dd><span class="view-only">{{ mob.stats.force }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="force"><input type="number" name="value" value="{{ mob.stats.force }}" min="0" onchange="this.form.submit()" aria-label="FOR"></form></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
+                <div><dt>AGI</dt><dd><span class="view-only">{{ mob.stats.agility }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="agility"><input type="number" name="value" value="{{ mob.stats.agility }}" min="0" onchange="this.form.submit()" aria-label="AGI"></form></dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
+                <div><dt>PER</dt><dd><span class="view-only">{{ mob.stats.perception }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="perception"><input type="number" name="value" value="{{ mob.stats.perception }}" min="0" onchange="this.form.submit()" aria-label="PER"></form></dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
+                <div><dt>TECH</dt><dd><span class="view-only">{{ mob.stats.technique }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="technique"><input type="number" name="value" value="{{ mob.stats.technique }}" min="0" onchange="this.form.submit()" aria-label="TECH"></form></dd></div>
+                <div><dt>CON</dt><dd><span class="view-only">{{ mob.stats.constitution }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="constitution"><input type="number" name="value" value="{{ mob.stats.constitution }}" min="0" onchange="this.form.submit()" aria-label="CON"></form></dd></div>
+                <div><dt>VOL</dt><dd><span class="view-only">{{ mob.stats.willpower }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="willpower"><input type="number" name="value" value="{{ mob.stats.willpower }}" min="0" onchange="this.form.submit()" aria-label="VOL"></form></dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
             </dl>
 
-            <div class="derived-edit">
+            <p class="view-only">Armure {{ mob.armor }} · PB {{ mob.shield }} · Réactions {{ mob.reactions }} · Vigilance {{ mob.vigilance }}</p>
+            <div class="derived-edit edit-only block">
                 {% for field, label, value in mob.editable_derived %}
                 <form method="post" action="{% url 'monster_builder_field' %}">
                     {% csrf_token %}
@@ -67,7 +85,8 @@
 
             <section>
                 <h3>Armement</h3>
-                <form method="post" action="{% url 'monster_builder_weapon' %}">
+                <div class="view-only"><strong>{{ mob.primary.name }}{% if mob.akimbo_identical %} ×2{% endif %}</strong> · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }}{% if mob.primary_card.contact_damage != None %}<br><strong>Dégâts Contact</strong> : {{ mob.primary_card.contact_damage }}<br><strong>Dégâts Distance</strong> : {{ mob.primary_card.distance_damage }}{% else %} · {{ mob.primary_card.neutral_damage }} Dégâts{% endif %}</div>
+                <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
                     {% csrf_token %}
                     <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                     <input type="hidden" name="slot" value="primary">
@@ -95,7 +114,7 @@
                     {% endfor %}
                 {% endif %}
                 {% if not mob.secondary %}
-                <form method="post" action="{% url 'monster_builder_weapon' %}">
+                <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
                     {% csrf_token %}
                     <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                     <input type="hidden" name="slot" value="secondary">
@@ -114,7 +133,7 @@
                 </form>
                 {% endif %}
                 {% if mob.secondary and not mob.akimbo_identical %}
-                    <form method="post" action="{% url 'monster_builder_weapon' %}">
+                    <form class="edit-only block" method="post" action="{% url 'monster_builder_weapon' %}">
                         {% csrf_token %}
                         <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
                         <input type="hidden" name="slot" value="secondary">
