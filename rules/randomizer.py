@@ -188,6 +188,76 @@ def choose_weapon_loadout(weapons, *, profile: str, level: int, rng=None):
     return {"primary": primary, "secondary": secondary, "akimbo": False}
 
 
+
+# Independent implant-slot chances. Values between anchors are interpolated.
+# Locked slots stay at 0 until their unlock level.
+IMPLANT_SLOT_ANCHORS = {
+    1: (0.20, 0.00, 0.00),
+    3: (0.30, 0.00, 0.00),
+    4: (0.50, 0.10, 0.00),
+    6: (0.70, 0.25, 0.00),
+    7: (0.85, 0.50, 0.10),
+    10: (1.00, 0.70, 0.25),
+    15: (1.00, 1.00, 0.50),
+    20: (1.00, 1.00, 0.75),
+}
+
+
+def implant_slot_chances(level: int) -> tuple[float, float, float]:
+    """Return independent fill chances for implant slots 1..3."""
+    _validate_level(level)
+    levels = sorted(IMPLANT_SLOT_ANCHORS)
+
+    if level >= levels[-1]:
+        return IMPLANT_SLOT_ANCHORS[levels[-1]]
+    if level in IMPLANT_SLOT_ANCHORS:
+        return IMPLANT_SLOT_ANCHORS[level]
+
+    lower = max(anchor for anchor in levels if anchor < level)
+    upper = min(anchor for anchor in levels if anchor > level)
+    progress = (level - lower) / (upper - lower)
+    start = IMPLANT_SLOT_ANCHORS[lower]
+    end = IMPLANT_SLOT_ANCHORS[upper]
+    return tuple(a + (b - a) * progress for a, b in zip(start, end))
+
+
+def roll_implant_slots(level: int, rng=None) -> list[int]:
+    """Roll each unlocked implant slot independently and return successful slot numbers."""
+    rng = rng or random
+    chances = implant_slot_chances(level)
+    return [
+        index
+        for index, chance in enumerate(chances, start=1)
+        if chance > 0 and rng.random() < chance
+    ]
+
+
+def compatible_implants(implants, *, profile: str):
+    return [implant for implant in implants if implant.supports_profile(profile)]
+
+
+def choose_implants(implants, *, profile: str, level: int, rng=None):
+    """Fill successful slots with compatible implants, compacted for display.
+
+    Duplicates are avoided while enough distinct compatible implants exist.
+    """
+    rng = rng or random
+    successful_slots = roll_implant_slots(level, rng)
+    pool = compatible_implants(implants, profile=profile)
+    if not pool or not successful_slots:
+        return []
+
+    selected = []
+    available = list(pool)
+    for _slot in successful_slots:
+        if not available:
+            break
+        implant = rng.choice(available)
+        selected.append(implant)
+        available.remove(implant)
+
+    return selected
+
 def _interpolate(start, end, progress):
     values = tuple(a + (b - a) * progress for a, b in zip(start, end))
     # Floating arithmetic can drift microscopically from 100; normalize defensively.
