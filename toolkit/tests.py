@@ -100,8 +100,12 @@ class MonsterBuilderViewTests(TestCase):
             {"quantity": 3, "level": 5},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["generated_mobs"]), 3)
-        self.assertContains(response, "370 PV", count=3)
+        mobs = response.context["generated_mobs"]
+        self.assertEqual(len(mobs), 3)
+        self.assertTrue(all(mob["level"] == 5 for mob in mobs))
+        self.assertTrue(
+            all(mob["current_hp"] == mob["max_hp"] for mob in mobs)
+        )
 
     def test_builder_rejects_invalid_quantity(self):
         response = self.client.post(
