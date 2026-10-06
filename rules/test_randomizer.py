@@ -389,3 +389,130 @@ class ImplantRandomizerTests(SimpleTestCase):
             rng=self.FixedRng([0.0, 0.0, 0.0]),
         )
         self.assertEqual([implant.name for implant in selected], ["VELOS"])
+
+
+class CompleteMobGenerationTests(SimpleTestCase):
+    class Weapon:
+        def __init__(self, name, tier, profiles="", hands=2, power=15, aim=1):
+            self.name = name
+            self.tier = tier
+            self.profiles = profiles
+            self.hands = hands
+            self.power = power
+            self.aim = aim
+
+        def supports_profile(self, profile):
+            return not self.profiles or profile in self.profiles
+
+    class Implant:
+        def __init__(self, name, profiles):
+            self.name = name
+            self.profiles = profiles
+
+        def supports_profile(self, profile):
+            return profile in self.profiles
+
+    def setUp(self):
+        self.weapons = [
+            self.Weapon("Pistolet", 1, "", 1, 10, 2),
+            self.Weapon("AR", 2, "C", 2),
+            self.Weapon("Arme de lancer", 2, "A", 1, 10, 2),
+            self.Weapon("Carabine", 2, "T", 2),
+            self.Weapon("Med Rifle", 2, "S", 2),
+            self.Weapon("Smartgun", 2, "K", 1, 10, 2),
+        ]
+        self.implants = [
+            self.Implant("AEGIS", "CSK"),
+            self.Implant("VELOS", "A"),
+            self.Implant("ARGUS", "TS"),
+            self.Implant("MEDUSA", "K"),
+        ]
+
+    def test_generated_mob_contains_stats_derived_values_and_equipment(self):
+        from rules.randomizer import generate_mob
+
+        mob = generate_mob(
+            self.weapons,
+            self.implants,
+            level=5,
+            profile=MobProfile.COMBATANT,
+            rng=random.Random(42),
+        )
+        self.assertEqual(mob["profile"], MobProfile.COMBATANT)
+        self.assertEqual(mob["level"], 5)
+        self.assertEqual(mob["max_hp"], 370)
+        self.assertEqual(mob["current_hp"], 370)
+        self.assertEqual(mob["armor"], 25)
+        self.assertEqual(mob["stats"].force, 14)
+        self.assertTrue(mob["primary"].supports_profile(MobProfile.COMBATANT))
+        self.assertTrue(all(i.supports_profile(MobProfile.COMBATANT) for i in mob["implants"]))
+
+    def test_generated_support_integrates_profile_shield(self):
+        from rules.randomizer import generate_mob
+
+        mob = generate_mob(
+            self.weapons,
+            self.implants,
+            level=5,
+            profile=MobProfile.SOUTIEN,
+            rng=random.Random(10),
+        )
+        self.assertEqual(mob["shield"], 100)
+
+    def test_group_generation_applies_profile_quotas(self):
+        from rules.randomizer import generate_mobs
+
+        mobs = generate_mobs(
+            self.weapons,
+            self.implants,
+            quantity=4,
+            level=5,
+            rng=random.Random(123),
+        )
+        profiles = [mob["profile"] for mob in mobs]
+        self.assertEqual(len(mobs), 4)
+        self.assertLessEqual(profiles.count(MobProfile.SOUTIEN), 1)
+        self.assertLessEqual(profiles.count(MobProfile.CONTROLE), 1)
+
+    def test_role_reroll_keeps_level_and_rebuilds_profile_values(self):
+        from rules.randomizer import reroll_mob_role
+
+        mob = reroll_mob_role(
+            self.weapons,
+            self.implants,
+            level=5,
+            profile=MobProfile.ASSASSIN,
+            rng=random.Random(7),
+        )
+        self.assertEqual(mob["level"], 5)
+        self.assertEqual(mob["profile"], MobProfile.ASSASSIN)
+        self.assertEqual(mob["max_hp"], 370)
+        self.assertEqual(mob["reactions"], 2)
+        self.assertEqual(mob["stats"].agility, 15)
+        self.assertTrue(mob["primary"].supports_profile(MobProfile.ASSASSIN))
+
+    def test_level_above_ten_uses_capped_stats_but_continued_scaling(self):
+        from rules.randomizer import generate_mob
+
+        mob = generate_mob(
+            self.weapons,
+            self.implants,
+            level=15,
+            profile=MobProfile.TIREUR,
+            rng=random.Random(4),
+        )
+        self.assertEqual(mob["stats"].perception, 20)
+        self.assertEqual(mob["max_hp"], 670)
+        self.assertGreaterEqual(len(mob["implants"]), 2)
+
+    def test_forced_unknown_profile_is_rejected(self):
+        from rules.randomizer import generate_mob
+
+        with self.assertRaises(ValueError):
+            generate_mob(
+                self.weapons,
+                self.implants,
+                level=5,
+                profile="X",
+                rng=random.Random(1),
+            )
