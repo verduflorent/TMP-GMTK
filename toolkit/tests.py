@@ -591,3 +591,22 @@ class BestiaryWorkflowTests(TestCase):
         self.assertContains(response, "Charger dans Builder")
         self.assertContains(response, f"delete-bestiary-mob-{mob.id}")
         self.assertNotContains(response, "return confirm(")
+
+
+    def test_bestiary_load_preserves_name_and_supports_quantity(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 6})
+        self.client.post(reverse("monster_builder_save"), {"index": 0, "name": "Garde Kurogane"})
+        mob = BestiaryMob.objects.get(owner=self.user, name="Garde Kurogane")
+
+        session = self.client.session
+        session["monster_builder_mobs"] = []
+        session.save()
+        response = self.client.post(
+            reverse("bestiary_load", args=[mob.id]),
+            {"quantity": 3},
+            follow=True,
+        )
+        drafts = self.client.session["monster_builder_mobs"]
+        self.assertEqual(len(drafts), 3)
+        self.assertTrue(all(draft["name"] == "Garde Kurogane" for draft in drafts))
+        self.assertContains(response, "Garde Kurogane", count=3)
