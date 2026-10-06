@@ -207,3 +207,45 @@ class HybridWeaponDamageTests(SimpleTestCase):
         card = resolve_weapon(self.Item("Chakram", 15, 1), 6)
         self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (15, 130, 140))
         self.assertEqual(len(card.property_lines), 2)
+
+
+class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
+    class Weapon:
+        def __init__(self, name, power, optimal_range):
+            self.name = name
+            self.power = power
+            self.aim = 0
+            self.optimal_range = optimal_range
+            self.property_text = ""
+
+    class Implant:
+        def __init__(self, name):
+            self.name = name
+
+    def test_zephyr_adds_distance_damage_and_remains_contextual(self):
+        from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses, resolve_weapon
+
+        contact, distance = implant_damage_bonuses([self.Implant("ZEPHYR")], 10)
+        card = resolve_weapon(self.Weapon("Pistolet", 10, "SHORT"), 10)
+        card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
+        self.assertEqual(distance, 25)
+        self.assertEqual(card.neutral_damage, 185)
+
+    def test_minos_adds_contact_damage(self):
+        from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses, resolve_weapon
+
+        contact, distance = implant_damage_bonuses([self.Implant("MINOS")], 10)
+        card = resolve_weapon(self.Weapon("Katana", 15, "CONTACT"), 10)
+        card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
+        self.assertEqual(contact, 50)
+        self.assertEqual(card.neutral_damage, 220)
+
+    def test_hybrid_shotgun_receives_only_matching_contextual_bonus(self):
+        from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses, resolve_weapon
+
+        implants = [self.Implant("MINOS"), self.Implant("ZEPHYR")]
+        contact, distance = implant_damage_bonuses(implants, 10)
+        card = resolve_weapon(self.Weapon("Fusil à pompe court", 10, "SHORT"), 10)
+        card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
+        self.assertEqual(card.contact_damage, 230)
+        self.assertEqual(card.distance_damage, 185)
