@@ -370,3 +370,12 @@ def table_mob_edit(request, mob_id):
     request.session.modified = True
     mob.delete()
     return redirect("monster_builder")
+
+
+@login_required
+def table_mob_delete(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    TableMob.objects.filter(id=mob_id, game_table=table).delete()
+    return redirect("table")
