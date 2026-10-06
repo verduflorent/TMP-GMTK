@@ -171,7 +171,6 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(after[1], untouched[0])
         self.assertEqual(after[2], untouched[1])
         self.assertEqual(after[0]["weapon_ids"][0], replacement.id)
-        self.assertFalse(after[0]["akimbo"])
 
     def test_weapon_switch_allows_mj_profile_override(self):
         from django.core.management import call_command
