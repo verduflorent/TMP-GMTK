@@ -16,7 +16,7 @@ WEAPONS = [
     ("Arbalète", 4, "A", 2, "MEDIUM", 15, 1, "Saignée", "Une attaque réussie soigne le porteur de 5 PV × Niveau.", False),
     ("Arc", 3, "T", 2, "MEDIUM", 15, 1, "Perforation", "Ignore les Couvertures légères.", False),
     ("Carabine", 2, "T", 2, "MEDIUM", 15, 1, "Mirador", "Vigilance : + ⌊Niveau ÷ 5⌋ Visée.", False),
-    ("Chakram", 4, "A", 1, "MEDIUM", 15, 1, "Bond", "Portée Moyenne / Contact • Puissance 15 / 20. À partir de 4 m, peut bondir directement sur sa cible.", False),
+    ("Chakram", 4, "A", 2, "MEDIUM", 15, 1, "Bond", "Portée Moyenne / Contact • Puissance 15 / 20. À partir de 4 m, peut bondir directement sur sa cible.", False),
     ("Fusil d’assaut", 2, "", 2, "MEDIUM", 15, 1, "Polyvalence", "Ignore les malus de portée.", False),
     ("Med Rifle", 2, "S", 2, "MEDIUM", 15, 1, "MedBoost", "Soigne un allié de 20 PV × Niveau.", False),
     ("Railgun", 4, "T", 2, "MEDIUM", 15, 1, "Transpercement", "Traverse les cibles alignées ; les suivantes subissent 50 % des dégâts.", False),
