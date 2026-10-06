@@ -115,12 +115,14 @@ class ResolvedWeapon:
     neutral_damage: int
     effective_aim: int
     resolved_property: str
+    property_lines: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class ResolvedImplant:
     implant: object
     resolved_property: str
+    property_lines: tuple[str, ...] = ()
 
 
 def stat_modifier(value: int) -> int:
@@ -131,6 +133,13 @@ def stat_modifier(value: int) -> int:
 def tech_support_bonus(technique: int) -> int:
     """TECH has no modifier: every point above 10 grants +10 support."""
     return max(0, technique - 10) * 10
+
+
+def split_property_lines(text: str) -> tuple[str, ...]:
+    """Split distinct resolved effects into readable card lines."""
+    if not text:
+        return ()
+    return tuple(part.strip() for part in text.split(";") if part.strip())
 
 
 def effective_weapon_power(weapon) -> int:
@@ -158,7 +167,7 @@ def resolve_weapon(
     if weapon.name == "Revolver":
         text = "Puissance +5 intégrée."
     elif weapon.name == "Chakram":
-        text = "Permet de bondir sur la cible à partir de 4 m. Peut être lancé à Portée Moyenne."
+        text = "Permet de bondir sur la cible à partir de 4 m. ; Lancer : peut être lancé à Portée Moyenne."
     elif weapon.name == "Fusil à pompe court":
         text = f"Au Contact : +{round_to_5(5 * level)} Dégâts."
     elif weapon.name == "Smartgun":
@@ -186,6 +195,7 @@ def resolve_weapon(
         round_to_5(neutral_damage),
         weapon.aim + per_bonus,
         text,
+        split_property_lines(text),
     )
 
 
@@ -211,7 +221,7 @@ def resolve_implant(
         text = f"Attaques à distance : +{round_to_5((level // 2) * 5)} Dégâts."
     elif implant.name == "PHALANX":
         text = f"Réaction : déploie une barrière à {round_to_5(10 * level + tech_bonus)} PV."
-    return ResolvedImplant(implant, text)
+    return ResolvedImplant(implant, text, split_property_lines(text))
 
 
 def implant_armor_bonus(implants, level: int) -> int:
