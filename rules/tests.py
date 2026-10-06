@@ -127,6 +127,13 @@ class FivePointQuantizationTests(SimpleTestCase):
 
 
 class MobStatModifierTests(SimpleTestCase):
+    class Item:
+        def __init__(self, name, power=0, aim=0, property_text=""):
+            self.name = name
+            self.power = power
+            self.aim = aim
+            self.property_text = property_text
+
     def test_stat_modifier_progression(self):
         from rules.engine import stat_modifier
 
