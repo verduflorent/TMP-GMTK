@@ -134,7 +134,7 @@ def tech_support_bonus(technique: int) -> int:
 
 
 def effective_weapon_power(weapon) -> int:
-    if weapon.name == "Revolver":
+    if weapon.name in ("Revolver", "Chakram"):
         return weapon.power + 5
     return weapon.power
 
@@ -157,6 +157,8 @@ def resolve_weapon(
     text = weapon.property_text
     if weapon.name == "Revolver":
         text = "Puissance +5 intégrée."
+    elif weapon.name == "Chakram":
+        text = "Permet de bondir sur la cible à partir de 4 m. Peut être lancé à Portée Moyenne."
     elif weapon.name == "Fusil à pompe court":
         text = f"Au Contact : +{round_to_5(5 * level)} Dégâts."
     elif weapon.name == "Smartgun":
