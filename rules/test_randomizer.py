@@ -137,3 +137,152 @@ class WeaponTierRandomizerTests(SimpleTestCase):
             weapons, profile=MobProfile.CONTROLE, level=20, rng=random.Random(2)
         )
         self.assertEqual(weapon.name, "Pistolet")
+
+
+class WeaponLoadoutRandomizerTests(SimpleTestCase):
+    class Weapon:
+        def __init__(self, name, tier, profiles="", hands=1):
+            self.name = name
+            self.tier = tier
+            self.profiles = profiles
+            self.hands = hands
+
+        def supports_profile(self, profile):
+            return not self.profiles or profile in self.profiles
+
+    class FixedRng:
+        def __init__(self, random_values=None, choice_index=0):
+            self.random_values = iter(random_values or [])
+            self.choice_index = choice_index
+
+        def random(self):
+            return next(self.random_values)
+
+        def choice(self, values):
+            return values[min(self.choice_index, len(values) - 1)]
+
+        def choices(self, values, weights=None, k=1):
+            return [values[0]]
+
+    def setUp(self):
+        self.t1 = self.Weapon("Pistolet", 1, "", 1)
+        self.t2 = self.Weapon("Pompe court", 2, "C", 1)
+        self.t2_two_hands = self.Weapon("AR", 2, "C", 2)
+        self.t4 = self.Weapon("Roquettes", 4, "C", 2)
+        self.weapons = [self.t1, self.t2, self.t2_two_hands, self.t4]
+
+    def test_t4_always_requests_a_t1_or_t2_secondary(self):
+        from rules.randomizer import choose_secondary_weapon
+
+        secondary = choose_secondary_weapon(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t4,
+            rng=self.FixedRng(choice_index=1),
+        )
+        self.assertIsNotNone(secondary)
+        self.assertIn(secondary.tier, (1, 2))
+
+    def test_non_t4_secondary_uses_twenty_percent_chance(self):
+        from rules.randomizer import choose_secondary_weapon
+
+        yes = choose_secondary_weapon(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2_two_hands,
+            rng=self.FixedRng([0.19]),
+        )
+        no = choose_secondary_weapon(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2_two_hands,
+            rng=self.FixedRng([0.20]),
+        )
+        self.assertIsNotNone(yes)
+        self.assertIsNone(no)
+
+    def test_secondary_respects_profile_compatibility(self):
+        from rules.randomizer import choose_secondary_weapon
+
+        secondary = choose_secondary_weapon(
+            self.weapons,
+            profile=MobProfile.ASSASSIN,
+            primary_weapon=self.t4,
+            rng=self.FixedRng(),
+        )
+        self.assertEqual(secondary.name, "Pistolet")
+
+    def test_akimbo_requires_one_handed_primary(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        pair = choose_akimbo_pair(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2_two_hands,
+            rng=self.FixedRng([0.0]),
+        )
+        self.assertIsNone(pair)
+
+    def test_akimbo_uses_ten_percent_chance(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        yes = choose_akimbo_pair(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2,
+            rng=self.FixedRng([0.09, 0.0]),
+        )
+        no = choose_akimbo_pair(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2,
+            rng=self.FixedRng([0.10]),
+        )
+        self.assertIsNotNone(yes)
+        self.assertIsNone(no)
+
+    def test_akimbo_eighty_percent_is_identical(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        pair = choose_akimbo_pair(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2,
+            rng=self.FixedRng([0.05, 0.79]),
+        )
+        self.assertIs(pair[0], pair[1])
+
+    def test_akimbo_twenty_percent_is_mixed_when_possible(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        pair = choose_akimbo_pair(
+            self.weapons,
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2,
+            rng=self.FixedRng([0.05, 0.80]),
+        )
+        self.assertNotEqual(pair[0].name, pair[1].name)
+
+    def test_impossible_mixed_akimbo_falls_back_to_identical(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        pair = choose_akimbo_pair(
+            [self.t2],
+            profile=MobProfile.COMBATANT,
+            primary_weapon=self.t2,
+            rng=self.FixedRng([0.05, 0.95]),
+        )
+        self.assertIs(pair[0], pair[1])
+
+    def test_loadout_never_stacks_akimbo_with_a_third_weapon(self):
+        from rules.randomizer import choose_weapon_loadout
+
+        loadout = choose_weapon_loadout(
+            [self.t1],
+            profile=MobProfile.COMBATANT,
+            level=1,
+            rng=self.FixedRng([0.05, 0.0]),
+        )
+        self.assertTrue(loadout["akimbo"])
+        self.assertEqual(loadout["primary"].name, "Pistolet")
+        self.assertEqual(loadout["secondary"].name, "Pistolet")
