@@ -129,7 +129,8 @@ def stat_modifier(value: int) -> int:
 
 
 def tech_support_bonus(technique: int) -> int:
-    return stat_modifier(technique) * 10
+    """TECH has no modifier: every point above 10 grants +10 support."""
+    return max(0, technique - 10) * 10
 
 
 def effective_weapon_power(weapon) -> int:
