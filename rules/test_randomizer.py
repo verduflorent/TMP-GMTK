@@ -196,12 +196,14 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2_two_hands,
+            level=6,
             rng=self.FixedRng([0.19]),
         )
         no = choose_secondary_weapon(
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2_two_hands,
+            level=6,
             rng=self.FixedRng([0.20]),
         )
         self.assertIsNotNone(yes)
@@ -241,6 +243,7 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2_two_hands,
+            level=6,
             rng=self.FixedRng([0.0]),
         )
         self.assertIsNone(pair)
@@ -252,12 +255,14 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2,
+            level=6,
             rng=self.FixedRng([0.09, 0.0]),
         )
         no = choose_akimbo_pair(
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2,
+            level=6,
             rng=self.FixedRng([0.10]),
         )
         self.assertIsNotNone(yes)
@@ -270,6 +275,7 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2,
+            level=6,
             rng=self.FixedRng([0.05, 0.79]),
         )
         self.assertIs(pair[0], pair[1])
@@ -281,6 +287,7 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             self.weapons,
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2,
+            level=6,
             rng=self.FixedRng([0.05, 0.80]),
         )
         self.assertNotEqual(pair[0].name, pair[1].name)
@@ -292,9 +299,24 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
             [self.t2],
             profile=MobProfile.COMBATANT,
             primary_weapon=self.t2,
+            level=6,
             rng=self.FixedRng([0.05, 0.95]),
         )
         self.assertIs(pair[0], pair[1])
+
+    def test_akimbo_cannot_pull_locked_high_tier_weapon(self):
+        from rules.randomizer import choose_akimbo_pair
+
+        t4_one_hand = self.Weapon("T4 impossible", 4, "A", 1)
+        pair = choose_akimbo_pair(
+            [self.t1, t4_one_hand],
+            profile=MobProfile.ASSASSIN,
+            primary_weapon=self.t1,
+            level=1,
+            rng=self.FixedRng([0.05, 0.95]),
+        )
+        self.assertEqual(pair[0].name, "Pistolet")
+        self.assertEqual(pair[1].name, "Pistolet")
 
     def test_loadout_never_stacks_akimbo_with_a_third_weapon(self):
         from rules.randomizer import choose_weapon_loadout
