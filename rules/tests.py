@@ -124,3 +124,31 @@ class FivePointQuantizationTests(SimpleTestCase):
         for value, rounded in expected.items():
             with self.subTest(value=value):
                 self.assertEqual(round_to_5(value), rounded)
+
+
+class MobStatModifierTests(SimpleTestCase):
+    def test_stat_modifier_progression(self):
+        from rules.engine import stat_modifier
+
+        expected = {10: 0, 11: 0, 12: 1, 13: 1, 14: 2, 16: 3, 18: 4, 20: 5}
+        for value, modifier in expected.items():
+            with self.subTest(value=value):
+                self.assertEqual(stat_modifier(value), modifier)
+
+    def test_perception_modifier_is_applied_to_weapon_aim(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Arc", 15, 1, ""), 10, perception=16)
+        self.assertEqual(card.effective_aim, 4)
+
+    def test_tech_modifier_is_applied_to_med_rifle_healing(self):
+        from rules.engine import resolve_weapon
+
+        card = resolve_weapon(self.Item("Med Rifle", 15, 1, ""), 5, technique=16)
+        self.assertEqual(card.resolved_property, "Soigne un allié de 130 PV.")
+
+    def test_tech_modifier_is_applied_to_phalanx_barrier(self):
+        from rules.engine import resolve_implant
+
+        card = resolve_implant(self.Item("PHALANX", property_text=""), 5, 370, technique=16)
+        self.assertEqual(card.resolved_property, "Réaction : déploie une barrière à 80 PV.")
