@@ -69,3 +69,45 @@ class DomainIntegrityTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             save_validated(instance)
+
+
+class MonsterBuilderViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="builder", password="pwd")
+        self.client.login(username="builder", password="pwd")
+
+    def test_builder_requires_authentication(self):
+        self.client.logout()
+        response = self.client.get(reverse("monster_builder"))
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={reverse('monster_builder')}",
+        )
+
+    def test_builder_get_displays_generation_form(self):
+        response = self.client.get(reverse("monster_builder"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Monster Builder")
+        self.assertContains(response, "Nombre de Mobs")
+        self.assertContains(response, "Niveau")
+
+    def test_builder_post_generates_requested_number_of_cards(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"quantity": 3, "level": 5},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["generated_mobs"]), 3)
+        self.assertContains(response, "370 PV", count=3)
+
+    def test_builder_rejects_invalid_quantity(self):
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"quantity": 0, "level": 5},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["generated_mobs"], [])
+        self.assertContains(response, "Assurez-vous que cette valeur est supérieure ou égale à 1")
