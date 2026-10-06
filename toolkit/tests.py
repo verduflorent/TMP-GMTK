@@ -218,3 +218,56 @@ class MonsterBuilderViewTests(TestCase):
         self.assertIsInstance(draft["implant_ids"], list)
         self.assertEqual(draft["abilities"], [])
         self.assertEqual(draft["overrides"], {})
+
+
+    def test_manual_perception_override_recalculates_weapon_aim(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 0, "field": "perception", "value": 18},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["stats"].perception, 18)
+        self.assertEqual(mob["stat_modifiers"]["perception"], 4)
+        self.assertEqual(
+            mob["weapon_cards"][0].effective_aim,
+            mob["weapons"][0].aim + 4,
+        )
+
+    def test_manual_constitution_override_recalculates_hp_until_hp_is_overridden(self):
+        from django.core.management import call_command
+        from rules.engine import max_hp
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 0, "field": "constitution", "value": 16},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["max_hp"], max_hp(5, 16))
+
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 0, "field": "max_hp", "value": 999},
+            follow=True,
+        )
+        self.assertEqual(response.context["generated_mobs"][0]["max_hp"], 999)
+
+    def test_manual_armor_override_does_not_change_modifiers(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_field"),
+            {"index": 0, "field": "armor", "value": 35},
+            follow=True,
+        )
+        mob = response.context["generated_mobs"][0]
+        self.assertEqual(mob["armor"], 35)
