@@ -124,6 +124,33 @@ class EncounterMob(models.Model):
         return self.name
 
 
+class UserAbility(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="monster_abilities"
+    )
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    effect_type = models.CharField(max_length=40, blank=True)
+    scaling = models.CharField(max_length=10, blank=True, default="fixed")
+    value = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+
+    def as_draft(self):
+        ability = {"name": self.name, "description": self.description}
+        if self.effect_type:
+            ability["effect"] = {
+                "type": self.effect_type, "scaling": self.scaling, "value": self.value,
+            }
+        return ability
+
+    def __str__(self):
+        return self.name
+
+
 class TableMob(models.Model):
     """Validated Monster Builder snapshot owned by one user's live Table."""
     game_table = models.ForeignKey(GameTable, on_delete=models.CASCADE, related_name="builder_mobs")
