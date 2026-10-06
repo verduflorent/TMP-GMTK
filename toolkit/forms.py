@@ -32,8 +32,9 @@ class MobRoleForm(forms.Form):
 
 class MobWeaponForm(forms.Form):
     index = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
-    slot = forms.ChoiceField(choices=[("primary", "Principale"), ("secondary", "Secondaire")], widget=forms.HiddenInput)
-    weapon_id = forms.IntegerField(min_value=1)
+    weapon_index = forms.IntegerField(min_value=0, required=False)
+    action = forms.ChoiceField(choices=[("add", "Ajouter"), ("replace", "Remplacer"), ("remove", "Retirer")])
+    weapon_id = forms.IntegerField(min_value=1, required=False)
 
 
 class MobFieldOverrideForm(forms.Form):
