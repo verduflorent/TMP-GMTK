@@ -419,9 +419,11 @@ class CompleteMobGenerationTests(SimpleTestCase):
             return not self.profiles or profile in self.profiles
 
     class Implant:
-        def __init__(self, name, profiles):
+        def __init__(self, name, profiles, property_name="", property_text=""):
             self.name = name
             self.profiles = profiles
+            self.property_name = property_name
+            self.property_text = property_text
 
         def supports_profile(self, profile):
             return profile in self.profiles
