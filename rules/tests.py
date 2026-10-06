@@ -15,6 +15,7 @@ class MobScalingTests(SimpleTestCase):
     def test_hp_scales_linearly_beyond_level_ten(self):
         self.assertEqual(max_hp(1), 250)
         self.assertEqual(max_hp(5), 370)
+        self.assertEqual(max_hp(3, constitution=12), 330)
         self.assertEqual(max_hp(10), 520)
         self.assertEqual(max_hp(20), 820)
 
