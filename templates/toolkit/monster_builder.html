@@ -75,7 +75,13 @@
                         {% endfor %}
                     </select>
                     {% if mob.akimbo_identical %}<strong> ×2</strong>{% endif %}
-                    · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }} · {{ mob.primary_card.neutral_damage }} Dégâts
+                    · P{{ mob.primary_card.effective_power }} · Visée {{ mob.primary_card.effective_aim|stringformat:"+d" }}
+                    {% if mob.primary_card.contact_damage != None %}
+                        <br><strong>Dégâts Contact</strong> : {{ mob.primary_card.contact_damage }}
+                        <br><strong>Dégâts Distance</strong> : {{ mob.primary_card.distance_damage }}
+                    {% else %}
+                        · {{ mob.primary_card.neutral_damage }} Dégâts
+                    {% endif %}
                 </form>
                 {% if mob.primary.property_name and mob.primary_card.property_lines %}
                     {% for line in mob.primary_card.property_lines %}
@@ -115,7 +121,13 @@
                         </optgroup>
                         {% endfor %}
                     </select>
-                        {% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }} · {{ mob.secondary_card.neutral_damage }} Dégâts
+                        {% if mob.akimbo %} · Akimbo{% endif %} · P{{ mob.secondary_card.effective_power }} · Visée {{ mob.secondary_card.effective_aim|stringformat:"+d" }}
+                        {% if mob.secondary_card.contact_damage != None %}
+                            <br><strong>Dégâts Contact</strong> : {{ mob.secondary_card.contact_damage }}
+                            <br><strong>Dégâts Distance</strong> : {{ mob.secondary_card.distance_damage }}
+                        {% else %}
+                            · {{ mob.secondary_card.neutral_damage }} Dégâts
+                        {% endif %}
                     </form>
                     {% if mob.secondary.property_name and mob.secondary_card.property_lines %}
                         {% for line in mob.secondary_card.property_lines %}
