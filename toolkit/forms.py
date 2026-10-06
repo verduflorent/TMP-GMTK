@@ -14,3 +14,17 @@ class MonsterBuilderForm(forms.Form):
         max_value=99,
         initial=1,
     )
+
+
+class MobRoleForm(forms.Form):
+    index = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
+    profile = forms.ChoiceField(
+        label="Rôle",
+        choices=[
+            ("C", "Combattant"),
+            ("A", "Assassin"),
+            ("T", "Tireur"),
+            ("S", "Soutien"),
+            ("K", "Contrôle"),
+        ],
+    )
