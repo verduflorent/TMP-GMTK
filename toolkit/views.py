@@ -9,8 +9,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import BestiaryMob, TableMob, UserAbility
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, TableMob, UserAbility, UserWeapon
 from .services import ensure_game_table
 
 
@@ -35,6 +35,7 @@ def table_home(request):
 def monster_builder(request):
     weapons = list(MobWeapon.objects.all())
     implants = list(MobImplant.objects.all())
+    user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     generated_mobs = []
     editing_index = request.session.pop("monster_builder_editing", None)
     form = MonsterBuilderForm(request.POST or None)
@@ -48,7 +49,7 @@ def monster_builder(request):
         request.session["monster_builder_mobs"] = [serialize_mob(mob) for mob in generated_mobs]
     else:
         saved = request.session.get("monster_builder_mobs", [])
-        generated_mobs = [rebuild_mob(weapons, implants, data) for data in saved]
+        generated_mobs = [rebuild_mob(weapons, implants, data, user_weapons) for data in saved]
 
     for mob in generated_mobs:
         mob["editable_derived"] = (
@@ -90,6 +91,7 @@ def monster_builder(request):
             "implant_groups": implant_groups,
             "editing_index": editing_index,
             "user_abilities": UserAbility.objects.filter(owner=request.user),
+            "user_weapons": user_weapons,
         },
     )
 
@@ -351,11 +353,12 @@ def monster_builder_validate(request):
 
     weapons = list(MobWeapon.objects.all())
     implants = list(MobImplant.objects.all())
+    user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     table = ensure_game_table(request.user)
     valid_indexes = [index for index in indexes if 0 <= index < len(saved)]
 
     for index in valid_indexes:
-        mob = rebuild_mob(weapons, implants, saved[index])
+        mob = rebuild_mob(weapons, implants, saved[index], user_weapons)
         TableMob.objects.create(
             game_table=table,
             name=mob.get("name") or f"{mob['profile'].label if hasattr(mob['profile'], 'label') else mob['profile']} N{mob['level']}",
@@ -505,3 +508,62 @@ def ability_library_delete(request, ability_id):
     if request.method == "POST":
         UserAbility.objects.filter(id=ability_id, owner=request.user).delete()
     return redirect("monster_builder")
+
+
+@login_required
+def monster_builder_user_weapon_create(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = UserWeaponForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+    weapon = UserWeapon.objects.create(
+        owner=request.user,
+        name=form.cleaned_data["name"].strip(),
+        hands=int(form.cleaned_data["hands"]),
+        optimal_range=form.cleaned_data["optimal_range"],
+        power=form.cleaned_data["power"],
+        aim=form.cleaned_data["aim"],
+        property_name=(form.cleaned_data.get("property_name") or "").strip(),
+        property_text=(form.cleaned_data.get("property_text") or "").strip(),
+    )
+    data = saved[index]
+    refs = list(data.get("weapons", []))
+    refs.append({"source": "user", "id": weapon.id})
+    data["weapons"] = refs
+    data.pop("weapon_ids", None)
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+@login_required
+def monster_builder_user_weapon_add(request):
+    if request.method != "POST":
+        return redirect("monster_builder")
+    form = UserWeaponLibraryForm(request.POST)
+    saved = request.session.get("monster_builder_mobs", [])
+    if not form.is_valid():
+        return redirect("monster_builder")
+    index = form.cleaned_data["index"]
+    if not 0 <= index < len(saved):
+        return redirect("monster_builder")
+    weapon = UserWeapon.objects.filter(
+        id=form.cleaned_data["weapon_id"], owner=request.user
+    ).first()
+    if weapon is None:
+        return _builder_redirect_editing(request, index)
+    data = saved[index]
+    refs = list(data.get("weapons", []))
+    refs.append({"source": "user", "id": weapon.id})
+    data["weapons"] = refs
+    data.pop("weapon_ids", None)
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
