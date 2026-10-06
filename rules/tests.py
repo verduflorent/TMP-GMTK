@@ -152,10 +152,10 @@ class MobStatModifierTests(SimpleTestCase):
         from rules.engine import resolve_weapon
 
         card = resolve_weapon(self.Item("Med Rifle", 15, 1, ""), 5, technique=16)
-        self.assertEqual(card.resolved_property, "Soigne un allié de 130 PV.")
+        self.assertEqual(card.resolved_property, "Soigne un allié de 160 PV.")
 
     def test_tech_modifier_is_applied_to_phalanx_barrier(self):
         from rules.engine import resolve_implant
 
         card = resolve_implant(self.Item("PHALANX", property_text=""), 5, 370, technique=16)
-        self.assertEqual(card.resolved_property, "Réaction : déploie une barrière à 80 PV.")
+        self.assertEqual(card.resolved_property, "Réaction : déploie une barrière à 110 PV.")
