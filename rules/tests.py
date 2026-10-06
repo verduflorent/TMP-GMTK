@@ -159,3 +159,28 @@ class MobStatModifierTests(SimpleTestCase):
 
         card = resolve_implant(self.Item("PHALANX", property_text=""), 5, 370, technique=16)
         self.assertEqual(card.resolved_property, "Réaction : déploie une barrière à 110 PV.")
+
+
+class PropertyLineTests(SimpleTestCase):
+    def test_semicolon_separates_distinct_card_effects(self):
+        from rules.engine import split_property_lines
+
+        self.assertEqual(
+            split_property_lines("+20 Armure ; résistance aux Poussées."),
+            ("+20 Armure", "résistance aux Poussées."),
+        )
+
+    def test_chakram_resolves_bond_and_throw_on_two_lines(self):
+        from rules.engine import resolve_weapon
+
+        class Item:
+            name = "Chakram"
+            power = 15
+            aim = 1
+            property_text = ""
+
+        card = resolve_weapon(Item(), 6)
+        self.assertEqual(card.effective_power, 20)
+        self.assertEqual(len(card.property_lines), 2)
+        self.assertIn("bondir", card.property_lines[0])
+        self.assertIn("Portée Moyenne", card.property_lines[1])
