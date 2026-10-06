@@ -163,7 +163,7 @@ class MonsterBuilderViewTests(TestCase):
 
         response = self.client.post(
             reverse("monster_builder_weapon"),
-            {"index": 0, "slot": "primary", "weapon_id": replacement.id},
+            {"index": 0, "action": "replace", "weapon_index": 0, "weapon_id": replacement.id},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
@@ -190,7 +190,7 @@ class MonsterBuilderViewTests(TestCase):
 
         self.client.post(
             reverse("monster_builder_weapon"),
-            {"index": 0, "slot": "primary", "weapon_id": override.id},
+            {"index": 0, "action": "replace", "weapon_index": 0, "weapon_id": override.id},
         )
         self.assertEqual(
             self.client.session["monster_builder_mobs"][0]["weapon_ids"][0],
@@ -295,4 +295,48 @@ class MonsterBuilderViewTests(TestCase):
         self.assertContains(
             response,
             ".mob-card.is-editing .view-only { display: none !important; }",
+        )
+
+
+    def test_manual_weapon_addition_supports_three_weapons(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        weapons = list(MobWeapon.objects.all())
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["weapon_ids"] = [weapons[0].id, weapons[1].id]
+        session["monster_builder_mobs"] = [draft]
+        session.save()
+
+        response = self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "action": "add", "weapon_id": weapons[2].id},
+            follow=True,
+        )
+        self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["weapon_ids"]), 3)
+        self.assertEqual(len(response.context["generated_mobs"][0]["weapon_cards"]), 3)
+
+    def test_manual_weapon_removal_removes_selected_list_item(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        weapons = list(MobWeapon.objects.all())
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["weapon_ids"] = [weapons[0].id, weapons[1].id, weapons[2].id]
+        session["monster_builder_mobs"] = [draft]
+        session.save()
+
+        self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "action": "remove", "weapon_index": 1},
+        )
+        self.assertEqual(
+            self.client.session["monster_builder_mobs"][0]["weapon_ids"],
+            [weapons[0].id, weapons[2].id],
         )
