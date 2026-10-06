@@ -79,8 +79,14 @@ class MobAbilityForm(forms.Form):
     effect_type = forms.ChoiceField(choices=ABILITY_EFFECT_CHOICES, required=False)
     scaling = forms.ChoiceField(choices=[("fixed", "Fixe"), ("level", "× Niveau")], required=False)
     value = forms.IntegerField(required=False)
+    save_to_library = forms.BooleanField(required=False)
 
 
 class BestiaryMobSaveForm(forms.Form):
     index = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     name = forms.CharField(max_length=120)
+
+
+class MobAbilityLibraryForm(forms.Form):
+    index = forms.IntegerField(min_value=0)
+    ability_id = forms.IntegerField(min_value=1)
