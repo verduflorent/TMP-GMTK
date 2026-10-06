@@ -69,7 +69,16 @@ def tier_weights(level: int) -> tuple[float, float, float, float]:
         return (t1, 100.0 - t1, 0.0, 0.0)
 
     if level < 6:
-        return _interpolate(TIER_ANCHORS[3], TIER_ANCHORS[6], (level - 3) / 3)
+        # T4 is hard-locked before N6: interpolate T1/T2/T3 only.
+        progress = (level - 3) / 3
+        start = TIER_ANCHORS[3]
+        end = TIER_ANCHORS[6]
+        first_three = tuple(
+            start[index] + (end[index] - start[index]) * progress
+            for index in range(3)
+        )
+        total = sum(first_three)
+        return tuple(value * 100.0 / total for value in first_three) + (0.0,)
 
     if level >= TIER_CAP_LEVEL:
         return TIER_CAP
