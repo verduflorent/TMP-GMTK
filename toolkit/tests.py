@@ -506,3 +506,44 @@ class MonsterBuilderViewTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.context["generated_mobs"][0]["weapon_cards"][0].neutral_damage, before + 50)
+
+
+class BuilderValidationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="validator", password="pwd")
+        self.client.login(username="validator", password="pwd")
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def test_validate_one_moves_only_selected_draft_to_table(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 3, "level": 5})
+        response = self.client.post(
+            reverse("monster_builder_validate"),
+            {"action": "one", "index": 1},
+            follow=True,
+        )
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 1)
+        self.assertEqual(len(self.client.session["monster_builder_mobs"]), 2)
+        self.assertEqual(len(response.context["generated_mobs"]), 2)
+
+    def test_validate_all_moves_every_draft_to_table(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 3, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 3)
+        self.assertEqual(self.client.session["monster_builder_mobs"], [])
+
+    def test_table_mob_can_return_to_builder_for_editing(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        table_mob = TableMob.objects.get(game_table__owner=self.user)
+
+        response = self.client.post(reverse("table_mob_edit", args=[table_mob.id]), follow=True)
+        self.assertFalse(TableMob.objects.filter(id=table_mob.id).exists())
+        self.assertEqual(len(self.client.session["monster_builder_mobs"]), 1)
+        self.assertEqual(response.context["editing_index"], 0)
