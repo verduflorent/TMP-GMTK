@@ -207,38 +207,40 @@ def monster_builder_field(request):
 def monster_builder_implant(request):
     if request.method != "POST":
         return redirect("monster_builder")
-
     form = MobImplantForm(request.POST)
     saved = request.session.get("monster_builder_mobs", [])
     if not form.is_valid():
         return redirect("monster_builder")
-
     index = form.cleaned_data["index"]
     if not 0 <= index < len(saved):
         return redirect("monster_builder")
 
     data = saved[index]
-    implant_ids = list(data.get("implant_ids", []))
+    refs = data.get("implants")
+    if refs is None:
+        refs = [{"source": "catalogue", "id": item_id} for item_id in data.get("implant_ids", [])]
+    refs = list(refs)
     action = form.cleaned_data["action"]
     implant_index = form.cleaned_data.get("implant_index")
     implant_id = form.cleaned_data.get("implant_id")
-
-    if action in ("add", "replace"):
-        if implant_id is None or not MobImplant.objects.filter(id=implant_id).exists():
-            return redirect("monster_builder")
-
+    if action in ("add", "replace") and (
+        implant_id is None or not MobImplant.objects.filter(id=implant_id).exists()
+    ):
+        return _builder_redirect_editing(request, index)
+    ref = {"source": "catalogue", "id": implant_id}
     if action == "add":
-        implant_ids.append(implant_id)
+        refs.append(ref)
     elif action == "replace":
-        if implant_index is None or not 0 <= implant_index < len(implant_ids):
-            return redirect("monster_builder")
-        implant_ids[implant_index] = implant_id
+        if implant_index is None or not 0 <= implant_index < len(refs):
+            return _builder_redirect_editing(request, index)
+        refs[implant_index] = ref
     elif action == "remove":
-        if implant_index is None or not 0 <= implant_index < len(implant_ids):
-            return redirect("monster_builder")
-        implant_ids.pop(implant_index)
+        if implant_index is None or not 0 <= implant_index < len(refs):
+            return _builder_redirect_editing(request, index)
+        refs.pop(implant_index)
 
-    data["implant_ids"] = implant_ids
+    data["implants"] = refs
+    data.pop("implant_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
