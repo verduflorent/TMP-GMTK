@@ -340,7 +340,7 @@ def monster_builder_validate(request):
         mob = rebuild_mob(weapons, implants, saved[index])
         TableMob.objects.create(
             game_table=table,
-            name=f"{mob['profile'].label if hasattr(mob['profile'], 'label') else mob['profile']} N{mob['level']}",
+            name=mob.get("name") or f"{mob['profile'].label if hasattr(mob['profile'], 'label') else mob['profile']} N{mob['level']}",
             profile=str(mob["profile"]),
             level=mob["level"],
             payload=_table_payload(mob),
@@ -399,7 +399,11 @@ def monster_builder_save(request):
     if not 0 <= index < len(saved):
         return redirect("monster_builder")
 
-    data = saved[index]
+    data = dict(saved[index])
+    data["name"] = form.cleaned_data["name"].strip()
+    saved[index] = data
+    request.session["monster_builder_mobs"] = saved
+    request.session.modified = True
     BestiaryMob.objects.create(
         owner=request.user,
         name=form.cleaned_data["name"].strip(),
@@ -418,9 +422,17 @@ def bestiary_load(request, mob_id):
     if mob is None or not mob.draft_payload:
         return redirect("bestiary")
     saved = request.session.get("monster_builder_mobs", [])
-    saved.append(mob.draft_payload)
+    try:
+        quantity = max(1, min(50, int(request.POST.get("quantity", "1"))))
+    except ValueError:
+        quantity = 1
+    first_index = len(saved)
+    for _ in range(quantity):
+        draft = dict(mob.draft_payload)
+        draft["name"] = mob.name
+        saved.append(draft)
     request.session["monster_builder_mobs"] = saved
-    request.session["monster_builder_editing"] = len(saved) - 1
+    request.session["monster_builder_editing"] = first_index
     request.session.modified = True
     return redirect("monster_builder")
 
