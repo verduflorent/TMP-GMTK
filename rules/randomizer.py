@@ -338,7 +338,7 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     }
 
 
-def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None):
+def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, overrides=None):
     """Build an editable draft from unrestricted equipment lists."""
     if not weapons:
         raise ValueError("Un brouillon Mob doit conserver au moins une arme pour le moment.")
@@ -370,7 +370,68 @@ def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None):
         for weapon in weapons
     ]
     mob["abilities"] = list(abilities or [])
+    mob["overrides"] = dict(overrides or {})
+    _apply_draft_overrides(mob)
     return mob
+
+
+def _apply_draft_overrides(mob):
+    """Apply MJ-entered source values, then recalculate every derived modifier."""
+    from dataclasses import replace
+    from rules.engine import (
+        max_hp, resolve_implant, resolve_weapon, round_to_5,
+        stat_modifier, tech_support_bonus, implant_damage_bonuses,
+        apply_weapon_damage_bonuses,
+    )
+
+    overrides = mob.get("overrides", {})
+    stats = mob["stats"]
+    stat_fields = {
+        "force": stats.force, "agility": stats.agility,
+        "perception": stats.perception, "technique": stats.technique,
+        "constitution": stats.constitution, "willpower": stats.willpower,
+    }
+    for field in stat_fields:
+        if field in overrides:
+            stat_fields[field] = overrides[field]
+    stats = replace(stats, **stat_fields)
+    mob["stats"] = stats
+
+    mob["stat_modifiers"] = {
+        "force": stat_modifier(stats.force),
+        "agility": stat_modifier(stats.agility),
+        "perception": stat_modifier(stats.perception),
+        "technique": None,
+        "willpower": stat_modifier(stats.willpower),
+    }
+    mob["tech_support_bonus"] = tech_support_bonus(stats.technique)
+
+    calculated_hp = max_hp(mob["level"], stats.constitution)
+    mob["max_hp"] = overrides.get("max_hp", calculated_hp)
+    mob["current_hp"] = overrides.get("current_hp", mob["max_hp"])
+    for field in ("armor", "shield", "reactions", "vigilance"):
+        if field in overrides:
+            mob[field] = overrides[field]
+
+    contact_bonus, distance_bonus = implant_damage_bonuses(mob["implants"], mob["level"])
+    mob["weapon_cards"] = [
+        apply_weapon_damage_bonuses(
+            resolve_weapon(
+                weapon, mob["level"],
+                perception=stats.perception,
+                technique=stats.technique,
+            ),
+            contact_bonus=contact_bonus,
+            distance_bonus=distance_bonus,
+        )
+        for weapon in mob["weapons"]
+    ]
+    mob["implant_cards"] = [
+        resolve_implant(
+            implant, mob["level"], mob["max_hp"], technique=stats.technique
+        )
+        for implant in mob["implants"]
+    ]
 
 
 def serialize_mob(mob):
@@ -415,6 +476,7 @@ def rebuild_mob(weapons, implants, data):
             if item_id in implant_by_id
         ],
         abilities=data.get("abilities", []),
+        overrides=data.get("overrides", {}),
     )
 
 def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):
