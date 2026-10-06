@@ -128,41 +128,42 @@ def monster_builder_role(request):
 def monster_builder_weapon(request):
     if request.method != "POST":
         return redirect("monster_builder")
-
     form = MobWeaponForm(request.POST)
     saved = request.session.get("monster_builder_mobs", [])
     if not form.is_valid():
         return redirect("monster_builder")
-
     index = form.cleaned_data["index"]
     if not 0 <= index < len(saved):
         return redirect("monster_builder")
 
     data = saved[index]
-    weapon_ids = list(data.get("weapon_ids", []))
+    refs = data.get("weapons")
+    if refs is None:
+        refs = [{"source": "catalogue", "id": item_id} for item_id in data.get("weapon_ids", [])]
+    refs = list(refs)
     action = form.cleaned_data["action"]
     weapon_index = form.cleaned_data.get("weapon_index")
     weapon_id = form.cleaned_data.get("weapon_id")
 
-    if action in ("add", "replace"):
-        if weapon_id is None or not MobWeapon.objects.filter(id=weapon_id).exists():
-            return redirect("monster_builder")
+    if action in ("add", "replace") and (
+        weapon_id is None or not MobWeapon.objects.filter(id=weapon_id).exists()
+    ):
+        return _builder_redirect_editing(request, index)
 
+    ref = {"source": "catalogue", "id": weapon_id}
     if action == "add":
-        weapon_ids.append(weapon_id)
+        refs.append(ref)
     elif action == "replace":
-        if weapon_index is None or not 0 <= weapon_index < len(weapon_ids):
-            return redirect("monster_builder")
-        weapon_ids[weapon_index] = weapon_id
+        if weapon_index is None or not 0 <= weapon_index < len(refs):
+            return _builder_redirect_editing(request, index)
+        refs[weapon_index] = ref
     elif action == "remove":
-        if weapon_index is None or not 0 <= weapon_index < len(weapon_ids):
-            return redirect("monster_builder")
-        # Keep one weapon until the zero-weapon draft renderer is implemented.
-        if len(weapon_ids) <= 1:
-            return redirect("monster_builder")
-        weapon_ids.pop(weapon_index)
+        if weapon_index is None or not 0 <= weapon_index < len(refs) or len(refs) <= 1:
+            return _builder_redirect_editing(request, index)
+        refs.pop(weapon_index)
 
-    data["weapon_ids"] = weapon_ids
+    data["weapons"] = refs
+    data.pop("weapon_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
