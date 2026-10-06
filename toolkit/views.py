@@ -13,6 +13,13 @@ from .forms import MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponF
 from .services import ensure_game_table
 
 
+def _builder_redirect_editing(request, index):
+    request.session["monster_builder_editing"] = index
+    request.session.modified = True
+    return _builder_redirect_editing(request, index)
+
+
+
 @login_required
 def table_home(request):
     game_table = ensure_game_table(request.user)
@@ -24,6 +31,7 @@ def monster_builder(request):
     weapons = list(MobWeapon.objects.all())
     implants = list(MobImplant.objects.all())
     generated_mobs = []
+    editing_index = request.session.pop("monster_builder_editing", None)
     form = MonsterBuilderForm(request.POST or None)
 
     if request.method == "POST" and request.POST.get("action") == "generate" and form.is_valid():
@@ -75,6 +83,7 @@ def monster_builder(request):
             "generated_mobs": generated_mobs,
             "weapon_groups": weapon_groups,
             "implant_groups": implant_groups,
+            "editing_index": editing_index,
         },
     )
 
@@ -104,7 +113,7 @@ def monster_builder_role(request):
     saved[index] = serialize_mob(rerolled)
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
-    return redirect("monster_builder")
+    return _builder_redirect_editing(request, index)
 
 
 @login_required
@@ -149,7 +158,7 @@ def monster_builder_weapon(request):
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
-    return redirect("monster_builder")
+    return _builder_redirect_editing(request, index)
 
 
 @login_required
@@ -173,7 +182,7 @@ def monster_builder_field(request):
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
-    return redirect("monster_builder")
+    return _builder_redirect_editing(request, index)
 
 
 @login_required
@@ -215,4 +224,4 @@ def monster_builder_implant(request):
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
-    return redirect("monster_builder")
+    return _builder_redirect_editing(request, index)
