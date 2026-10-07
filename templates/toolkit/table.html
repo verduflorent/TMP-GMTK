@@ -12,7 +12,20 @@
                 <strong>{{ mob.name }}</strong>
                 <strong>{{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} PV</strong>
             </header>
-            <p>Armure {{ mob.payload.armor }} · PB {{ mob.payload.shield }} · Réactions {{ mob.payload.reactions }} · Vigilance {{ mob.payload.vigilance }}</p>
+            <p>Armure {{ mob.payload.armor }}</p>
+            <div class="table-resources">
+                {% for resource, label, value in mob.live_resources %}
+                <form method="post" action="{% url 'table_mob_resource' mob.id %}" style="display:flex;gap:.3rem;align-items:center;margin:.25rem 0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="resource" value="{{ resource }}">
+                    <strong>{{ label }} {{ value }}</strong>
+                    <input type="number" name="value" value="10" min="0" style="width:4rem;">
+                    <button name="action" value="subtract" type="submit">−</button>
+                    <button name="action" value="add" type="submit">+</button>
+                    <button name="action" value="reset" type="submit">↺</button>
+                </form>
+                {% endfor %}
+            </div>
             {% for weapon in mob.payload.weapons %}
                 <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée +{{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
             {% endfor %}
