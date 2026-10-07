@@ -953,3 +953,16 @@ def table_load_encounter(request):
                 rank=table.builder_mobs.count(),
             )
     return redirect("table")
+
+
+@login_required
+def table_clear(request):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    table.builder_mobs.all().delete()
+    table.instances.all().delete()
+    request.session.pop("table_roll_result", None)
+    request.session.pop("universal_roll_result", None)
+    request.session.modified = True
+    return redirect("table")
