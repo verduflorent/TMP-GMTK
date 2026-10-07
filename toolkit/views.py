@@ -812,10 +812,26 @@ def table_universal_roll(request):
 
 @login_required
 def encounters_home(request):
-    encounters = Encounter.objects.filter(owner=request.user).select_related("folder").prefetch_related("draft_mobs")
-    bestiary = BestiaryMob.objects.filter(owner=request.user).order_by("name")
     folders = UserFolder.objects.filter(owner=request.user)
-    return render(request, "toolkit/encounters.html", {"encounters": encounters, "bestiary_mobs": bestiary, "folders": folders})
+    folder_filter = request.GET.get("folder", "all")
+    encounters = Encounter.objects.filter(owner=request.user).select_related("folder").prefetch_related("draft_mobs")
+    if folder_filter == "unclassified":
+        encounters = encounters.filter(folder__isnull=True)
+    elif folder_filter != "all":
+        try:
+            folder_id = int(folder_filter)
+        except ValueError:
+            folder_filter = "all"
+        else:
+            if folders.filter(id=folder_id).exists():
+                encounters = encounters.filter(folder_id=folder_id)
+            else:
+                folder_filter = "all"
+    bestiary = BestiaryMob.objects.filter(owner=request.user).order_by("name")
+    return render(request, "toolkit/encounters.html", {
+        "encounters": encounters, "bestiary_mobs": bestiary,
+        "folders": folders, "folder_filter": folder_filter,
+    })
 
 
 @login_required
