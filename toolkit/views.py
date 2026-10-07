@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, UniversalRollerForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -803,17 +803,7 @@ def table_mob_roll_stat(request, mob_id):
 def table_universal_roll(request):
     if request.method != "POST":
         return redirect("table")
-    form = UniversalRollerForm(request.POST)
-    if not form.is_valid():
-        return redirect("table")
-    base = form.cleaned_data["threshold"]
-    modifier = form.cleaned_data.get("modifier") or 0
-    threshold = base + modifier
-    roll = random.randint(1, 20)
-    request.session["universal_roll_result"] = {
-        "label": (form.cleaned_data.get("label") or "Jet").strip(),
-        "base": base, "modifier": modifier, "threshold": threshold,
-        "roll": roll, "success": roll <= threshold,
-    }
+    request.session["universal_roll_result"] = random.randint(1, 20)
     request.session.modified = True
     return redirect("table")
+
