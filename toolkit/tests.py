@@ -280,7 +280,7 @@ class MonsterBuilderViewTests(TestCase):
         )
         self.assertContains(
             response,
-            ".mob-card.is-editing .view-only { display: none !important; }",
+            ".mob-card.is-editing .edit-only { display: none !important; }",
         )
 
 
@@ -401,7 +401,8 @@ class MonsterBuilderViewTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.context["editing_index"], 1)
-        self.assertContains(response, "mob-card is-editing", count=1)
+        self.assertEqual(response.context["editing_index"], 1)
+        self.assertContains(response, 'id="mob-edit-1"', count=1)
 
 
     def test_custom_ability_fixed_effect_is_rendered(self):
