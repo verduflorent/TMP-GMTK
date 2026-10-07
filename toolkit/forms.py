@@ -128,3 +128,8 @@ class TableMobResourceForm(forms.Form):
 
 class TableConditionForm(forms.Form):
     name = forms.CharField(max_length=80)
+
+
+class TableWeaponRollForm(forms.Form):
+    modifier = forms.IntegerField(required=False, initial=0)
+    mode = forms.ChoiceField(choices=[("default", "Standard"), ("contact", "Contact"), ("distance", "Distance")], required=False)
