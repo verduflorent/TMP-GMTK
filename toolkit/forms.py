@@ -152,3 +152,11 @@ class EncounterCreateForm(forms.Form):
 class EncounterMobAddForm(forms.Form):
     bestiary_id = forms.IntegerField(min_value=1)
     quantity = forms.IntegerField(min_value=1, max_value=50)
+
+
+class TableEncounterSaveForm(forms.Form):
+    name = forms.CharField(max_length=120)
+
+
+class TableEncounterLoadForm(forms.Form):
+    encounter_id = forms.IntegerField(min_value=1)
