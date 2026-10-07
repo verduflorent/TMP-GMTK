@@ -1014,3 +1014,20 @@ class ScenarioFolderTests(TestCase):
         self.assertContains(response, 'class="mob-edit-dialog"', count=2)
         self.assertContains(response, "Profil & niveau", count=2)
         self.assertContains(response, "Ressources", count=2)
+
+
+    def test_mob_edit_modal_stays_active_after_repeated_weapon_additions(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        weapon = MobWeapon.objects.first()
+        self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "action": "add", "weapon_id": weapon.id},
+        )
+        response = self.client.get(reverse("monster_builder"))
+        self.assertEqual(response.context["editing_index"], 0)
+        response = self.client.get(reverse("monster_builder"))
+        self.assertEqual(response.context["editing_index"], 0)
