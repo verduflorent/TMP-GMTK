@@ -1004,3 +1004,11 @@ class ScenarioFolderTests(TestCase):
         response = self.client.get(reverse("encounters"), {"folder": folder.id})
         self.assertContains(response, "Planque")
         self.assertNotContains(response, "Impro")
+
+
+    def test_builder_renders_dedicated_edit_dialog_for_each_mob(self):
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
+        response = self.client.get(reverse("monster_builder"))
+        self.assertContains(response, 'class="mob-edit-dialog"', count=2)
+        self.assertContains(response, "Profil &amp; niveau", count=2)
+        self.assertContains(response, "Ressources", count=2)
