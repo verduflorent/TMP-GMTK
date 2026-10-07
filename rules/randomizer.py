@@ -338,7 +338,7 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     }
 
 
-def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, overrides=None):
+def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, overrides=None, akimbo=False):
     """Build an editable draft from unrestricted equipment lists."""
     if not weapons:
         raise ValueError("Un brouillon Mob doit conserver au moins une arme pour le moment.")
@@ -348,12 +348,14 @@ def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, ove
         profile=profile,
         primary=weapons[0],
         secondary=weapons[1] if len(weapons) > 1 else None,
-        akimbo=False,
+        akimbo=akimbo,
         implants=implants,
     )
     stats = mob["stats"]
     from rules.engine import resolve_weapon
     mob["weapons"] = weapons
+    mob["akimbo"] = akimbo
+    mob["akimbo_identical"] = bool(akimbo and len(weapons) == 2 and weapons[0].id == weapons[1].id and type(weapons[0]) is type(weapons[1]))
     from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses
     contact_bonus, distance_bonus = implant_damage_bonuses(implants, level)
     mob["weapon_cards"] = [
@@ -502,6 +504,7 @@ def serialize_mob(mob):
         "implants": [_implant_ref(item) for item in mob["implants"]],
         "abilities": list(mob.get("abilities", [])),
         "overrides": dict(mob.get("overrides", {})),
+        "akimbo": bool(mob.get("akimbo", False)),
     }
 
 
@@ -534,8 +537,10 @@ def rebuild_mob(weapons, implants, data, user_weapons=None, user_implants=None):
         elif source == "catalogue" and item_id in weapon_by_id:
             selected_weapons.append(weapon_by_id[item_id])
 
+    if data.get("akimbo") and (len(selected_weapons) != 2 or any(weapon.hands != 1 for weapon in selected_weapons)):
+        raise ValueError("Akimbo exige exactement deux armes à une main.")
     mob = assemble_draft_mob(
-        level=data["level"], profile=data["profile"], weapons=selected_weapons,
+        level=data["level"], profile=data["profile"], weapons=selected_weapons, akimbo=bool(data.get("akimbo", False)),
         implants=[
             (user_implant_by_id[ref["id"]] if ref.get("source") == "user" else implant_by_id[ref["id"]])
             for ref in (
