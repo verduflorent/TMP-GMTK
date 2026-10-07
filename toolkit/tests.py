@@ -616,7 +616,7 @@ class BestiaryWorkflowTests(TestCase):
         drafts = self.client.session["monster_builder_mobs"]
         self.assertEqual(len(drafts), 3)
         self.assertTrue(all(draft["name"] == "Garde Kurogane" for draft in drafts))
-        self.assertContains(response, "Garde Kurogane", count=3)
+        self.assertContains(response, "<strong>Garde Kurogane", count=3, html=False)
 
 
     def test_manual_level_edit_recalculates_level_scaled_values(self):
@@ -1007,6 +1007,8 @@ class ScenarioFolderTests(TestCase):
 
 
     def test_builder_renders_dedicated_edit_dialog_for_each_mob(self):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
         response = self.client.get(reverse("monster_builder"))
         self.assertContains(response, 'class="mob-edit-dialog"', count=2)
