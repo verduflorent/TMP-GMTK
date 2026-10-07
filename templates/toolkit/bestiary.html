@@ -2,6 +2,17 @@
 {% block title %}Bestiaire — TMP-GMTK{% endblock %}
 {% block content %}
 <h1>Bestiaire</h1>
+<form method="get" style="display:flex;gap:.4rem;align-items:center;margin-bottom:1rem;">
+    <label>Afficher
+        <select name="folder" onchange="this.form.submit()">
+            <option value="all"{% if folder_filter == "all" %} selected{% endif %}>Tout</option>
+            {% for folder in folders %}
+            <option value="{{ folder.id }}"{% if folder_filter == folder.id|stringformat:"s" %} selected{% endif %}>{{ folder.name }}</option>
+            {% endfor %}
+            <option value="unclassified"{% if folder_filter == "unclassified" %} selected{% endif %}>Non classé</option>
+        </select>
+    </label>
+</form>
 <p>Mobs sauvegardés et réutilisables.</p>
 <form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
     {% csrf_token %}<input type="hidden" name="next" value="bestiary">
