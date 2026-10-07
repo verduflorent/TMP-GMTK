@@ -19,6 +19,20 @@
   .mob-card .print-hide { display:none !important; }
 }
 @media screen { .print-only { display:none; } }
+
+.roll-result-dialog{width:min(420px,92vw);padding:1.8rem;text-align:center;background:#faf8f0;color:#13233b;border:2px solid #b21b2c;border-radius:14px;box-shadow:0 22px 75px #0006}
+.roll-result-dialog::backdrop{background:#0d1c36a8}
+.roll-modal-inner{display:grid;justify-items:center;gap:.75rem}
+.roll-modal-eyebrow{font-family:Anton,Impact,sans-serif;color:#b21b2c;letter-spacing:.1em}
+.roll-modal-actor{font-size:1.15rem}
+.roll-modal-die{display:grid;place-items:center;width:100px;height:110px;clip-path:polygon(50% 0%,95% 30%,82% 88%,50% 100%,18% 88%,5% 30%);background:#b21b2c;color:white;font:700 2.7rem Anton,Impact,sans-serif}
+.roll-modal-die.rolling{animation:tmp-die-reveal .48s cubic-bezier(.2,.8,.2,1)}
+@keyframes tmp-die-reveal{0%{transform:rotate(-24deg) scale(.65);opacity:.2}65%{transform:rotate(8deg) scale(1.12)}100%{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.roll-modal-die.rolling{animation:none}}
+.roll-modal-outcome{font:700 1.6rem Anton,Impact,sans-serif}
+.roll-modal-close{margin-top:.5rem}
+.mob-last-roll{margin-top:auto;border-top:1px solid #b7bec9;padding-top:.5rem;font-size:.82rem;font-weight:700;color:#193252}
+@media print{.roll-result-dialog,.mob-last-roll{display:none!important}}
 </style>
 
 <div class="table-heading">
@@ -171,6 +185,7 @@
                     </form>
                 </div>
             {% endfor %}
+            <div class="mob-last-roll table-screen-only" data-last-roll hidden aria-live="polite"></div>
             <div class="print-gear">{% for implant in mob.payload.implants %}
                 <p><strong>{{ implant.name }}</strong>{% if implant.property_lines %} — {{ implant.property_lines|join:" · " }}{% endif %}</p>
             {% endfor %}</div>
@@ -195,6 +210,16 @@
         {% if not builder_mobs %}<p>Aucun Mob sur la Table.</p>{% endif %}
     {% endfor %}
 </section>
+<dialog id="weapon-roll-dialog" class="roll-result-dialog" aria-labelledby="roll-result-title">
+    <div class="roll-modal-inner">
+        <p class="roll-modal-eyebrow" id="roll-result-title">JET D'ATTAQUE</p>
+        <strong class="roll-modal-actor" data-roll-actor></strong>
+        <div class="roll-modal-die" data-roll-die>20</div>
+        <strong class="roll-modal-outcome" data-roll-outcome></strong>
+        <p class="roll-modal-details" data-roll-details></p>
+        <button type="button" class="roll-modal-close" onclick="this.closest('dialog').close()">Fermer</button>
+    </div>
+</dialog>
 <section class="dice-dock table-screen-only" aria-label="Dé universel">
     <div class="dice-caption"><strong>Lancer un D20</strong><span>Un dé pour vos jets de jeu.</span></div>
     <form method="post" action="{% url 'table_universal_roll' %}">
@@ -203,6 +228,11 @@
     <output class="dice-result" aria-live="polite">{% if universal_roll_result %}{{ universal_roll_result }}{% else %}—{% endif %}</output><a class="add-mob-link" href="{% url 'monster_builder' %}">+ Ajouter un adversaire</a>
 </section>
 <script>
+document.addEventListener("click",function(event){
+ const dialog=document.getElementById("weapon-roll-dialog");
+ if(!dialog||!dialog.open)return;
+ if(event.target===dialog)dialog.close();
+});
 function editToken(button) {
   const form=button.nextElementSibling;
   button.hidden=true;
@@ -252,9 +282,21 @@ document.addEventListener("submit", async function(event) {
       window.dispatchEvent(new CustomEvent("tmp:roll",{detail:{roll:result.roll}}));
     }
     if(result.result){
-      let panel=document.getElementById("combat-roll-feedback");
-      if(!panel){panel=document.createElement("div");panel.id="combat-roll-feedback";panel.setAttribute("role","status");form.closest(".mob-card")?.appendChild(panel);}
-      if(panel)panel.textContent=result.result.weapon+" — d20 "+result.result.roll+" — "+(result.result.success?"TOUCHÉ · "+result.result.damage+" dégâts":"RATÉ");
+      const card=form.closest(".mob-card");
+      const roll=result.result;
+      const summary=roll.weapon+" · d20 "+roll.roll+" / "+roll.aim+" · "+(roll.success?"TOUCHÉ · "+roll.damage+" dégâts":"RATÉ");
+      const last=card?.querySelector("[data-last-roll]");
+      if(last){last.textContent=summary;last.hidden=false;}
+      const dialog=document.getElementById("weapon-roll-dialog");
+      if(dialog){
+        dialog.querySelector("[data-roll-actor]").textContent=roll.mob+" — "+roll.weapon;
+        const die=dialog.querySelector("[data-roll-die]");
+        die.textContent=roll.roll;
+        die.classList.remove("rolling");void die.offsetWidth;die.classList.add("rolling");
+        dialog.querySelector("[data-roll-outcome]").textContent=roll.success?"TOUCHÉ":"RATÉ";
+        dialog.querySelector("[data-roll-details]").textContent="d20 "+roll.roll+" / Visée "+roll.aim+(roll.success?" · "+roll.damage+" dégâts":"");
+        if(!dialog.open)dialog.showModal();
+      }
     }
   } catch(error) {
     console.error("Combat action failed",error);
