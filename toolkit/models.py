@@ -205,6 +205,18 @@ class TableMob(models.Model):
         return f"{self.name} — N{self.level}"
 
 
+class TableCondition(models.Model):
+    mob = models.ForeignKey(TableMob, on_delete=models.CASCADE, related_name="conditions")
+    name = models.CharField(max_length=80)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self):
+        return self.name
+
+
 class TableInstance(models.Model):
     game_table = models.ForeignKey(GameTable, on_delete=models.CASCADE, related_name="instances")
     source = models.ForeignKey(
