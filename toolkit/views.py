@@ -468,6 +468,13 @@ def table_mob_edit(request, mob_id):
         return JsonResponse({
             "ok": True, "id": mob.id, "name": mob.name,
             "profile": mob.profile, "level": mob.level, "payload": mob.payload,
+            "catalogue": {
+                "weapons": [{"source": "catalogue", "id": w.id, "name": w.name} for w in MobWeapon.objects.all().order_by("name")],
+                "implants": [{"source": "catalogue", "id": i.id, "name": i.name} for i in MobImplant.objects.all().order_by("name")],
+                "user_weapons": [{"source": "user", "id": w.id, "name": w.name} for w in UserWeapon.objects.filter(owner=request.user).order_by("name")],
+                "user_implants": [{"source": "user", "id": i.id, "name": i.name} for i in UserImplant.objects.filter(owner=request.user).order_by("name")],
+                "abilities": [{"id": a.id, "name": a.name, "draft": a.as_draft()} for a in UserAbility.objects.filter(owner=request.user).order_by("name")],
+            },
         })
     if request.method != "POST":
         return HttpResponseNotAllowed(["GET", "POST"])
@@ -494,10 +501,63 @@ def table_mob_edit(request, mob_id):
     if not form.is_valid():
         return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
 
+    # Equipment edits use the same draft/rebuild pipeline as Monster Builder.
+    import json
+    draft = dict(mob.payload.get("draft") or {})
+    requested = {}
+    for kind in ("weapons", "implants", "abilities"):
+        try:
+            requested[kind] = json.loads(request.POST.get(kind, "null"))
+        except (ValueError, TypeError):
+            return JsonResponse({"ok": False, "errors": {kind: ["Format JSON invalide."]}}, status=400)
+        if requested[kind] is not None and not isinstance(requested[kind], list):
+            return JsonResponse({"ok": False, "errors": {kind: ["Liste attendue."]}}, status=400)
+
+    for kind, catalogue, owned in (
+        ("weapons", MobWeapon, UserWeapon),
+        ("implants", MobImplant, UserImplant),
+    ):
+        if requested[kind] is None:
+            continue
+        refs = requested[kind]
+        if kind == "weapons" and not refs:
+            return JsonResponse({"ok": False, "errors": {kind: ["Au moins une arme est nécessaire."]}}, status=400)
+        for ref in refs:
+            if not isinstance(ref, dict) or ref.get("source") not in ("catalogue", "user") or type(ref.get("id")) is not int:
+                return JsonResponse({"ok": False, "errors": {kind: ["Référence invalide."]}}, status=400)
+            queryset = catalogue.objects if ref["source"] == "catalogue" else owned.objects.filter(owner=request.user)
+            if not queryset.filter(id=ref["id"]).exists():
+                return JsonResponse({"ok": False, "errors": {kind: ["Équipement introuvable."]}}, status=400)
+        draft[kind] = refs
+        draft.pop("weapon_ids" if kind == "weapons" else "implant_ids", None)
+
+    if requested["abilities"] is not None:
+        abilities = requested["abilities"]
+        if any(not isinstance(a, dict) or not isinstance(a.get("name"), str) or not a["name"].strip() or len(a["name"]) > 120 for a in abilities):
+            return JsonResponse({"ok": False, "errors": {"abilities": ["Capacité invalide."]}}, status=400)
+        draft["abilities"] = abilities
+
+    equipment_changed = any(requested[kind] is not None for kind in ("weapons", "implants", "abilities"))
+    rebuilt_payload = None
+    if equipment_changed:
+        draft["level"] = form.cleaned_data["level"]
+        draft["name"] = form.cleaned_data["name"]
+        try:
+            rebuilt = rebuild_mob(
+                list(MobWeapon.objects.all()), list(MobImplant.objects.all()), draft,
+                list(UserWeapon.objects.filter(owner=request.user)),
+                list(UserImplant.objects.filter(owner=request.user)),
+            )
+            rebuilt_payload = _table_payload(rebuilt)
+        except (ValueError, KeyError, TypeError) as exc:
+            return JsonResponse({"ok": False, "errors": {"equipment": [str(exc)]}}, status=400)
     values = form.cleaned_data
     if values["current_hp"] > values["max_hp"]:
         return JsonResponse({"ok": False, "errors": {"current_hp": ["Les PV dépassent le maximum."]}}, status=400)
     payload = dict(mob.payload)
+    if rebuilt_payload is not None:
+        for key in ("weapons", "implants", "abilities", "stat_modifiers", "draft"):
+            payload[key] = rebuilt_payload[key]
     payload.update({key: values[key] for key in (
         "current_hp", "max_hp", "shield", "armor", "reactions", "vigilance"
     )})
