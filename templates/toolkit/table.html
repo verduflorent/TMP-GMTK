@@ -1,5 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Table de jeu — TMP-GMTK{% endblock %}
+{% block title %}Table de jeu — TMP-GMTK<script>
+document.querySelectorAll('.resource-dialog').forEach(function(dialog){
+  dialog.querySelectorAll('[data-folder-filter]').forEach(function(button){
+    button.addEventListener('click', function(){
+      const wanted = button.dataset.folderFilter;
+      dialog.querySelectorAll('.resource-choice').forEach(function(card){
+        card.hidden = wanted !== 'all' && card.dataset.folder !== wanted;
+      });
+    });
+  });
+});
+</script>
+{% endblock %}
 {% block content %}
 <div style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Table de jeu</h1>
@@ -25,15 +37,27 @@
             <input name="name" placeholder="Nom de la rencontre" required maxlength="120">
             <button type="submit">Sauvegarder la Table</button>
         </form>
-        {% if encounters %}
-        <form method="post" action="{% url 'table_load_encounter' %}" style="display:flex;gap:.35rem;">
-            {% csrf_token %}
-            <select name="encounter_id">
-                {% for encounter in encounters %}<option value="{{ encounter.id }}">{{ encounter.name }}</option>{% endfor %}
-            </select>
-            <button type="submit">Charger sur la Table</button>
-        </form>
-        {% endif %}
+        <button type="button" onclick="document.getElementById('load-encounter-dialog').showModal()">Charger une rencontre</button>
+        <dialog class="confirm-dialog resource-dialog" id="load-encounter-dialog">
+            <h2>Charger une rencontre</h2>
+            <div>
+                <button type="button" data-folder-filter="all">Tout</button>
+                {% for folder in folders %}<button type="button" data-folder-filter="{{ folder.id }}">{{ folder.name }}</button>{% endfor %}
+                <button type="button" data-folder-filter="unclassified">Non classé</button>
+            </div>
+            <div class="resource-picker">
+                {% for encounter in encounters %}
+                <article class="panel resource-choice" data-folder="{% if encounter.folder_id %}{{ encounter.folder_id }}{% else %}unclassified{% endif %}">
+                    <strong>{{ encounter.name }}</strong>
+                    <p>{% if encounter.folder %}{{ encounter.folder.name }}{% else %}Non classé{% endif %}</p>
+                    <form method="post" action="{% url 'table_load_encounter' %}">
+                        {% csrf_token %}<input type="hidden" name="encounter_id" value="{{ encounter.id }}"><button type="submit">Charger</button>
+                    </form>
+                </article>
+                {% empty %}<p>Aucune rencontre sauvegardée.</p>{% endfor %}
+            </div>
+            <button type="button" onclick="this.closest('dialog').close()">Fermer</button>
+        </dialog>
     </div>
 </section>
 
