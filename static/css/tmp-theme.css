@@ -27,3 +27,22 @@ dialog::backdrop{background:#10254ba6}
 .stats div{background:#f3f3ee;border-color:var(--tmp-line)}
 @media(max-width:760px){main{padding:.8rem}.site-brand img.brand-wordmark{width:min(290px,62vw)}.site-header{gap:.5rem}}
 @media print{.site-header{display:none!important}body{background:white;color:black}main{max-width:none;padding:0}}
+
+/* TMP editorial shell — official transparent assets */
+.site-header{position:relative;display:grid;grid-template-columns:minmax(280px,1fr) auto;grid-template-areas:"brand utility" "nav nav";gap:.65rem 1.5rem;padding:1.15rem clamp(1rem,3vw,2.8rem) .15rem;background:linear-gradient(120deg,#fffef9 0%,#f6f3e9 100%);border-bottom:4px solid var(--tmp-red);box-shadow:0 5px 20px #10254b12}
+.site-header:before{content:"";position:absolute;top:0;left:0;width:175px;height:5px;background:var(--tmp-navy)}
+.site-brand{grid-area:brand;display:flex;align-items:center;gap:1.1rem;width:max-content;max-width:100%;padding:.15rem 0 .35rem}
+.site-brand .brand-mark{width:76px;height:76px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 1px #8b112015)}
+.site-brand .brand-wordmark{width:min(560px,53vw);max-height:95px;object-fit:contain;object-position:left center}
+.site-brand .brand-fallback{font-family:"Anton",Impact,sans-serif;font-size:clamp(1.1rem,2vw,2rem);line-height:1;letter-spacing:.03em;color:var(--tmp-ink)}
+.site-header>.site-logout{grid-area:utility;justify-self:end;align-self:center}
+.site-logout button{background:transparent;border:1px solid #c4c9d0;color:var(--tmp-navy);font-size:.83rem;text-transform:uppercase;letter-spacing:.09em;padding:.5rem .75rem}
+.site-logout button:hover{background:var(--tmp-navy);color:white}
+.site-nav{grid-area:nav;display:flex;align-items:stretch;gap:0;border-top:1px solid #c6cbd2;overflow-x:auto}
+.site-nav a{position:relative;white-space:nowrap;padding:.85rem 1.45rem .75rem;font-family:"Rajdhani","Arial Narrow",sans-serif;font-weight:700;font-size:1.07rem;letter-spacing:.075em;border-bottom:4px solid transparent;transition:background .15s,color .15s}
+.site-nav a:hover{background:#e8e9e6;color:var(--tmp-red)}
+.site-nav a[aria-current="page"]{background:var(--tmp-navy);color:white;border-bottom-color:var(--tmp-red)}
+main>h1,main>section>h2{position:relative}
+.panel{box-shadow:0 2px 0 #1427440b}
+@media(max-width:800px){.site-header{grid-template-columns:minmax(0,1fr) auto}.site-brand{gap:.5rem}.site-brand .brand-mark{width:52px;height:52px}.site-brand .brand-wordmark{width:min(390px,55vw)}.site-nav a{padding:.7rem .9rem}}
+@media(max-width:510px){.site-header{padding:.8rem .7rem .1rem}.site-brand .brand-mark{width:42px;height:42px}.site-brand .brand-wordmark{width:min(260px,56vw)}.site-logout button{font-size:.7rem;padding:.35rem}.site-nav a{font-size:.9rem;padding:.65rem .6rem}}
