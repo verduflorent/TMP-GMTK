@@ -32,6 +32,7 @@ urlpatterns = [
     path("table/mob/<int:mob_id>/edit/", views.table_mob_edit, name="table_mob_edit"),
     path("table/mob/<int:mob_id>/delete/", views.table_mob_delete, name="table_mob_delete"),
     path("table/mob/<int:mob_id>/resource/", views.table_mob_resource, name="table_mob_resource"),
+    path("table/mob/<int:mob_id>/token-id/", views.table_mob_token_id, name="table_mob_token_id"),
     path("table/mob/<int:mob_id>/weapon/<int:weapon_index>/roll/", views.table_mob_roll_weapon, name="table_mob_roll_weapon"),
     path("table/mob/<int:mob_id>/roll/", views.table_mob_roll_stat, name="table_mob_roll_stat"),
     path("table/next-round/", views.table_next_round, name="table_next_round"),
