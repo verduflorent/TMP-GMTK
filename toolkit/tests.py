@@ -1154,3 +1154,28 @@ class ScenarioFolderTests(TestCase):
             self.assertIsNone(refresh.context["editing_index"])
 
 
+
+
+class ModalResourcePickerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="modalpickers", password="pwd")
+        self.client.login(username="modalpickers", password="pwd")
+
+    def test_table_encounter_picker_is_modal_and_folder_aware(self):
+        from .models import UserFolder
+        folder = UserFolder.objects.create(owner=self.user, name="Épisode 1")
+        Encounter.objects.create(owner=self.user, folder=folder, name="Parking")
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, 'id="load-encounter-dialog"')
+        self.assertContains(response, 'data-folder-filter="' + str(folder.id) + '"')
+        self.assertNotContains(response, '<select name="encounter_id">')
+
+    def test_encounter_bestiary_picker_is_modal_and_folder_aware(self):
+        from .models import UserFolder
+        folder = UserFolder.objects.create(owner=self.user, name="Épisode 2")
+        BestiaryMob.objects.create(owner=self.user, folder=folder, name="Ronin", profile="A", level=5)
+        Encounter.objects.create(owner=self.user, name="Finale")
+        response = self.client.get(reverse("encounters"))
+        self.assertContains(response, "encounter-mob-dialog-")
+        self.assertContains(response, 'data-folder="' + str(folder.id) + '"')
+        self.assertNotContains(response, '<select name="bestiary_id">')
