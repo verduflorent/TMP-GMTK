@@ -458,21 +458,58 @@ def monster_builder_validate(request):
 
 @login_required
 def table_mob_edit(request, mob_id):
-    if request.method != "POST":
-        return redirect("table")
+    """Edit a live TableMob in place; never move or delete it."""
+    from django.http import HttpResponseNotAllowed
+    from django.shortcuts import get_object_or_404
+
     table = ensure_game_table(request.user)
-    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
-    if mob is None:
-        return redirect("table")
+    mob = get_object_or_404(TableMob, id=mob_id, game_table=table)
+    if request.method == "GET":
+        return JsonResponse({
+            "ok": True, "id": mob.id, "name": mob.name,
+            "profile": mob.profile, "level": mob.level, "payload": mob.payload,
+        })
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["GET", "POST"])
 
-    saved = request.session.get("monster_builder_mobs", [])
-    saved.append(mob.payload["draft"])
-    request.session["monster_builder_mobs"] = saved
-    request.session["monster_builder_reopen_index"] = len(saved) - 1
-    request.session.modified = True
-    mob.delete()
-    return redirect("monster_builder")
+    from django import forms
 
+    class LiveMobEditForm(forms.Form):
+        name = forms.CharField(max_length=120)
+        level = forms.IntegerField(min_value=1, max_value=99)
+        current_hp = forms.IntegerField(min_value=0)
+        max_hp = forms.IntegerField(min_value=1)
+        shield = forms.IntegerField(min_value=0)
+        armor = forms.IntegerField(min_value=0)
+        reactions = forms.IntegerField(min_value=0)
+        vigilance = forms.IntegerField(min_value=0)
+        force = forms.IntegerField(min_value=0, max_value=99)
+        agility = forms.IntegerField(min_value=0, max_value=99)
+        perception = forms.IntegerField(min_value=0, max_value=99)
+        technique = forms.IntegerField(min_value=0, max_value=99)
+        constitution = forms.IntegerField(min_value=0, max_value=99)
+        willpower = forms.IntegerField(min_value=0, max_value=99)
+
+    form = LiveMobEditForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({"ok": False, "errors": form.errors.get_json_data()}, status=400)
+
+    values = form.cleaned_data
+    if values["current_hp"] > values["max_hp"]:
+        return JsonResponse({"ok": False, "errors": {"current_hp": ["Les PV dépassent le maximum."]}}, status=400)
+    payload = dict(mob.payload)
+    payload.update({key: values[key] for key in (
+        "current_hp", "max_hp", "shield", "armor", "reactions", "vigilance"
+    )})
+    stats = dict(payload.get("stats", {}))
+    for key in ("force", "agility", "perception", "technique", "constitution", "willpower"):
+        stats[key] = values[key]
+    payload["stats"] = stats
+    mob.name = values["name"]
+    mob.level = values["level"]
+    mob.payload = payload
+    mob.save(update_fields=["name", "level", "payload", "updated_at"])
+    return JsonResponse({"ok": True, "id": mob.id, "name": mob.name, "level": mob.level, "payload": payload})
 
 @login_required
 def table_mob_delete(request, mob_id):
