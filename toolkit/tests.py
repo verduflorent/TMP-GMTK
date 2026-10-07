@@ -862,23 +862,10 @@ class UserImplantLibraryTests(TestCase):
             self.assertEqual(result["roll_damage"], 10)
 
 
-    def test_universal_table_roll_uses_selected_stat_and_modifier(self):
+    def test_universal_table_roll_is_a_bare_d20(self):
         from unittest.mock import patch
-        from .models import TableMob
 
-        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
-        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
-        mob = TableMob.objects.get(game_table__owner=self.user)
-        agility = mob.payload["stats"]["agility"]
+        with patch("toolkit.views.random.randint", return_value=13):
+            response = self.client.post(reverse("table_universal_roll"), follow=True)
+        self.assertEqual(response.context["universal_roll_result"], 13)
 
-        with patch("toolkit.views.random.randint", return_value=8):
-            response = self.client.post(
-                reverse("table_mob_roll_stat", args=[mob.id]),
-                {"stat": "agility", "modifier": -2},
-                follow=True,
-            )
-        result = response.context["roll_result"]
-        self.assertEqual(result["weapon"], "AGI")
-        self.assertEqual(result["aim"], agility - 2)
-        self.assertEqual(result["roll"], 8)
-        self.assertEqual(result["success"], 8 <= agility - 2)
