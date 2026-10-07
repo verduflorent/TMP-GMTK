@@ -413,6 +413,8 @@ def _table_payload(mob):
         ],
         "abilities": mob["abilities"],
         "draft": serialize_mob(mob),
+        "akimbo": bool(mob.get("akimbo", False)),
+        "akimbo_identical": bool(mob.get("akimbo_identical", False)),
     }
 
 
@@ -469,9 +471,9 @@ def table_mob_edit(request, mob_id):
             "ok": True, "id": mob.id, "name": mob.name,
             "profile": mob.profile, "level": mob.level, "payload": mob.payload,
             "catalogue": {
-                "weapons": [{"source": "catalogue", "id": w.id, "name": w.name} for w in MobWeapon.objects.all().order_by("name")],
+                "weapons": [{"source": "catalogue", "id": w.id, "name": w.name, "hands": w.hands} for w in MobWeapon.objects.all().order_by("name")],
                 "implants": [{"source": "catalogue", "id": i.id, "name": i.name} for i in MobImplant.objects.all().order_by("name")],
-                "user_weapons": [{"source": "user", "id": w.id, "name": w.name} for w in UserWeapon.objects.filter(owner=request.user).order_by("name")],
+                "user_weapons": [{"source": "user", "id": w.id, "name": w.name, "hands": w.hands} for w in UserWeapon.objects.filter(owner=request.user).order_by("name")],
                 "user_implants": [{"source": "user", "id": i.id, "name": i.name} for i in UserImplant.objects.filter(owner=request.user).order_by("name")],
                 "abilities": [{"id": a.id, "name": a.name, "draft": a.as_draft()} for a in UserAbility.objects.filter(owner=request.user).order_by("name")],
             },
@@ -545,6 +547,12 @@ def table_mob_edit(request, mob_id):
     previous_stats = old_payload.get("stats", {})
     stats_changed = any(values[key] != previous_stats.get(key) for key in stat_keys)
     level_changed = values["level"] != mob.level
+    akimbo = request.POST.get("akimbo") == "1"
+    if akimbo:
+        weapon_refs = draft.get("weapons", [])
+        if len(weapon_refs) != 2:
+            return JsonResponse({"ok": False, "errors": {"akimbo": ["Deux armes requises."]}}, status=400)
+    draft["akimbo"] = akimbo
     equipment_changed = any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
     explicit_max = values["max_hp"] != old_max
     explicit_hp = values["current_hp"] != old_hp
