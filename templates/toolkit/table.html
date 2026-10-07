@@ -18,6 +18,31 @@
   .mob-card .print-hide { display:none !important; }
 }
 @media screen { .print-only { display:none; } }
+.table-combat .mob-grid { grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); align-items:stretch; }
+.table-combat .mob-card { background:#171a20; border:1px solid #353d4a; border-radius:20px; padding:1rem; display:flex; flex-direction:column; gap:.55rem; }
+.table-combat .mob-card-header { border-bottom:1px solid #354052; padding-bottom:.55rem; display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.table-combat .mob-card-header strong:first-child { font-size:1.15rem; text-transform:uppercase; letter-spacing:.04em; }
+.table-combat .mob-card-header strong:last-child { color:#c7d9f4; font-variant-numeric:tabular-nums; }
+.table-combat .combat-resource-row { display:flex; align-items:center; flex-wrap:wrap; gap:.35rem; }
+.table-combat .combat-resource-row strong { min-width:4.5rem; }
+.table-combat .combat-resource-row input { background:#0e131b; border:1px solid #465267; border-radius:6px; color:#fff; padding:.25rem; }
+.table-combat .combat-resource-row button { background:#252e3b; color:#e6edf8; border:1px solid #445168; border-radius:6px; padding:.2rem .45rem; cursor:pointer; }
+.table-combat .combat-resource-row button:hover { border-color:#ef2436; }
+.table-combat .table-stats { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; }
+.table-combat .table-stats span { display:flex; flex-direction:column; align-items:center; background:#111720; border:1px solid #303a49; border-radius:5px; padding:.3rem 0; font-size:.7rem; }
+.table-combat .table-stats b { font-size:1rem; }
+.table-combat .table-stats small { color:#a4b9d6; }
+.table-combat .resource-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; font-size:1rem; }
+.table-combat .resource-icon.vigilance { color:#20b9ef; }
+.table-combat .resource-icon.reactions { color:#ff902e; }
+.table-combat .resource-icon.shield { color:#ae71eb; }
+.table-combat .weapon-row { border-top:1px solid #2b3543; padding-top:.45rem; display:flex; align-items:center; gap:.5rem; }
+.table-combat .weapon-row p { flex:1; }
+.table-combat .weapon-row button { cursor:pointer; }
+.table-combat .combat-d20 { width:60px; height:64px; background:none; border:0; color:#f3f6fa; cursor:pointer; position:relative; padding:0; }
+.table-combat .combat-d20 svg { width:100%; height:100%; }
+.table-combat .combat-d20 span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; }
+@media print { .table-combat .mob-card { background:white; color:black; border:1px solid #000; border-radius:8px; display:block; } .table-combat .mob-card-header strong:last-child { color:black; } .table-combat .table-stats { display:none; } }
 .hp-bar { width:100%; height:12px; border:1px solid #444; border-radius:999px; overflow:hidden; margin:.35rem 0 .55rem; }
 .hp-bar-fill { height:100%; width:var(--hp-percent); }
 .hp-bar-fill.healthy { background:#3a3; }
@@ -79,15 +104,15 @@
     </div>
 </section>
 
-<section class="panel" style="margin-bottom:1rem;min-height:auto;display:flex;gap:.75rem;align-items:center;">
+<section class="panel table-screen-only" style="margin-bottom:1rem;min-height:auto;display:flex;gap:.75rem;align-items:center;">
     <strong>Roller</strong>
     <form method="post" action="{% url 'table_universal_roll' %}">
-        {% csrf_token %}<button type="submit">🎲 d20</button>
+        {% csrf_token %}<button class="combat-d20" type="submit" aria-label="Lancer un D20"><svg viewBox="0 0 100 110" aria-hidden="true"><path d="M50 3 95 34 79 94 21 94 5 34Z M50 3 50 24 5 34 M50 24 79 94 M50 24 21 94 M50 24 95 34 M21 94 79 94" fill="none" stroke="currentColor" stroke-width="3"/></svg><span>{% if universal_roll_result %}{{ universal_roll_result }}{% else %}D20{% endif %}</span></button>
     </form>
     {% if universal_roll_result %}<strong>{{ universal_roll_result }}</strong>{% endif %}
 </section>
 
-<section>
+<section class="table-combat">
     <h2>Mobs</h2>
     <div class="mob-grid">
     {% for mob in builder_mobs %}
@@ -104,7 +129,8 @@
                 <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent|stringformat:"d" }}%;"></div>
                 <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent|stringformat:"d" }}%;"></div>
             </div>
-            <p>Armure {{ mob.payload.armor }}</p>
+            <p><strong>Armure {{ mob.payload.armor }}</strong></p>
+            <div class="table-stats table-screen-only">{% for label, value, modifier in mob.stat_display %}<span>{{ label }}<b>{{ value }}</b><small>{% if modifier >= 0 %}+{% endif %}{{ modifier }}</small></span>{% endfor %}</div>
             <div class="print-only">
               <p><strong>PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} · PB {{ mob.payload.shield }} · Total {{ mob.effective_hp }}</strong></p>
               <p>Réactions {{ mob.payload.reactions }} · Vigilance {{ mob.payload.vigilance }}</p>
@@ -116,10 +142,10 @@
             </div>
             <div class="table-resources print-hide">
                 {% for resource, label, value in mob.live_resources %}
-                <form method="post" action="{% url 'table_mob_resource' mob.id %}" style="display:flex;gap:.3rem;align-items:center;margin:.25rem 0;">
+                <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
                     {% csrf_token %}
                     <input type="hidden" name="resource" value="{{ resource }}">
-                    <strong>{{ label }} {{ value }}</strong>
+                    <span class="resource-icon {% if resource == 'shield' %}shield{% elif resource == 'vigilance' %}vigilance{% elif resource == 'reactions' %}reactions{% endif %}" aria-hidden="true">{% if resource == 'hp' %}♥{% elif resource == 'shield' %}⬡{% elif resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span><strong>{{ label }} {{ value }}</strong>
                     <input type="number" name="value" value="{% if resource == 'hp' or resource == 'shield' %}10{% else %}1{% endif %}" min="0" style="width:4rem;">
                     <button name="action" value="subtract" type="submit">−</button>
                     <button name="action" value="add" type="submit">+</button>
@@ -143,8 +169,8 @@
                 </form>
             </div>
             {% for weapon in mob.payload.weapons %}
-                <div style="display:flex;gap:.4rem;align-items:center;">
-                    <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
+                <div class="weapon-row">
+                    <span aria-hidden="true">⌖</span><p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
                     <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}" style="display:flex;gap:.25rem;">
                         {% csrf_token %}
                         <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
