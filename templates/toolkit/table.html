@@ -102,6 +102,36 @@
  .table-combat .table-stats {grid-template-columns:repeat(6,minmax(0,1fr))}
  @media(max-width:470px){.table-combat .mob-grid {grid-template-columns:minmax(0,1fr)} .table-combat .mob-card {padding:.65rem}}
 }
+
+/* Composition de la fiche TMP — la géométrie précède la finition */
+@media screen {
+.table-combat .mob-grid {grid-template-columns:repeat(auto-fill, minmax(0,410px))}
+.table-combat .mob-card {gap:.6rem;padding:1.05rem 1.15rem;min-height:420px;border-radius:28px}
+.table-combat .mob-card-header {position:relative;display:flex;justify-content:center;align-items:center;min-height:30px;padding:0 45px .65rem}
+.table-combat .mob-card-header>span:first-child {display:flex;align-items:baseline;gap:.4rem;white-space:nowrap}
+.table-combat .mob-card-header>span:nth-child(2) {display:inline-flex;align-items:center}
+.table-combat .combat-card-actions {position:absolute;right:0;top:0}
+.table-combat .hp-section {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.55rem}
+.table-combat .hp-section .hp-bar {height:26px;border:2px solid #152139;border-radius:7px}
+.table-combat .hp-section .combat-resource-row {flex-wrap:nowrap}
+.table-combat .hp-section .combat-resource-row strong {display:none}
+.table-combat .hp-section .combat-resource-row .resource-icon {display:none}
+.table-combat .hp-section .combat-resource-row input {width:3.6rem!important}
+.table-combat .combat-meta {justify-content:space-between;gap:.5rem}
+.table-combat .combat-meta .combat-resource-row {flex:0 0 auto}
+.table-combat .combat-secondary {justify-content:flex-end;gap:1rem}
+.table-combat .table-stats {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0}
+.table-combat .table-stats span {border-radius:0;min-height:48px;justify-content:center;border-right:0}
+.table-combat .table-stats span:first-child {border-radius:5px 0 0 5px}
+.table-combat .table-stats span:last-child {border-right:1px solid #bdc5cf;border-radius:0 5px 5px 0}
+.table-combat .weapon-row {gap:.55rem}
+.table-combat .weapon-row>span {font-size:1.4rem;min-width:25px}
+.table-combat .weapon-row p {margin:0;min-width:0}
+.table-combat .weapon-row form {flex:0 0 auto}
+.table-combat .print-gear {padding-left:30px}
+.table-combat .combat-condition-row {margin:.25rem 0}
+.table-combat .combat-condition-row input {background:transparent;border:0;border-bottom:1px solid #a8b1c1;color:#14213b;width:95px}
+}
 </style>
 
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -183,9 +213,17 @@
                 </span>
             </header>
             <p class="print-only"><strong>ID #{{ mob.payload.token_id|default:"—" }}</strong></p>
+            <div class="hp-section print-hide">
             <div class="hp-bar print-hide" role="meter" aria-label="PV {{ mob.payload.current_hp }} sur {{ mob.payload.max_hp }}" aria-valuemin="0" aria-valuemax="{{ mob.payload.max_hp }}" aria-valuenow="{{ mob.payload.current_hp }}">
                 <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent|stringformat:"d" }}%;"></div>
                 <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent|stringformat:"d" }}%;"></div>
+            </div>
+                <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
+                    {% csrf_token %}<input type="hidden" name="resource" value="hp">
+                    <input type="number" name="value" min="0" value="10" aria-label="Dégâts ou soins">
+                    <button type="submit" name="action" value="subtract" title="Dégâts">▾</button>
+                    <button type="submit" name="action" value="add" title="Soins">▴</button>
+                </form>
             </div>
             <p><strong>Armure {{ mob.payload.armor }}</strong></p>
             <div class="table-stats table-screen-only">{% for label, value, modifier in mob.stat_display %}<span>{{ label }}<b>{{ value }}</b><small>{% if modifier >= 0 %}+{% endif %}{{ modifier }}</small></span>{% endfor %}</div>
@@ -199,42 +237,29 @@
               </div>
             </div>
             <div class="combat-meta print-hide">
-              <div class="combat-resource-row">
-                <span class="resource-icon" aria-hidden="true">♥</span>
-                <strong data-resource-label="hp">PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }}</strong>
-                <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
-                    {% csrf_token %}<input type="hidden" name="resource" value="hp">
-                    <input type="number" name="value" min="0" value="10" aria-label="Dégâts ou soins">
-                    <button type="submit" name="action" value="subtract" title="Infliger des dégâts">‹</button>
-                    <button type="submit" name="action" value="add" title="Soigner">›</button>
-                </form>
-              </div>
-              <div class="combat-resource-row">
+              <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
+                {% csrf_token %}<input type="hidden" name="resource" value="shield">
                 <span class="resource-icon shield" aria-hidden="true">⬡</span>
                 <strong data-resource-label="shield">PB {{ mob.payload.shield }}</strong>
-                <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
-                    {% csrf_token %}<input type="hidden" name="resource" value="shield">
-                    <input type="number" name="value" min="0" value="10" aria-label="Quantité de PB">
-                    <button type="submit" name="action" value="subtract" title="Retirer PB">‹</button>
-                    <button type="submit" name="action" value="add" title="Ajouter PB">›</button>
+                <input type="number" name="value" min="0" value="10" aria-label="Quantité de PB">
+                <button type="submit" name="action" value="subtract" title="Retirer PB">▾</button>
+                <button type="submit" name="action" value="add" title="Ajouter PB">▴</button>
+              </form>
+              <div class="combat-secondary">
+                {% for resource, label, value in mob.live_resources %}
+                {% if resource == "reactions" or resource == "vigilance" %}
+                <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row compact">
+                    {% csrf_token %}<input type="hidden" name="resource" value="{{ resource }}"><input type="hidden" name="value" value="1">
+                    <span class="resource-icon {% if resource == 'vigilance' %}vigilance{% else %}reactions{% endif %}" title="{{ label }}">{% if resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span>
+                    <strong data-resource-label="{{ resource }}">{{ value }}</strong>
+                    <button type="submit" name="action" value="subtract" title="−1 {{ label }}">▾</button>
+                    <button type="submit" name="action" value="add" title="+1 {{ label }}">▴</button>
                 </form>
+                {% endif %}
+                {% endfor %}
               </div>
             </div>
-            <div class="combat-secondary print-hide">
-              {% for resource, label, value in mob.live_resources %}
-              {% if resource == "reactions" or resource == "vigilance" %}
-              <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row compact">
-                {% csrf_token %}<input type="hidden" name="resource" value="{{ resource }}"><input type="hidden" name="value" value="1">
-                <span class="resource-icon {% if resource == 'vigilance' %}vigilance{% else %}reactions{% endif %}" title="{{ label }}">{% if resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span>
-                <strong data-resource-label="{{ resource }}">{{ value }}</strong>
-                <button name="action" value="subtract" title="−1 {{ label }}" type="submit">‹</button>
-                <button name="action" value="add" title="+1 {{ label }}" type="submit">›</button>
-              </form>
-              {% endif %}
-              {% endfor %}
-              <span class="combat-armor">Armure {{ mob.payload.armor }}</span>
-            </div>
-            <div class="print-hide" style="margin:.5rem 0;">
+            <div class="print-hide combat-condition-row">
                 {% for condition in mob.conditions.all %}
                 <span style="display:inline-flex;gap:.25rem;align-items:center;border:1px solid #444;border-radius:999px;padding:.15rem .45rem;margin:.1rem;">
                     {{ condition.name }}
