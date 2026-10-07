@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 import random
@@ -779,13 +780,19 @@ def table_mob_resource(request, mob_id):
     payload[key] = current
     mob.payload = payload
     mob.save(update_fields=["payload", "updated_at"])
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "mob_id": mob.id, "payload": payload})
     return redirect("table")
 
 
 @login_required
 def table_next_round(request):
     if request.method != "POST":
-        return redirect("table")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "mobs": [
+            {"id": mob.id, "payload": mob.payload} for mob in table.builder_mobs.all()
+        ]})
+    return redirect("table")
     table = ensure_game_table(request.user)
     for mob in table.builder_mobs.all():
         payload = dict(mob.payload)
