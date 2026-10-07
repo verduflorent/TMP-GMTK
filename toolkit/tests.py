@@ -1235,3 +1235,22 @@ class GlobalModalUiContractTests(TestCase):
         self.assertContains(response, "Imprimer les Mobs")
         self.assertContains(response, "window.print()")
         self.assertContains(response, "@media print")
+
+
+    def test_table_hp_bar_is_percentage_based_with_thresholds_and_shield_priority(self):
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
+        cases = [
+            ("healthy", 420, 420, 0, 100),
+            ("wounded", 210, 420, 0, 50),
+            ("critical", 105, 420, 0, 25),
+            ("shield", 210, 420, 20, 50),
+        ]
+        for rank, (state, current, maximum, shield, percent) in enumerate(cases):
+            TableMob.objects.create(
+                game_table=table, name=state, profile="C", level=1, rank=rank,
+                payload={"max_hp": maximum, "current_hp": current, "armor": 0, "shield": shield, "reactions": 1, "vigilance": 1, "weapons": [], "implants": [], "abilities": []},
+            )
+        response = self.client.get(reverse("table"))
+        for state, _current, _maximum, _shield, percent in cases:
+            self.assertContains(response, f'class="hp-bar-fill {state}"')
+            self.assertContains(response, f'--hp-percent:{percent}%')
