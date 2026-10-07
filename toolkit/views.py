@@ -47,7 +47,8 @@ def table_home(request):
         "builder_mobs": builder_mobs,
         "roll_result": roll_result,
         "universal_roll_result": universal_roll_result,
-        "encounters": Encounter.objects.filter(owner=request.user).order_by("name"),
+        "encounters": Encounter.objects.filter(owner=request.user).select_related("folder").order_by("name"),
+        "folders": UserFolder.objects.filter(owner=request.user),
     })
 
 
@@ -870,7 +871,7 @@ def encounters_home(request):
                 encounters = encounters.filter(folder_id=folder_id)
             else:
                 folder_filter = "all"
-    bestiary = BestiaryMob.objects.filter(owner=request.user).order_by("name")
+    bestiary = BestiaryMob.objects.filter(owner=request.user).select_related("folder").order_by("name")
     return render(request, "toolkit/encounters.html", {
         "encounters": encounters, "bestiary_mobs": bestiary,
         "folders": folders, "folder_filter": folder_filter,
