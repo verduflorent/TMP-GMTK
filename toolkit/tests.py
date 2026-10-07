@@ -1129,3 +1129,25 @@ class ScenarioFolderTests(TestCase):
         self.assertNotIn("monster_builder_reopen_index", self.client.session)
 
 
+    def test_all_mob_edit_posts_reopen_once_then_refresh_closes(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon, MobImplant
+
+        call_command("seed_monster_catalogue", verbosity=0)
+
+        cases = [
+            ("field", reverse("monster_builder_field"), {"index": 0, "field": "armor", "value": 15}),
+            ("weapon", reverse("monster_builder_weapon"), {"index": 0, "action": "add", "weapon_id": MobWeapon.objects.first().id}),
+            ("implant", reverse("monster_builder_implant"), {"index": 0, "action": "add", "implant_id": MobImplant.objects.first().id}),
+            ("ability", reverse("monster_builder_ability"), {"index": 0, "action": "add", "name": "Test", "description": "", "effect_type": "", "scaling": "fixed", "value": 0}),
+        ]
+        for _label, url, payload in cases:
+            self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+            response = self.client.post(url, payload, follow=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context["editing_index"], 0)
+            self.assertNotIn("monster_builder_reopen_index", self.client.session)
+            refresh = self.client.get(reverse("monster_builder"))
+            self.assertIsNone(refresh.context["editing_index"])
+
+
