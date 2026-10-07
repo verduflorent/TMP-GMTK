@@ -866,6 +866,8 @@ def table_mob_roll_weapon(request, mob_id, weapon_index):
         "roll_damage": roll_damage if success else None,
     }
     request.session.modified = True
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "result": request.session["table_roll_result"]})
     return redirect("table")
 
 
@@ -906,6 +908,8 @@ def table_universal_roll(request):
         return redirect("table")
     request.session["universal_roll_result"] = random.randint(1, 20)
     request.session.modified = True
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "roll": request.session["universal_roll_result"]})
     return redirect("table")
 
 
