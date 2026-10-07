@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from catalogue.models import MobProfile
-from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, UserAbility, UserWeapon, UserImplant
+from .models import BestiaryMob, Encounter, EncounterMob, GameTable, TableInstance, TableMob, UserAbility, UserWeapon, UserImplant
 from .services import save_validated
 
 User = get_user_model()
