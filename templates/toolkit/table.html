@@ -407,6 +407,47 @@ document.addEventListener("submit", async function(event) {
  const fields=["name","level","current_hp","max_hp","shield","armor","reactions","vigilance","force","agility","perception","technique","constitution","willpower"];
  const stats=["force","agility","perception","technique","constitution","willpower"];
  let activeId=null;
+ let original=null;
+ let previewTimer=null;
+ let previewSequence=0;
+ let applyingPreview=false;
+ const previewFields=["level","force","agility","perception","technique","constitution","willpower"];
+ function prepareBody(preview=false){
+   const body=new FormData(editor);
+   for(const kind of Object.keys(gear)){
+     body.set(kind,JSON.stringify(kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
+   }
+   if(preview)body.set("preview","1");
+   return body;
+ }
+ async function updatePreview(){
+   if(!dialog.open||!original||!editor.checkValidity())return;
+   const sequence=++previewSequence;
+   const body=prepareBody(true);
+   const response=await fetch(editor.getAttribute("action"),{method:"POST",body,headers:{"X-Requested-With":"XMLHttpRequest"}});
+   const result=await response.json();
+   if(sequence!==previewSequence||!dialog.open)return;
+   const error=dialog.querySelector(".live-editor-error");
+   if(!response.ok||!result.ok){
+     error.textContent="Prévisualisation : "+JSON.stringify(result.errors||result.error||"Calcul impossible");
+     error.hidden=false;return;
+   }
+   error.hidden=true;
+   applyingPreview=true;
+   for(const key of ["max_hp","current_hp","shield","armor","reactions","vigilance"]){
+     const input=editor.elements.namedItem(key);
+     if(input)input.value=result.payload[key];
+   }
+   applyingPreview=false;
+ }
+ function schedulePreview(){
+   if(applyingPreview||!dialog.open)return;
+   clearTimeout(previewTimer);
+   previewTimer=setTimeout(()=>{updatePreview().catch(console.error);},180);
+ }
+ editor.addEventListener("input",event=>{
+   if(previewFields.includes(event.target.name))schedulePreview();
+ });
  let gear={weapons:[],implants:[],abilities:[]};
  let catalogue={weapons:[],implants:[],abilities:[]};
  function renderGear(){
@@ -444,6 +485,7 @@ document.addEventListener("submit", async function(event) {
    if(!response.ok){alert("Impossible de charger la fiche.");return;}
    const mob=await response.json();
    activeId=mob.id;
+   original=structuredClone(mob);
    const draft=mob.payload.draft||{};
    catalogue={
      weapons:[...mob.catalogue.weapons,...mob.catalogue.user_weapons],
@@ -469,16 +511,15 @@ document.addEventListener("submit", async function(event) {
    dialog.querySelector(".live-editor-error").hidden=true;
    dialog.showModal();
  });
- function close(){dialog.close();}
+ function close(){clearTimeout(previewTimer);previewSequence++;original=null;dialog.close();}
  dialog.querySelector(".live-editor-close").addEventListener("click",close);
  dialog.querySelector(".live-editor-cancel").addEventListener("click",close);
  dialog.addEventListener("click",e=>{if(e.target===dialog)close();});
  editor.addEventListener("submit",async function(event){
    event.preventDefault();
-   const body=new FormData(editor);
-   for(const kind of Object.keys(gear)){
-     body.set(kind,JSON.stringify(kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
-   }
+   clearTimeout(previewTimer);
+   previewSequence++;
+   const body=prepareBody();
    const response=await fetch(editor.getAttribute("action"),{method:"POST",body,headers:{"X-Requested-With":"XMLHttpRequest"}});
    const data=await response.json();
    if(!response.ok||!data.ok){
