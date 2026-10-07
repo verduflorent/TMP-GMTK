@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, UserFolderForm, FolderMoveForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableMobTokenIdForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, UserFolderForm, FolderMoveForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, Encounter, EncounterDraftMob, UserFolder, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -691,6 +691,21 @@ def monster_builder_user_implant_add(request):
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
     return _builder_redirect_editing(request, index)
+
+
+@login_required
+def table_mob_token_id(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    form = TableMobTokenIdForm(request.POST)
+    if mob is not None and form.is_valid():
+        payload = dict(mob.payload)
+        payload["token_id"] = form.cleaned_data["token_id"].strip()
+        mob.payload = payload
+        mob.save(update_fields=["payload", "updated_at"])
+    return redirect("table")
 
 
 @login_required
