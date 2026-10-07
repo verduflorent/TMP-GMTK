@@ -1017,20 +1017,52 @@ class ScenarioFolderTests(TestCase):
         self.assertContains(response, "Ressources", count=2)
 
 
-    def test_mob_edit_modal_reopens_only_on_immediate_edit_redirect(self):
+    def test_modal_reopen_script_is_not_rendered_inside_title(self):
+        response = self.client.get(reverse("monster_builder"))
+        self.assertNotContains(response, "<title>Monster Builder — TMP-GMTK<script>")
+        self.assertContains(response, 'document.addEventListener("DOMContentLoaded"')
+
+
+    def test_mob_edit_modal_reopens_once_after_weapon_add_then_stays_closed(self):
         from django.core.management import call_command
         from catalogue.models import MobWeapon
 
         call_command("seed_monster_catalogue", verbosity=0)
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         weapon = MobWeapon.objects.first()
+
         response = self.client.post(
             reverse("monster_builder_weapon"),
             {"index": 0, "action": "add", "weapon_id": weapon.id},
         )
-        self.assertEqual(response.url, reverse("monster_builder") + "?edit=0")
-        response = self.client.get(response.url)
-        self.assertEqual(response.context["editing_index"], 0)
+        self.assertEqual(response.url, reverse("monster_builder"))
+
+        # Immediate redirect target consumes the one-shot reopen state.
         response = self.client.get(reverse("monster_builder"))
+        self.assertEqual(response.context["editing_index"], 0)
+        self.assertContains(response, 'id="mob-edit-0"', count=1)
+
+        # Refresh / ordinary navigation must not reopen it again.
+        response = self.client.get(reverse("monster_builder"))
+        self.assertIsNone(response.context["editing_index"])
+
+    def test_generate_does_not_reopen_previous_mob_modal(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        weapon = MobWeapon.objects.first()
+        self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "action": "add", "weapon_id": weapon.id},
+        )
+        # Consume the intended immediate reopen.
+        self.client.get(reverse("monster_builder"))
+
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 2, "level": 6},
+        )
         self.assertIsNone(response.context["editing_index"])
 
