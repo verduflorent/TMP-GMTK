@@ -217,13 +217,13 @@
                         </div>
                         {% empty %}<p>Aucune capacité.</p>{% endfor %}
                         <button type="button" onclick="document.getElementById('ability-picker-{{ forloop.counter0 }}').showModal()">+ Capacité</button><dialog class="confirm-dialog" id="ability-picker-{{ forloop.counter0 }}"><h3>Ajouter une capacité</h3>
-                            {% if user_abilities %}
-                            <form method="post" action="{% url 'monster_builder_ability_library' %}">
-                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                                <select name="ability_id">{% for ability in user_abilities %}<option value="{{ ability.id }}">{{ ability.name }}</option>{% endfor %}</select>
-                                <button type="submit">Ajouter une capacité sauvegardée</button>
+                            {% if user_abilities %}<h4>Bibliothèque</h4>
+                            {% for saved_ability in user_abilities %}
+                            <form class="panel resource-choice" method="post" action="{% url 'monster_builder_ability_library' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="ability_id" value="{{ saved_ability.id }}">
+                                <strong>{{ saved_ability.name }}</strong><button type="submit">Ajouter</button>
                             </form>
-                            {% endif %}
+                            {% endfor %}{% endif %}
                             <form method="post" action="{% url 'monster_builder_ability' %}">
                                 {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="add">
                                 <p><label>Nom <input type="text" name="name" maxlength="120" required></label></p>
