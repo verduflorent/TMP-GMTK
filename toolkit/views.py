@@ -9,6 +9,7 @@ from rules.randomizer import (
     rebuild_mob,
     reroll_mob_role,
     serialize_mob,
+    validate_akimbo_weapons,
 )
 
 from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableMobTokenIdForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, UserFolderForm, FolderMoveForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
@@ -240,8 +241,15 @@ def monster_builder_weapon(request):
             second_id = int(request.POST.get("second_weapon_id", ""))
         except (TypeError, ValueError):
             return _builder_redirect_editing(request, index)
-        pair = list(MobWeapon.objects.filter(id__in=[first_id, second_id], hands=1))
+        pair = list(MobWeapon.objects.filter(id__in=[first_id, second_id]))
         if len({w.id for w in pair}) != len({first_id, second_id}):
+            return _builder_redirect_editing(request, index)
+        try:
+            validate_akimbo_weapons([
+                next(w for w in pair if w.id == first_id),
+                next(w for w in pair if w.id == second_id),
+            ])
+        except (StopIteration, ValueError):
             return _builder_redirect_editing(request, index)
         refs = [{"source": "catalogue", "id": first_id}, {"source": "catalogue", "id": second_id}]
         data["akimbo"] = True
@@ -565,7 +573,25 @@ def table_mob_edit(request, mob_id):
     if akimbo:
         weapon_refs = draft.get("weapons", [])
         if len(weapon_refs) != 2:
-            return JsonResponse({"ok": False, "errors": {"akimbo": ["Deux armes requises."]}}, status=400)
+            return JsonResponse({"ok": False, "errors": {"akimbo": ["Deux armes à une main sont requises."]}}, status=400)
+        pair_objects = []
+        for ref in weapon_refs:
+            if not isinstance(ref, dict):
+                return JsonResponse({"ok": False, "errors": {"akimbo": ["Référence d'arme invalide."]}}, status=400)
+            source, item_id = ref.get("source"), ref.get("id")
+            if source == "catalogue":
+                weapon = MobWeapon.objects.filter(id=item_id).first()
+            elif source == "user":
+                weapon = UserWeapon.objects.filter(owner=request.user, id=item_id).first()
+            else:
+                weapon = None
+            if weapon is None:
+                return JsonResponse({"ok": False, "errors": {"akimbo": ["Arme introuvable."]}}, status=400)
+            pair_objects.append(weapon)
+        try:
+            validate_akimbo_weapons(pair_objects)
+        except ValueError as exc:
+            return JsonResponse({"ok": False, "errors": {"akimbo": [str(exc)]}}, status=400)
     draft["akimbo"] = akimbo
     equipment_changed = any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
     explicit_max = values["max_hp"] != old_max

@@ -338,10 +338,18 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     }
 
 
+def validate_akimbo_weapons(weapons):
+    """Validate the equipment invariant for an Akimbo pair."""
+    if len(weapons) != 2 or any(getattr(weapon, "hands", None) != 1 for weapon in weapons):
+        raise ValueError("Akimbo exige exactement deux armes à une main.")
+
+
 def assemble_draft_mob(*, level, profile, weapons, implants, abilities=None, overrides=None, akimbo=False):
     """Build an editable draft from unrestricted equipment lists."""
     if not weapons:
         raise ValueError("Un brouillon Mob doit conserver au moins une arme pour le moment.")
+    if akimbo:
+        validate_akimbo_weapons(weapons)
 
     mob = _assemble_mob(
         level=level,
@@ -549,8 +557,8 @@ def rebuild_mob(weapons, implants, data, user_weapons=None, user_implants=None):
         elif source == "catalogue" and item_id in weapon_by_id:
             selected_weapons.append(weapon_by_id[item_id])
 
-    if data.get("akimbo") and (len(selected_weapons) != 2 or any(weapon.hands != 1 for weapon in selected_weapons)):
-        raise ValueError("Akimbo exige exactement deux armes à une main.")
+    if data.get("akimbo"):
+        validate_akimbo_weapons(selected_weapons)
     mob = assemble_draft_mob(
         level=data["level"], profile=data["profile"], weapons=selected_weapons, akimbo=bool(data.get("akimbo", False)),
         implants=[

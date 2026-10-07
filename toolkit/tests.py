@@ -1417,6 +1417,73 @@ class AkimboBuilderContractTests(TestCase):
         })
         self.assertEqual(self.client.session["monster_builder_mobs"][0], before)
 
+class AkimboTableEditorContractTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="akimbo-table", password="pwd")
+        self.client.login(username="akimbo-table", password="pwd")
+
+    def _create_akimbo_table_mob(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 7})
+        pm = MobWeapon.objects.get(name="Pistolet-mitrailleur")
+        self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 0, "action": "akimbo", "first_weapon_id": pm.id, "second_weapon_id": pm.id},
+        )
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        return TableMob.objects.get(game_table__owner=self.user), pm
+
+    def test_builder_to_table_preserves_akimbo_and_combined_damage_rule(self):
+        mob, _pm = self._create_akimbo_table_mob()
+        self.assertTrue(mob.payload["akimbo"])
+        self.assertTrue(mob.payload["akimbo_identical"])
+        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 150), (10, 130)])
+
+    def test_table_editor_preserves_akimbo_and_live_mob_identity(self):
+        mob, pm = self._create_akimbo_table_mob()
+        before = dict(mob.payload)
+        stats = before["stats"]
+        fields = {
+            "name": mob.name, "level": mob.level,
+            **{key: before[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **{key: stats[key] for key in stats},
+            "weapons": '[{"source":"catalogue","id":%d},{"source":"catalogue","id":%d}]' % (pm.id, pm.id),
+            "implants": "[]", "abilities": "[]", "akimbo": "1",
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 200)
+        mob.refresh_from_db()
+        self.assertTrue(mob.payload["akimbo"])
+        self.assertTrue(mob.payload["akimbo_identical"])
+        self.assertEqual(mob.id, before.get("id", mob.id))
+        self.assertEqual(mob.payload["current_hp"], before["current_hp"])
+        self.assertEqual(mob.payload["token_id"], before.get("token_id", ""))
+        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 150), (10, 130)])
+
+    def test_table_editor_rejects_akimbo_with_two_handed_weapon(self):
+        from catalogue.models import MobWeapon
+        mob, _pm = self._create_akimbo_table_mob()
+        two_hands = MobWeapon.objects.filter(hands=2).first()
+        before = mob.payload
+        stats = before["stats"]
+        fields = {
+            "name": mob.name, "level": mob.level,
+            **{key: before[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **{key: stats[key] for key in stats},
+            "weapons": '[{"source":"catalogue","id":%d},{"source":"catalogue","id":%d}]' % (_pm.id, two_hands.id),
+            "implants": "[]", "abilities": "[]", "akimbo": "1",
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 400)
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload, before)
+
 class WeaponRollModalContractTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="rollmodal", password="pwd")

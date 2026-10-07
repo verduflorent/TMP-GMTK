@@ -330,6 +330,19 @@ class WeaponLoadoutRandomizerTests(SimpleTestCase):
         self.assertEqual(loadout["secondary"].name, "Pistolet")
 
 
+    def test_akimbo_draft_requires_exactly_two_one_handed_weapons(self):
+        from rules.randomizer import assemble_draft_mob
+
+        with self.assertRaisesRegex(ValueError, "deux armes à une main"):
+            assemble_draft_mob(
+                level=1,
+                profile=MobProfile.COMBATANT,
+                weapons=[self.t1, self.t2_two_hands],
+                implants=[],
+                akimbo=True,
+            )
+
+
 class ImplantRandomizerTests(SimpleTestCase):
     class Implant:
         def __init__(self, name, profiles, property_name="", property_text=""):
