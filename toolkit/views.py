@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, Encounter, EncounterDraftMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -42,6 +42,7 @@ def table_home(request):
         "builder_mobs": builder_mobs,
         "roll_result": roll_result,
         "universal_roll_result": universal_roll_result,
+        "encounters": Encounter.objects.filter(owner=request.user).order_by("name"),
     })
 
 
@@ -894,6 +895,58 @@ def encounter_load_table(request, encounter_id):
     for entry in encounter.draft_mobs.all():
         for _ in range(entry.quantity):
             mob = rebuild_mob(weapons, implants, entry.payload, user_weapons, user_implants)
+            TableMob.objects.create(
+                game_table=table, name=entry.name, profile=str(mob["profile"]),
+                level=mob["level"], payload=_table_payload(mob),
+                rank=table.builder_mobs.count(),
+            )
+    return redirect("table")
+
+
+@login_required
+def table_save_encounter(request):
+    if request.method != "POST":
+        return redirect("table")
+    form = TableEncounterSaveForm(request.POST)
+    if not form.is_valid():
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    encounter = Encounter.objects.create(
+        owner=request.user, name=form.cleaned_data["name"].strip()
+    )
+    for rank, table_mob in enumerate(table.builder_mobs.all()):
+        draft = table_mob.payload.get("draft")
+        if not draft:
+            continue
+        EncounterDraftMob.objects.create(
+            encounter=encounter, name=table_mob.name,
+            quantity=1, payload=draft, rank=rank,
+        )
+    return redirect("table")
+
+
+@login_required
+def table_load_encounter(request):
+    if request.method != "POST":
+        return redirect("table")
+    form = TableEncounterLoadForm(request.POST)
+    if not form.is_valid():
+        return redirect("table")
+    encounter = Encounter.objects.filter(
+        id=form.cleaned_data["encounter_id"], owner=request.user
+    ).first()
+    if encounter is None:
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    weapons = list(MobWeapon.objects.all())
+    implants = list(MobImplant.objects.all())
+    user_weapons = list(UserWeapon.objects.filter(owner=request.user))
+    user_implants = list(UserImplant.objects.filter(owner=request.user))
+    for entry in encounter.draft_mobs.all():
+        for _ in range(entry.quantity):
+            mob = rebuild_mob(
+                weapons, implants, entry.payload, user_weapons, user_implants
+            )
             TableMob.objects.create(
                 game_table=table, name=entry.name, profile=str(mob["profile"]),
                 level=mob["level"], payload=_table_payload(mob),
