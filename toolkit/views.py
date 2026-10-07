@@ -10,8 +10,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import BestiaryMob, Encounter, EncounterDraftMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, UserFolderForm, FolderMoveForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, Encounter, EncounterDraftMob, UserFolder, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
 
@@ -812,9 +812,10 @@ def table_universal_roll(request):
 
 @login_required
 def encounters_home(request):
-    encounters = Encounter.objects.filter(owner=request.user).prefetch_related("draft_mobs")
+    encounters = Encounter.objects.filter(owner=request.user).select_related("folder").prefetch_related("draft_mobs")
     bestiary = BestiaryMob.objects.filter(owner=request.user).order_by("name")
-    return render(request, "toolkit/encounters.html", {"encounters": encounters, "bestiary_mobs": bestiary})
+    folders = UserFolder.objects.filter(owner=request.user)
+    return render(request, "toolkit/encounters.html", {"encounters": encounters, "bestiary_mobs": bestiary, "folders": folders})
 
 
 @login_required
@@ -966,3 +967,52 @@ def table_clear(request):
     request.session.pop("universal_roll_result", None)
     request.session.modified = True
     return redirect("table")
+
+
+@login_required
+def folder_create(request):
+    if request.method == "POST":
+        form = UserFolderForm(request.POST)
+        if form.is_valid():
+            UserFolder.objects.get_or_create(owner=request.user, name=form.cleaned_data["name"].strip())
+    return redirect(request.POST.get("next") or "bestiary")
+
+
+@login_required
+def folder_delete(request, folder_id):
+    if request.method == "POST":
+        UserFolder.objects.filter(id=folder_id, owner=request.user).delete()
+    return redirect(request.POST.get("next") or "bestiary")
+
+
+def _move_to_folder(request, obj):
+    raw = request.POST.get("folder_id", "")
+    folder = None
+    if raw:
+        try:
+            folder = UserFolder.objects.filter(id=int(raw), owner=request.user).first()
+        except ValueError:
+            return False
+        if folder is None:
+            return False
+    obj.folder = folder
+    obj.save(update_fields=["folder"])
+    return True
+
+
+@login_required
+def bestiary_move_folder(request, mob_id):
+    if request.method == "POST":
+        mob = BestiaryMob.objects.filter(id=mob_id, owner=request.user).first()
+        if mob is not None:
+            _move_to_folder(request, mob)
+    return redirect("bestiary")
+
+
+@login_required
+def encounter_move_folder(request, encounter_id):
+    if request.method == "POST":
+        encounter = Encounter.objects.filter(id=encounter_id, owner=request.user).first()
+        if encounter is not None:
+            _move_to_folder(request, encounter)
+    return redirect("encounters")
