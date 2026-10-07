@@ -15,7 +15,8 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
 {% block content %}
 <div style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Table de jeu</h1>
-<form method="post" action="{% url 'table_clear' %}" style="display:inline-block;">{% csrf_token %}<button type="submit">Nettoyer la Table</button></form>
+<button type="button" onclick="document.getElementById('clear-table-dialog').showModal()">Nettoyer la Table</button>
+<dialog class="confirm-dialog" id="clear-table-dialog"><strong>Nettoyer toute la Table ?</strong><p>Les Mobs présents seront retirés. Les Bestiaires et Rencontres sauvegardées restent intactes.</p><div class="confirm-actions"><button type="button" onclick="this.closest('dialog').close()">Annuler</button><form method="post" action="{% url 'table_clear' %}">{% csrf_token %}<button type="submit">Nettoyer</button></form></div></dialog>
     <form method="post" action="{% url 'table_next_round' %}">
         {% csrf_token %}<button type="submit">Tour suivant ↻</button>
     </form>
@@ -32,11 +33,11 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
 <section class="panel" style="margin-bottom:1rem;min-height:auto;">
     <h2>Rencontres</h2>
     <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-        <form method="post" action="{% url 'table_save_encounter' %}" style="display:flex;gap:.35rem;">
+        <button type="button" onclick="document.getElementById('save-table-dialog').showModal()">Sauvegarder la Table</button><dialog class="confirm-dialog" id="save-table-dialog"><h3>Sauvegarder comme rencontre</h3><form method="post" action="{% url 'table_save_encounter' %}" style="display:flex;gap:.35rem;">
             {% csrf_token %}
             <input name="name" placeholder="Nom de la rencontre" required maxlength="120">
             <button type="submit">Sauvegarder la Table</button>
-        </form>
+        </form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
         <button type="button" onclick="document.getElementById('load-encounter-dialog').showModal()">Charger une rencontre</button>
         <dialog class="confirm-dialog resource-dialog" id="load-encounter-dialog">
             <h2>Charger une rencontre</h2>
@@ -114,7 +115,7 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
                         {% csrf_token %}
                         <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
                         {% if weapon.contact_damage != None and weapon.distance_damage != None %}
-                        <select name="mode"><option value="distance">Distance</option><option value="contact">Contact</option></select>
+                        <button type="submit" name="mode" value="distance">🎲 Distance</button><button type="submit" name="mode" value="contact">🎲 Contact</button>
                         {% endif %}
                         <button type="submit">🎲</button>
                     </form>
