@@ -47,6 +47,16 @@
 .live-editor-error{color:#a20e25}
 .live-mob-editor footer{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1rem}
 @media(max-width:600px){.live-editor-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.live-editor-equipment{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1rem 0}
+.live-editor-equipment section{border:1px solid #b9c1ca;border-radius:9px;padding:.75rem;min-width:0}
+.live-editor-equipment section:last-child{grid-column:1/-1}
+.live-editor-equipment h3{margin:0 0 .65rem}
+.gear-picker{display:flex;gap:.35rem;margin-top:.5rem;flex-wrap:wrap}
+.gear-picker select,.gear-picker input{min-width:0;flex:1}
+.gear-entry{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.3rem 0;border-bottom:1px solid #d8dce0}
+.gear-entry button{background:transparent;color:#b21b2c;border:0;padding:.2rem .4rem}
+@media(max-width:600px){.live-editor-equipment{grid-template-columns:1fr}.live-editor-equipment section:last-child{grid-column:auto}}
 </style>
 
 <div class="table-heading">
@@ -244,7 +254,11 @@
       <label>CON<input name="constitution" type="number" min="0" max="99" required></label>
       <label>VOL<input name="willpower" type="number" min="0" max="99" required></label>
     </div>
-    <p class="live-editor-note">Les armes, implants et capacités restent inchangés dans cette première étape.</p>
+    <div class="live-editor-equipment">
+  <section><h3>ARMES</h3><div data-gear-list="weapons"></div><div class="gear-picker"><select data-gear-picker="weapons" aria-label="Choisir une arme"></select><button type="button" data-gear-add="weapons">+ Arme</button></div></section>
+  <section><h3>IMPLANTS</h3><div data-gear-list="implants"></div><div class="gear-picker"><select data-gear-picker="implants" aria-label="Choisir un implant"></select><button type="button" data-gear-add="implants">+ Implant</button></div></section>
+  <section><h3>CAPACITÉS</h3><div data-gear-list="abilities"></div><div class="gear-picker"><select data-gear-picker="abilities" aria-label="Choisir une capacité enregistrée"></select><button type="button" data-gear-add="abilities">+ Capacité</button></div><div class="gear-picker"><input data-new-ability-name maxlength="120" placeholder="Nouvelle capacité"><button type="button" data-create-ability>Créer</button></div></section>
+</div>
     <p class="live-editor-error" role="alert" hidden></p>
     <footer><button type="button" class="live-editor-cancel">Annuler</button><button type="submit">Enregistrer</button></footer>
   </form>
@@ -379,6 +393,35 @@ document.addEventListener("submit", async function(event) {
  const fields=["name","level","current_hp","max_hp","shield","armor","reactions","vigilance","force","agility","perception","technique","constitution","willpower"];
  const stats=["force","agility","perception","technique","constitution","willpower"];
  let activeId=null;
+ let gear={weapons:[],implants:[],abilities:[]};
+ let catalogue={weapons:[],implants:[],abilities:[]};
+ function renderGear(){
+   for(const kind of Object.keys(gear)){
+     const list=dialog.querySelector('[data-gear-list="'+kind+'"]');
+     list.replaceChildren();
+     gear[kind].forEach((item,index)=>{
+       const row=document.createElement("div");row.className="gear-entry";
+       const label=document.createElement("span");label.textContent=item.name||"Sans nom";
+       const remove=document.createElement("button");remove.type="button";remove.textContent="✕";remove.setAttribute("aria-label","Retirer "+label.textContent);
+       remove.addEventListener("click",()=>{gear[kind].splice(index,1);renderGear();});
+       row.append(label,remove);list.append(row);
+     });
+   }
+ }
+ for(const kind of Object.keys(gear)){
+   dialog.querySelector('[data-gear-add="'+kind+'"]').addEventListener("click",()=>{
+     const select=dialog.querySelector('[data-gear-picker="'+kind+'"]');
+     const item=catalogue[kind][Number(select.value)];
+     if(!item)return;
+     gear[kind].push(kind==="abilities"?structuredClone(item.draft):{source:item.source,id:item.id,name:item.name});
+     renderGear();
+   });
+ }
+ dialog.querySelector("[data-create-ability]").addEventListener("click",()=>{
+   const input=dialog.querySelector("[data-new-ability-name]");
+   const name=input.value.trim();if(!name)return;
+   gear.abilities.push({name,description:""});input.value="";renderGear();
+ });
  document.addEventListener("submit",async function(event){
    const trigger=event.target.closest("form.live-mob-edit-trigger");
    if(!trigger)return;
@@ -387,6 +430,23 @@ document.addEventListener("submit", async function(event) {
    if(!response.ok){alert("Impossible de charger la fiche.");return;}
    const mob=await response.json();
    activeId=mob.id;
+   const draft=mob.payload.draft||{};
+   catalogue={
+     weapons:[...mob.catalogue.weapons,...mob.catalogue.user_weapons],
+     implants:[...mob.catalogue.implants,...mob.catalogue.user_implants],
+     abilities:mob.catalogue.abilities,
+   };
+   for(const kind of Object.keys(gear)){
+     const picker=dialog.querySelector('[data-gear-picker="'+kind+'"]');
+     picker.replaceChildren();
+     catalogue[kind].forEach((item,index)=>{
+       const option=document.createElement("option");option.value=String(index);option.textContent=item.name;picker.append(option);
+     });
+   }
+   gear.weapons=(draft.weapons||[]).map(ref=>({...ref,name:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Arme"}));
+   gear.implants=(draft.implants||[]).map(ref=>({...ref,name:catalogue.implants.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Implant"}));
+   gear.abilities=structuredClone(draft.abilities||mob.payload.abilities||[]);
+   renderGear();
    editor.setAttribute("action",trigger.getAttribute("action"));
    for(const key of fields){
      const input=editor.elements.namedItem(key);
@@ -401,7 +461,11 @@ document.addEventListener("submit", async function(event) {
  dialog.addEventListener("click",e=>{if(e.target===dialog)close();});
  editor.addEventListener("submit",async function(event){
    event.preventDefault();
-   const response=await fetch(editor.getAttribute("action"),{method:"POST",body:new FormData(editor),headers:{"X-Requested-With":"XMLHttpRequest"}});
+   const body=new FormData(editor);
+   for(const kind of Object.keys(gear)){
+     body.set(kind,JSON.stringify(kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
+   }
+   const response=await fetch(editor.getAttribute("action"),{method:"POST",body,headers:{"X-Requested-With":"XMLHttpRequest"}});
    const data=await response.json();
    if(!response.ok||!data.ok){
      const error=dialog.querySelector(".live-editor-error");
@@ -426,6 +490,7 @@ document.addEventListener("submit", async function(event) {
      if(shieldFill)shieldFill.style.setProperty("--shield-percent",Math.round(100*shield/total)+"%");
    }
    close();
+   window.location.reload();
  });
 })();
 </script>
