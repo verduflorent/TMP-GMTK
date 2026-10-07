@@ -821,7 +821,7 @@ class UserImplantLibraryTests(TestCase):
             )
         result = response.context["roll_result"]
         self.assertEqual(result["roll"], 1)
-        self.assertEqual(result["aim"], weapon["aim"])
+        self.assertEqual(result["aim"], 10 + weapon["aim"])
         self.assertTrue(result["success"])
         self.assertEqual(result["weapon"], weapon["name"])
 
@@ -839,3 +839,24 @@ class UserImplantLibraryTests(TestCase):
             follow=True,
         )
         self.assertIsNone(response.context["roll_result"])
+
+
+    def test_table_weapon_roll_applies_context_modifier_and_damage_roll_scale(self):
+        from unittest.mock import patch
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        weapon = mob.payload["weapons"][0]
+
+        with patch("toolkit.views.random.randint", return_value=8):
+            response = self.client.post(
+                reverse("table_mob_roll_weapon", args=[mob.id, 0]),
+                {"modifier": -2, "mode": "distance"},
+                follow=True,
+            )
+        result = response.context["roll_result"]
+        self.assertEqual(result["aim"], 10 + weapon["aim"] - 2)
+        if result["success"]:
+            self.assertEqual(result["roll_damage"], 10)
