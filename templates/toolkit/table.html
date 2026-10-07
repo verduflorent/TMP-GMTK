@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Table de jeu — TMP-GMTK{% endblock %}
 {% block content %}
-<h1>Table de jeu</h1>
+<div style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>Table de jeu</h1>
+    <form method="post" action="{% url 'table_next_round' %}">
+        {% csrf_token %}<button type="submit">Tour suivant ↻</button>
+    </form>
+</div>
 
 <section>
     <h2>Mobs</h2>
@@ -25,6 +30,21 @@
                     <button name="action" value="reset" type="submit">↺</button>
                 </form>
                 {% endfor %}
+            </div>
+            <div style="margin:.5rem 0;">
+                {% for condition in mob.conditions.all %}
+                <span style="display:inline-flex;gap:.25rem;align-items:center;border:1px solid #444;border-radius:999px;padding:.15rem .45rem;margin:.1rem;">
+                    {{ condition.name }}
+                    <form method="post" action="{% url 'table_condition_delete' mob.id condition.id %}">
+                        {% csrf_token %}<button type="submit" aria-label="Retirer {{ condition.name }}">×</button>
+                    </form>
+                </span>
+                {% endfor %}
+                <form method="post" action="{% url 'table_condition_add' mob.id %}" style="display:inline-flex;gap:.3rem;">
+                    {% csrf_token %}
+                    <input name="name" maxlength="80" placeholder="État..." style="width:7rem;">
+                    <button type="submit">+</button>
+                </form>
             </div>
             {% for weapon in mob.payload.weapons %}
                 <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée +{{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
