@@ -781,13 +781,15 @@ class UserImplantLibraryTests(TestCase):
         mob = TableMob.objects.get(game_table__owner=self.user)
         initial = mob.payload["initial_resources"]
         hp = mob.payload["current_hp"]
+        shield = mob.payload["shield"]
 
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "subtract", "value": 20})
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "reactions", "action": "subtract", "value": 1})
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "vigilance", "action": "subtract", "value": 1})
         self.client.post(reverse("table_next_round"))
         mob.refresh_from_db()
-        self.assertEqual(mob.payload["current_hp"], max(0, hp - 20))
+        self.assertEqual(mob.payload["current_hp"], max(0, hp - max(0, 20 - shield)))
+        self.assertEqual(mob.payload["shield"], max(0, shield - 20))
         self.assertEqual(mob.payload["reactions"], initial["reactions"])
         self.assertEqual(mob.payload["vigilance"], initial["vigilance"])
 
