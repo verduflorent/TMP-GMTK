@@ -118,3 +118,9 @@ class UserImplantForm(forms.Form):
 class UserImplantLibraryForm(forms.Form):
     index = forms.IntegerField(min_value=0)
     implant_id = forms.IntegerField(min_value=1)
+
+
+class TableMobResourceForm(forms.Form):
+    resource = forms.ChoiceField(choices=[("hp", "PV"), ("shield", "PB"), ("reactions", "Réactions"), ("vigilance", "Vigilance")])
+    action = forms.ChoiceField(choices=[("add", "+"), ("subtract", "-"), ("set", "="), ("reset", "Reset")])
+    value = forms.IntegerField(min_value=0, required=False)
