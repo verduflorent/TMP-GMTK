@@ -47,7 +47,19 @@ def table_home(request):
             hp_state = "healthy"
         mob.hp_percent = hp_percent
         mob.hp_state = hp_state
-        mob.shield_percent = round(shield / max_hp * 100, 2) if max_hp else 0
+        # Normalize the visible segments against effective health so PB is
+        # visible even at full HP and the bar never exceeds its container.
+        visible_total = max(max_hp, current_hp + shield, 1)
+        mob.hp_percent = round(current_hp * 100 / visible_total)
+        mob.shield_percent = round(shield * 100 / visible_total)
+        mob.stat_display = [
+            (label, payload.get("stats", {}).get(key, "—"),
+             payload.get("stat_modifiers", {}).get(key, 0))
+            for key, label in (
+                ("force", "FOR"), ("agility", "AGI"), ("perception", "PER"),
+                ("technique", "TECH"), ("constitution", "CON"), ("willpower", "VOL")
+            )
+        ]
         mob.effective_hp = current_hp + shield
         mob.live_resources = (
             ("hp", "PV", f"{current_hp}/{max_hp}"),
