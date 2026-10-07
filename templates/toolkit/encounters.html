@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Rencontres — TMP-GMTK{% endblock %}
+{% block content %}
+<h1>Rencontres</h1>
+<form method="post" action="{% url 'encounter_create' %}" class="panel" style="min-height:auto;display:flex;gap:.5rem;">
+    {% csrf_token %}<input name="name" placeholder="Nom de la rencontre" required maxlength="120"><button type="submit">+ Créer</button>
+</form>
+{% for encounter in encounters %}
+<article class="panel" style="margin-top:1rem;">
+    <h2>{{ encounter.name }}</h2>
+    {% for entry in encounter.draft_mobs.all %}
+    <p><strong>{{ entry.quantity }}× {{ entry.name }}</strong>
+        <form method="post" action="{% url 'encounter_remove_mob' encounter.id entry.id %}" style="display:inline;">
+            {% csrf_token %}<button type="submit">×</button>
+        </form>
+    </p>
+    {% empty %}<p>Aucun Mob.</p>{% endfor %}
+    {% if bestiary_mobs %}
+    <form method="post" action="{% url 'encounter_add_mob' encounter.id %}" style="display:flex;gap:.4rem;">
+        {% csrf_token %}
+        <select name="bestiary_id">{% for mob in bestiary_mobs %}<option value="{{ mob.id }}">{{ mob.name }} — N{{ mob.level }}</option>{% endfor %}</select>
+        <label>× <input type="number" name="quantity" value="1" min="1" max="50" style="width:3.5rem;"></label>
+        <button type="submit">Ajouter</button>
+    </form>
+    {% endif %}
+    <div style="display:flex;gap:.4rem;margin-top:.75rem;">
+        <form method="post" action="{% url 'encounter_load_table' encounter.id %}">{% csrf_token %}<button type="submit">Charger sur Table</button></form>
+        <form method="post" action="{% url 'encounter_duplicate' encounter.id %}">{% csrf_token %}<button type="submit">Dupliquer</button></form>
+        <form method="post" action="{% url 'encounter_delete' encounter.id %}">{% csrf_token %}<button type="submit">Supprimer</button></form>
+    </div>
+</article>
+{% empty %}<p>Aucune rencontre sauvegardée.</p>{% endfor %}
+{% endblock %}
