@@ -47,6 +47,8 @@ def table_home(request):
             hp_state = "healthy"
         mob.hp_percent = hp_percent
         mob.hp_state = hp_state
+        mob.shield_percent = round(shield / max_hp * 100, 2) if max_hp else 0
+        mob.effective_hp = current_hp + shield
         mob.live_resources = (
             ("hp", "PV", f"{current_hp}/{max_hp}"),
             ("shield", "PB", shield),
