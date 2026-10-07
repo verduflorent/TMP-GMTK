@@ -2,34 +2,31 @@
 {% block title %}Bestiaire — TMP-GMTK{% endblock %}
 {% block content %}
 <h1>Bestiaire</h1>
-<form method="get" style="display:flex;gap:.4rem;align-items:center;margin-bottom:1rem;">
-    <label>Afficher
-        <select name="folder" onchange="this.form.submit()">
-            <option value="all"{% if folder_filter == "all" %} selected{% endif %}>Tout</option>
-            {% for folder in folders %}
-            <option value="{{ folder.id }}"{% if folder_filter == folder.id|stringformat:"s" %} selected{% endif %}>{{ folder.name }}</option>
-            {% endfor %}
-            <option value="unclassified"{% if folder_filter == "unclassified" %} selected{% endif %}>Non classé</option>
-        </select>
-    </label>
-</form>
+<button type="button" onclick="document.getElementById('bestiary-filter-dialog').showModal()">Dossier : {% if folder_filter == "all" %}Tout{% elif folder_filter == "unclassified" %}Non classé{% else %}{% for folder in folders %}{% if folder.id|stringformat:"s" == folder_filter %}{{ folder.name }}{% endif %}{% endfor %}{% endif %}</button>
+<dialog class="confirm-dialog" id="bestiary-filter-dialog">
+    <h3>Afficher un dossier</h3>
+    <p><a href="?folder=all">Tout</a></p>
+    {% for folder in folders %}<p><a href="?folder={{ folder.id }}">{{ folder.name }}</a></p>{% endfor %}
+    <p><a href="?folder=unclassified">Non classé</a></p>
+    <button type="button" onclick="this.closest('dialog').close()">Fermer</button>
+</dialog>
 <p>Mobs sauvegardés et réutilisables.</p>
-<form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
+<button type="button" onclick="document.getElementById('bestiary-folder-create').showModal()">+ Dossier</button>
+<dialog class="confirm-dialog" id="bestiary-folder-create"><h3>Nouveau dossier</h3><form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
     {% csrf_token %}<input type="hidden" name="next" value="bestiary">
     <input name="name" placeholder="Nouveau dossier" required maxlength="120"><button type="submit">+ Dossier</button>
-</form>
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
 <div class="mob-grid">
 {% for mob in bestiary_mobs %}
 <article class="panel mob-card">
     <h3>{{ mob.name }}</h3>
     <p>{{ mob.get_profile_display }} · N{{ mob.level }} · <strong>{% if mob.folder %}{{ mob.folder.name }}{% else %}Non classé{% endif %}</strong></p>
-    <form method="post" action="{% url 'bestiary_move_folder' mob.id %}" style="margin-bottom:.5rem;">
-        {% csrf_token %}
-        <select name="folder_id" onchange="this.form.submit()">
-            <option value="">Non classé</option>
-            {% for folder in folders %}<option value="{{ folder.id }}"{% if mob.folder_id == folder.id %} selected{% endif %}>{{ folder.name }}</option>{% endfor %}
-        </select>
-    </form>
+    <button type="button" onclick="document.getElementById('move-bestiary-{{ mob.id }}').showModal()">Déplacer</button>
+<dialog class="confirm-dialog" id="move-bestiary-{{ mob.id }}"><h3>Déplacer {{ mob.name }}</h3>
+<form method="post" action="{% url 'bestiary_move_folder' mob.id %}">{% csrf_token %}
+<button name="folder_id" value="" type="submit">Non classé</button>
+{% for folder in folders %}<button name="folder_id" value="{{ folder.id }}" type="submit">{{ folder.name }}</button>{% endfor %}
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
         <form method="post" action="{% url 'bestiary_load' mob.id %}" style="display:flex;gap:.35rem;align-items:center;">
             {% csrf_token %}
