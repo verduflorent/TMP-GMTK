@@ -24,10 +24,19 @@ def _builder_redirect_editing(request, index):
 @login_required
 def table_home(request):
     game_table = ensure_game_table(request.user)
+    builder_mobs = list(game_table.builder_mobs.all())
+    for mob in builder_mobs:
+        payload = mob.payload
+        mob.live_resources = (
+            ("hp", "PV", f"{payload.get('current_hp', 0)}/{payload.get('max_hp', 0)}"),
+            ("shield", "PB", payload.get("shield", 0)),
+            ("reactions", "Réactions", payload.get("reactions", 0)),
+            ("vigilance", "Vigilance", payload.get("vigilance", 0)),
+        )
     return render(request, "toolkit/table.html", {
         "game_table": game_table,
         "instances": game_table.instances.all(),
-        "builder_mobs": game_table.builder_mobs.all(),
+        "builder_mobs": builder_mobs,
     })
 
 
