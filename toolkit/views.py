@@ -788,11 +788,7 @@ def table_mob_resource(request, mob_id):
 @login_required
 def table_next_round(request):
     if request.method != "POST":
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse({"ok": True, "mobs": [
-            {"id": mob.id, "payload": mob.payload} for mob in table.builder_mobs.all()
-        ]})
-    return redirect("table")
+        return redirect("table")
     table = ensure_game_table(request.user)
     for mob in table.builder_mobs.all():
         payload = dict(mob.payload)
@@ -801,8 +797,11 @@ def table_next_round(request):
         payload["vigilance"] = int(initial.get("vigilance", payload.get("vigilance", 0)))
         mob.payload = payload
         mob.save(update_fields=["payload", "updated_at"])
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "mobs": [
+            {"id": mob.id, "payload": mob.payload} for mob in table.builder_mobs.all()
+        ]})
     return redirect("table")
-
 
 @login_required
 def table_condition_add(request, mob_id):
