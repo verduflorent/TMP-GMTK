@@ -740,7 +740,14 @@ def table_mob_resource(request, mob_id):
     key = key_map[resource]
     current = int(payload.get(key, 0))
 
-    if action == "add":
+    if resource == "hp" and action == "subtract":
+        shield = max(0, int(payload.get("shield", 0)))
+        absorbed = min(shield, value)
+        payload["shield"] = shield - absorbed
+        current = max(0, current - (value - absorbed))
+    elif resource == "shield" and action == "add":
+        current += value
+    elif action == "add":
         current += value
     elif action == "subtract":
         current = max(0, current - value)
