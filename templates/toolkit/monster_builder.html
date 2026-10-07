@@ -415,7 +415,29 @@ document.addEventListener("DOMContentLoaded", function () {
                             </form>
                         </div>
                         {% endfor %}
-                        <button type="button" onclick="document.getElementById('weapon-modal-{{ forloop.counter0 }}').showModal()">+ Arme</button>
+                        <details>
+                            <summary>+ Arme</summary>
+                            <form method="post" action="{% url 'monster_builder_weapon' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                                <input type="hidden" name="action" value="add">
+                                <select name="weapon_id" required>
+                                    {% for group_name, weapons in weapon_groups %}
+                                    <optgroup label="{{ group_name }}">
+                                        {% for weapon in weapons %}<option value="{{ weapon.id }}">T{{ weapon.tier }} — {{ weapon.name }}</option>{% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit">Ajouter</button>
+                            </form>
+                            {% if user_weapons %}
+                            <form method="post" action="{% url 'monster_builder_user_weapon_add' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                                <select name="weapon_id">{% for weapon in user_weapons %}<option value="{{ weapon.id }}">{{ weapon.name }}</option>{% endfor %}</select>
+                                <button type="submit">Ajouter mon arme</button>
+                            </form>
+                            {% endif %}
+                        </details>
                     </section>
                     <section class="edit-section">
                         <h3>Implant(s)</h3>
@@ -429,7 +451,16 @@ document.addEventListener("DOMContentLoaded", function () {
                             </form>
                         </div>
                         {% empty %}<p>Aucun implant.</p>{% endfor %}
-                        <button type="button" onclick="document.getElementById('implant-modal-{{ forloop.counter0 }}').showModal()">+ Implant</button>
+                        <details>
+                            <summary>+ Implant</summary>
+                            <form method="post" action="{% url 'monster_builder_implant' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="add">
+                                <select name="implant_id" required>
+                                    {% for group_name, implants in implant_groups %}<optgroup label="{{ group_name }}">{% for implant in implants %}<option value="{{ implant.id }}">{{ implant.name }}</option>{% endfor %}</optgroup>{% endfor %}
+                                </select>
+                                <button type="submit">Ajouter</button>
+                            </form>
+                        </details>
                     </section>
                     <section class="edit-section">
                         <h3>Capacité(s)</h3>
