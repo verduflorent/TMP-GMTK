@@ -89,12 +89,12 @@ def monster_builder(request):
     for mob in generated_mobs:
         mob["profile_label"] = profile_labels.get(str(mob["profile"]), str(mob["profile"]))
         mob["editable_stats"] = (
-            ("force", "FOR", mob["stats"]["force"]),
-            ("agility", "AGI", mob["stats"]["agility"]),
-            ("perception", "PER", mob["stats"]["perception"]),
-            ("technique", "TECH", mob["stats"]["technique"]),
-            ("constitution", "CON", mob["stats"]["constitution"]),
-            ("willpower", "VOL", mob["stats"]["willpower"]),
+            ("force", "FOR", mob["stats"].force),
+            ("agility", "AGI", mob["stats"].agility),
+            ("perception", "PER", mob["stats"].perception),
+            ("technique", "TECH", mob["stats"].technique),
+            ("constitution", "CON", mob["stats"].constitution),
+            ("willpower", "VOL", mob["stats"].willpower),
         )
         mob["editable_derived"] = (
             ("max_hp", "PV", mob["max_hp"]),
