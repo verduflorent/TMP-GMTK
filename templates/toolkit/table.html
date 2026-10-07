@@ -132,6 +132,21 @@
 .table-combat .combat-condition-row {margin:.25rem 0}
 .table-combat .combat-condition-row input {background:transparent;border:0;border-bottom:1px solid #a8b1c1;color:#14213b;width:95px}
 }
+
+@media screen {
+.table-combat .hp-bar {position:relative;overflow:hidden}
+.table-combat .hp-bar-value {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem;font-weight:900;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 2px 3px #000;pointer-events:none;z-index:2}
+.table-combat .resource-icon.shield {width:34px;height:34px;background:#9247ac;color:white;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);font-size:0}
+.table-combat .resource-icon.shield:after {content:"";width:25px;height:25px;background:#b66bcd;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.table-combat .combat-meta .combat-resource-row strong {font-size:1.1rem}
+.table-combat .combat-resource-row button {cursor:pointer;font-size:1rem;line-height:1.2}
+.table-combat .weapon-row form input {background:transparent;border:0;border-bottom:1px solid #697a91;border-radius:0;color:#14213b;padding:.1rem;text-align:center}
+.table-combat .weapon-row form button {font-size:1rem;padding:.2rem}
+dialog.confirm-dialog {background:#faf9f4;color:#14213b;border:2px solid #b5beca;border-radius:14px;box-shadow:0 12px 45px #0004}
+dialog.confirm-dialog::backdrop {background:#0d1d37a8}
+dialog.confirm-dialog .confirm-actions button {background:#f3f1ec;color:#14213b;border:1px solid #a6b3c5;border-radius:7px;padding:.45rem .8rem;cursor:pointer}
+dialog.confirm-dialog .confirm-actions form button {background:#bd2036;color:white;border-color:#bd2036}
+}
 </style>
 
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -217,6 +232,7 @@
             <div class="hp-bar print-hide" role="meter" aria-label="PV {{ mob.payload.current_hp }} sur {{ mob.payload.max_hp }}" aria-valuemin="0" aria-valuemax="{{ mob.payload.max_hp }}" aria-valuenow="{{ mob.payload.current_hp }}">
                 <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent|stringformat:"d" }}%;"></div>
                 <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent|stringformat:"d" }}%;"></div>
+                <strong class="hp-bar-value" data-resource-label="hp">{{ mob.payload.current_hp }}/{{ mob.payload.max_hp }}</strong>
             </div>
                 <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
                     {% csrf_token %}<input type="hidden" name="resource" value="hp">
@@ -240,7 +256,7 @@
               <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
                 {% csrf_token %}<input type="hidden" name="resource" value="shield">
                 <span class="resource-icon shield" aria-hidden="true">⬡</span>
-                <strong data-resource-label="shield">PB {{ mob.payload.shield }}</strong>
+                <strong data-resource-label="shield">{{ mob.payload.shield }}</strong>
                 <input type="number" name="value" min="0" value="10" aria-label="Quantité de PB">
                 <button type="submit" name="action" value="subtract" title="Retirer PB">▾</button>
                 <button type="submit" name="action" value="add" title="Ajouter PB">▴</button>
@@ -346,7 +362,7 @@ document.addEventListener("submit", async function(event) {
       const pbFill=card.querySelector(".hp-shield-fill");
       if(hpFill){hpFill.style.setProperty("--hp-percent",hpPercent+"%");hpFill.classList.remove("healthy","wounded","critical");hpFill.classList.add(max&&hp/max<=.25?"critical":max&&hp/max<=.5?"wounded":"healthy");}
       if(pbFill)pbFill.style.setProperty("--shield-percent",shieldPercent+"%");
-      const labels={hp:"PV "+hp+"/"+max,shield:"PB "+shield,reactions:String(payload.reactions),vigilance:String(payload.vigilance)};
+      const labels={hp:hp+"/"+max,shield:String(shield),reactions:String(payload.reactions),vigilance:String(payload.vigilance)};
       for(const [key,value] of Object.entries(labels)){const label=card.querySelector('[data-resource-label="'+key+'"]');if(label)label.textContent=value;}
       const meter=card.querySelector(".hp-bar");
       if(meter){meter.setAttribute("aria-valuenow",hp);meter.setAttribute("aria-label","PV "+hp+" sur "+max);}
