@@ -24,4 +24,5 @@ urlpatterns = [
     path("bestiary/<int:mob_id>/delete/", views.bestiary_delete, name="bestiary_delete"),
     path("table/mob/<int:mob_id>/edit/", views.table_mob_edit, name="table_mob_edit"),
     path("table/mob/<int:mob_id>/delete/", views.table_mob_delete, name="table_mob_delete"),
+    path("table/mob/<int:mob_id>/resource/", views.table_mob_resource, name="table_mob_resource"),
 ]
