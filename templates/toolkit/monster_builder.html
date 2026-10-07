@@ -382,10 +382,58 @@
                         </form>
                     </section>
                     <section class="edit-section">
-                        <h3>Équipement & capacités</h3>
-                        <p><button type="button" onclick="document.getElementById('weapon-modal-{{ forloop.counter0 }}').showModal()">Armes</button></p>
-                        <p><button type="button" onclick="document.getElementById('implant-modal-{{ forloop.counter0 }}').showModal()">Implants</button></p>
-                        <p><button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">Capacités</button></p>
+                        <h3>Caractéristiques</h3>
+                        <div class="stats">
+                        {% for field, label, value in mob.editable_stats %}
+                            <div><dt>{{ label }}</dt><dd>
+                                <form method="post" action="{% url 'monster_builder_field' %}">
+                                    {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="field" value="{{ field }}">
+                                    <input type="number" name="value" value="{{ value }}" min="0" onchange="this.form.submit()">
+                                </form>
+                            </dd></div>
+                        {% endfor %}
+                        </div>
+                    </section>
+                    <section class="edit-section">
+                        <h3>Arme(s)</h3>
+                        {% for card in mob.weapon_cards %}
+                        <div class="weapon-entry">
+                            <strong>{{ card.weapon.name }}</strong> · P{{ card.effective_power }} · Visée {{ card.effective_aim|stringformat:"+d" }}
+                            {% if card.contact_damage != None %}<div>Dégâts Contact : {{ card.contact_damage }}</div><div>Dégâts Distance : {{ card.distance_damage }}</div>{% else %}<div>{{ card.neutral_damage }} Dégâts</div>{% endif %}
+                            {% for line in card.property_lines %}<p>{{ line }}</p>{% endfor %}
+                            <form method="post" action="{% url 'monster_builder_weapon' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="weapon_index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="remove">
+                                <button type="submit">× Retirer</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        <button type="button" onclick="document.getElementById('weapon-modal-{{ forloop.counter0 }}').showModal()">+ Arme</button>
+                    </section>
+                    <section class="edit-section">
+                        <h3>Implant(s)</h3>
+                        {% for card in mob.implant_cards %}
+                        <div class="implant-entry">
+                            <p><strong>{{ card.implant.name }}</strong>{% if card.resolved_property %} — {{ card.resolved_property }}{% endif %}</p>
+                            {% for line in card.extra_lines %}<p>{{ line }}</p>{% endfor %}
+                            <form method="post" action="{% url 'monster_builder_implant' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="implant_index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="remove">
+                                <button type="submit">× Retirer</button>
+                            </form>
+                        </div>
+                        {% empty %}<p>Aucun implant.</p>{% endfor %}
+                        <button type="button" onclick="document.getElementById('implant-modal-{{ forloop.counter0 }}').showModal()">+ Implant</button>
+                    </section>
+                    <section class="edit-section">
+                        <h3>Capacité(s)</h3>
+                        {% for ability in mob.abilities %}
+                        <div><strong>{{ ability.name }}</strong>{% if ability.description %}<p>{{ ability.description }}</p>{% endif %}
+                            <form method="post" action="{% url 'monster_builder_ability' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="ability_index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="remove">
+                                <button type="submit">× Retirer</button>
+                            </form>
+                        </div>
+                        {% empty %}<p>Aucune capacité.</p>{% endfor %}
+                        <button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">+ Capacité</button>
                     </section>
                     <section class="edit-section">
                         <h3>Ressources</h3>
