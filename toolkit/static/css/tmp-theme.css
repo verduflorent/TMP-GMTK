@@ -15,3 +15,11 @@ dialog,dialog.mob-edit-dialog{background:var(--tmp-panel);color:var(--tmp-ink);b
 .combat-meta strong{grid-row:2}.combat-meta input[type=number]{grid-column:3}.combat-meta .combat-resource-row:not(.compact)>button:first-of-type{grid-column:4}.combat-meta .combat-resource-row:not(.compact)>button:last-of-type{grid-column:5}.combat-meta .compact>button:first-of-type{grid-column:3}.combat-meta .compact>button:last-of-type{grid-column:4}
 .dice-dock{position:relative;bottom:auto;box-shadow:none}.combat-d20 span{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--tmp-panel);padding:0 2px;line-height:1.05}
 body .mob-edit-dialog .edit-actions{background:var(--tmp-panel)}body .mob-edit-dialog .edit-section{border-color:var(--tmp-line)}
+
+/* Compact resources: filled violet shield and icon-only reaction counters. */
+.resource-icon.shield{width:26px;height:29px;background:#8854b7;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);font-size:0;display:grid;place-items:center}
+.resource-icon.shield:after{content:"";width:19px;height:22px;background:#b180d3;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.combat-meta .combat-resource-row:not(.compact){grid-template-columns:28px auto auto auto auto}
+.combat-meta .compact{display:flex;align-items:center;gap:3px}
+.combat-meta .compact .resource-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;font-size:23px}
+.combat-secondary{align-items:center}

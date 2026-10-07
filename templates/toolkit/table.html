@@ -134,8 +134,8 @@
                 {% if resource == "reactions" or resource == "vigilance" %}
                 <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row compact">
                     {% csrf_token %}<input type="hidden" name="resource" value="{{ resource }}"><input type="hidden" name="value" value="1">
-                    <span class="resource-icon {% if resource == 'vigilance' %}vigilance{% else %}reactions{% endif %}" title="{{ label }}">{% if resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span>
-                    <span class="resource-label">{{ label }}</span><strong data-resource-label="{{ resource }}">{{ value }}</strong>
+                    <span class="resource-icon {% if resource == 'vigilance' %}vigilance{% else %}reactions{% endif %}" title="{{ label }}" role="img" aria-label="{{ label }}">{% if resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span>
+                    <strong data-resource-label="{{ resource }}">{{ value }}</strong>
                     <button type="submit" name="action" value="subtract" title="−1 {{ label }}">▾</button>
                     <button type="submit" name="action" value="add" title="+1 {{ label }}">▴</button>
                 </form>
