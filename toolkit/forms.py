@@ -124,3 +124,7 @@ class TableMobResourceForm(forms.Form):
     resource = forms.ChoiceField(choices=[("hp", "PV"), ("shield", "PB"), ("reactions", "Réactions"), ("vigilance", "Vigilance")])
     action = forms.ChoiceField(choices=[("add", "+"), ("subtract", "-"), ("set", "="), ("reset", "Reset")])
     value = forms.IntegerField(min_value=0, required=False)
+
+
+class TableConditionForm(forms.Form):
+    name = forms.CharField(max_length=80)
