@@ -12,34 +12,25 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
 {% endblock %}
 {% block content %}
 <h1>Rencontres</h1>
-<form method="get" style="display:flex;gap:.4rem;align-items:center;margin-bottom:1rem;">
-    <label>Afficher
-        <select name="folder" onchange="this.form.submit()">
-            <option value="all"{% if folder_filter == "all" %} selected{% endif %}>Tout</option>
-            {% for folder in folders %}
-            <option value="{{ folder.id }}"{% if folder_filter == folder.id|stringformat:"s" %} selected{% endif %}>{{ folder.name }}</option>
-            {% endfor %}
-            <option value="unclassified"{% if folder_filter == "unclassified" %} selected{% endif %}>Non classé</option>
-        </select>
-    </label>
-</form>
-<form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
+<button type="button" onclick="document.getElementById('encounter-filter-dialog').showModal()">Dossier : {% if folder_filter == "all" %}Tout{% elif folder_filter == "unclassified" %}Non classé{% else %}{% for folder in folders %}{% if folder.id|stringformat:"s" == folder_filter %}{{ folder.name }}{% endif %}{% endfor %}{% endif %}</button>
+<dialog class="confirm-dialog" id="encounter-filter-dialog"><h3>Afficher un dossier</h3>
+<p><a href="?folder=all">Tout</a></p>{% for folder in folders %}<p><a href="?folder={{ folder.id }}">{{ folder.name }}</a></p>{% endfor %}<p><a href="?folder=unclassified">Non classé</a></p>
+<button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
+<button type="button" onclick="document.getElementById('enc-folder-create').showModal()">+ Dossier</button><dialog class="confirm-dialog" id="enc-folder-create"><h3>Nouveau dossier</h3><form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
     {% csrf_token %}<input type="hidden" name="next" value="encounters">
     <input name="name" placeholder="Nouveau dossier" required maxlength="120"><button type="submit">+ Dossier</button>
-</form>
-<form method="post" action="{% url 'encounter_create' %}" class="panel" style="min-height:auto;display:flex;gap:.5rem;">
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
+<button type="button" onclick="document.getElementById('enc-create').showModal()">+ Rencontre</button><dialog class="confirm-dialog" id="enc-create"><h3>Créer une rencontre</h3><form method="post" action="{% url 'encounter_create' %}" class="panel" style="min-height:auto;display:flex;gap:.5rem;">
     {% csrf_token %}<input name="name" placeholder="Nom de la rencontre" required maxlength="120"><button type="submit">+ Créer</button>
-</form>
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
 {% for encounter in encounters %}
 <article class="panel" style="margin-top:1rem;">
     <h2>{{ encounter.name }}</h2>
-    <form method="post" action="{% url 'encounter_move_folder' encounter.id %}">
-        {% csrf_token %}
-        <select name="folder_id" onchange="this.form.submit()">
-            <option value="">Non classé</option>
-            {% for folder in folders %}<option value="{{ folder.id }}"{% if encounter.folder_id == folder.id %} selected{% endif %}>{{ folder.name }}</option>{% endfor %}
-        </select>
-    </form>
+    <button type="button" onclick="document.getElementById('move-enc-{{ encounter.id }}').showModal()">Déplacer</button>
+<dialog class="confirm-dialog" id="move-enc-{{ encounter.id }}"><h3>Déplacer {{ encounter.name }}</h3>
+<form method="post" action="{% url 'encounter_move_folder' encounter.id %}">{% csrf_token %}
+<button name="folder_id" value="" type="submit">Non classé</button>{% for folder in folders %}<button name="folder_id" value="{{ folder.id }}" type="submit">{{ folder.name }}</button>{% endfor %}
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
     {% for entry in encounter.draft_mobs.all %}
     <p><strong>{{ entry.quantity }}× {{ entry.name }}</strong>
         <form method="post" action="{% url 'encounter_remove_mob' encounter.id entry.id %}" style="display:inline;">
@@ -72,7 +63,8 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
     <div style="display:flex;gap:.4rem;margin-top:.75rem;">
         <form method="post" action="{% url 'encounter_load_table' encounter.id %}">{% csrf_token %}<button type="submit">Charger sur Table</button></form>
         <form method="post" action="{% url 'encounter_duplicate' encounter.id %}">{% csrf_token %}<button type="submit">Dupliquer</button></form>
-        <form method="post" action="{% url 'encounter_delete' encounter.id %}">{% csrf_token %}<button type="submit">Supprimer</button></form>
+        <button type="button" onclick="document.getElementById('delete-enc-{{ encounter.id }}').showModal()">Supprimer</button>
+<dialog class="confirm-dialog" id="delete-enc-{{ encounter.id }}"><strong>Supprimer {{ encounter.name }} ?</strong><div class="confirm-actions"><button type="button" onclick="this.closest('dialog').close()">Annuler</button><form method="post" action="{% url 'encounter_delete' encounter.id %}">{% csrf_token %}<button type="submit">Supprimer</button></form></div></dialog>
     </div>
 </article>
 {% empty %}<p>Aucune rencontre sauvegardée.</p>{% endfor %}
