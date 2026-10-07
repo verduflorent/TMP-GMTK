@@ -13,8 +13,21 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
 </script>
 {% endblock %}
 {% block content %}
+<style>
+@media print {
+  header, .table-screen-only, dialog, .confirm-dialog, form, button { display:none !important; }
+  main { max-width:none; padding:0; }
+  body { background:white; color:black; }
+  .mob-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8mm; }
+  .mob-card { break-inside:avoid; border:1px solid #000; padding:4mm; min-height:0; }
+  .mob-card .print-hide { display:none !important; }
+  .mob-card .print-core { display:block !important; }
+}
+@media screen { .print-only { display:none; } }
+</style>
+
 <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h1>Table de jeu</h1>
+    <h1>Table de jeu</h1><button type="button" class="table-screen-only" onclick="window.print()">🖨 Imprimer les Mobs</button>
 <button type="button" onclick="document.getElementById('clear-table-dialog').showModal()">Nettoyer la Table</button>
 <dialog class="confirm-dialog" id="clear-table-dialog"><strong>Nettoyer toute la Table ?</strong><p>Les Mobs présents seront retirés. Les Bestiaires et Rencontres sauvegardées restent intactes.</p><div class="confirm-actions"><button type="button" onclick="this.closest('dialog').close()">Annuler</button><form method="post" action="{% url 'table_clear' %}">{% csrf_token %}<button type="submit">Nettoyer</button></form></div></dialog>
     <form method="post" action="{% url 'table_next_round' %}">
@@ -79,8 +92,12 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
                 <strong>{{ mob.name }}</strong>
                 <strong>{{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} PV</strong>
             </header>
+            <form class="table-screen-only" method="post" action="{% url 'table_mob_token_id' mob.id %}" style="display:flex;gap:.35rem;align-items:center;margin:.4rem 0;">
+                {% csrf_token %}<label>ID jeton <input name="token_id" value="{{ mob.payload.token_id|default:'' }}" placeholder="—" maxlength="32" style="width:5rem;"></label><button type="submit">✓</button>
+            </form>
+            <p class="print-only"><strong>ID {{ mob.payload.token_id|default:"—" }}</strong></p>
             <p>Armure {{ mob.payload.armor }}</p>
-            <div class="table-resources">
+            <div class="table-resources print-hide">
                 {% for resource, label, value in mob.live_resources %}
                 <form method="post" action="{% url 'table_mob_resource' mob.id %}" style="display:flex;gap:.3rem;align-items:center;margin:.25rem 0;">
                     {% csrf_token %}
@@ -93,7 +110,7 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
                 </form>
                 {% endfor %}
             </div>
-            <div style="margin:.5rem 0;">
+            <div class="print-hide" style="margin:.5rem 0;">
                 {% for condition in mob.conditions.all %}
                 <span style="display:inline-flex;gap:.25rem;align-items:center;border:1px solid #444;border-radius:999px;padding:.15rem .45rem;margin:.1rem;">
                     {{ condition.name }}
@@ -121,13 +138,13 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
                     </form>
                 </div>
             {% endfor %}
-            {% for implant in mob.payload.implants %}
+            <div class="print-hide">{% for implant in mob.payload.implants %}
                 <p><strong>{{ implant.name }}</strong>{% if implant.property_lines %} — {{ implant.property_lines|join:" · " }}{% endif %}</p>
-            {% endfor %}
-            {% for ability in mob.payload.abilities %}
+            {% endfor %}</div>
+            <div class="print-hide">{% for ability in mob.payload.abilities %}
                 <p><strong>{{ ability.name }}</strong>{% if ability.description %} — {{ ability.description }}{% endif %}{% if ability.resolved_effect %} · {{ ability.resolved_effect.label }} +{{ ability.resolved_effect.value }}{% endif %}</p>
-            {% endfor %}
-            <div style="display:flex;gap:.4rem;">
+            {% endfor %}</div>
+            <div class="print-hide" style="display:flex;gap:.4rem;">
                 <form method="post" action="{% url 'table_mob_edit' mob.id %}">
                     {% csrf_token %}
                     <button type="submit">✎ Rééditer</button>
