@@ -468,6 +468,18 @@ def _apply_draft_overrides(mob):
                 card.property_lines, card.contact_damage, card.distance_damage,
             )
         cards.append(card)
+    # Identical Akimbo follows the established generator rule: combined power
+    # applies to the first card only; the second remains an individual weapon.
+    if mob.get("akimbo_identical") and len(cards) == 2:
+        from rules.engine import base_damage
+        first, second = cards
+        combined_power = first.effective_power + second.effective_power
+        neutral = round_to_5(base_damage(mob["level"]) + combined_power * 2)
+        cards[0] = ResolvedWeapon(
+            first.weapon, combined_power, neutral, first.effective_aim,
+            first.resolved_property, first.property_lines,
+            first.contact_damage, first.distance_damage,
+        )
     mob["weapon_cards"] = cards
 
     mob["implant_cards"] = [
