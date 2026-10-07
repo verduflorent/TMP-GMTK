@@ -1066,3 +1066,25 @@ class ScenarioFolderTests(TestCase):
         )
         self.assertIsNone(response.context["editing_index"])
 
+    def test_weapon_add_follow_reopens_exactly_once_and_refresh_closes(self):
+        from django.core.management import call_command
+        from catalogue.models import MobWeapon
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
+        weapon = MobWeapon.objects.first()
+
+        response = self.client.post(
+            reverse("monster_builder_weapon"),
+            {"index": 1, "action": "add", "weapon_id": weapon.id},
+            follow=True,
+        )
+        self.assertEqual(response.context["editing_index"], 1)
+        self.assertContains(response, 'id="mob-edit-1"', count=1)
+        self.assertNotIn("monster_builder_reopen_index", self.client.session)
+
+        refresh = self.client.get(reverse("monster_builder"))
+        self.assertIsNone(refresh.context["editing_index"])
+        self.assertNotIn("monster_builder_reopen_index", self.client.session)
+
+
