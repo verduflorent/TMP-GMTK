@@ -1297,3 +1297,29 @@ class GlobalModalUiContractTests(TestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["payload"]["current_hp"], 200)
+
+
+class WeaponRollModalContractTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="rollmodal", password="pwd")
+        self.client.login(username="rollmodal", password="pwd")
+
+    def test_table_has_shared_roll_modal_and_per_mob_history(self):
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
+        for index in range(2):
+            TableMob.objects.create(game_table=table, name=f"Tireur {index}", profile="T", level=1,
+                payload={"max_hp": 250, "current_hp": 250, "shield": 0, "armor": 0,
+                         "reactions": 1, "vigilance": 1, "weapons": [{"name": "Pistolet", "aim": 2, "damage": 70}], "implants": [], "abilities": []})
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, 'id="weapon-roll-dialog"', count=1)
+        self.assertContains(response, 'data-last-roll', count=2)
+
+    def test_weapon_roll_async_response_keeps_mob_identity(self):
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
+        mob = TableMob.objects.create(game_table=table, name="Tireur cible", profile="T", level=1,
+            payload={"max_hp": 250, "current_hp": 250, "shield": 0, "armor": 0,
+                     "reactions": 1, "vigilance": 1, "weapons": [{"name": "Pistolet", "aim": 2, "damage": 70}], "implants": [], "abilities": []})
+        response = self.client.post(reverse("table_mob_roll_weapon", args=[mob.id, 0]),
+            {"modifier": 0}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["result"]["mob"], "Tireur cible")
