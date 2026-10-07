@@ -530,6 +530,27 @@ class BuilderValidationTests(TestCase):
         mob.refresh_from_db()
         self.assertEqual(mob.payload, before)
 
+    def test_live_preview_scales_hp_without_persisting_changes(self):
+        from .models import TableMob
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 1})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        original_level = mob.level
+        original_payload = dict(mob.payload)
+        fields = {
+            "name": mob.name, "level": 5,
+            **{key: original_payload[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **{key: original_payload["stats"][key] for key in ("force", "agility", "perception", "technique", "constitution", "willpower")},
+            "preview": "1",
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["preview"])
+        self.assertNotEqual(response.json()["payload"]["max_hp"], original_payload["max_hp"])
+        mob.refresh_from_db()
+        self.assertEqual(mob.level, original_level)
+        self.assertEqual(mob.payload, original_payload)
+
     def test_table_mob_can_be_edited_in_place_without_losing_resources(self):
         from .models import TableMob
 
