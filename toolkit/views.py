@@ -22,7 +22,7 @@ def _builder_redirect_editing(request, index):
 
 
 def _builder_clear_editing(request):
-    request.session.pop("monster_builder_editing", None)
+    request.session.pop("monster_builder_reopen_index", None)
     request.session.modified = True
 
 
@@ -65,6 +65,10 @@ def monster_builder(request):
     if editing_index is not None:
         request.session.modified = True
     form = MonsterBuilderForm(request.POST or None)
+
+    if request.method == "POST" and request.POST.get("action") == "generate":
+        editing_index = None
+        request.session.pop("monster_builder_reopen_index", None)
 
     if request.method == "POST" and request.POST.get("action") == "generate" and form.is_valid():
         generated_mobs = generate_mobs(
@@ -423,7 +427,7 @@ def table_mob_edit(request, mob_id):
     saved = request.session.get("monster_builder_mobs", [])
     saved.append(mob.payload["draft"])
     request.session["monster_builder_mobs"] = saved
-    request.session["monster_builder_editing"] = len(saved) - 1
+    request.session["monster_builder_reopen_index"] = len(saved) - 1
     request.session.modified = True
     mob.delete()
     return redirect("monster_builder")
@@ -507,7 +511,7 @@ def bestiary_load(request, mob_id):
         draft["name"] = mob.name
         saved.append(draft)
     request.session["monster_builder_mobs"] = saved
-    request.session["monster_builder_editing"] = first_index
+    request.session["monster_builder_reopen_index"] = first_index
     request.session.modified = True
     return redirect("monster_builder")
 
