@@ -1,44 +1,28 @@
+{% load static %}
 <!doctype html>
 <html lang="fr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}TMP-GMTK{% endblock %}</title>
-    <style>
-        body { font-family: system-ui, sans-serif; margin: 0; background: #111; color: #eee; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #333; }
-        main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .panel { border: 1px solid #333; border-radius: .5rem; padding: 1rem; min-height: 12rem; }
-        button, input { font: inherit; }
-        nav { display: flex; gap: 1rem; align-items: center; }
-        .builder-form { display: flex; gap: 1rem; align-items: end; min-height: auto; margin-bottom: 1.5rem; }
-        .builder-form div { display: grid; gap: .35rem; }
-        .mob-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
-        .mob-card { min-height: auto; }
-        .mob-card > .mob-card-header { padding: 0 0 .75rem; border: 0; border-bottom: 1px solid #333; }
-        .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: .4rem; }
-        .stats div { text-align: center; border: 1px solid #333; border-radius: .35rem; padding: .4rem; }
-        .stats dt { font-size: .75rem; opacity: .7; }
-        .stats dd { margin: .2rem 0 0; font-weight: 700; }
-        .mob-card h3 { margin-bottom: .4rem; }
-        .mob-card p { margin: .35rem 0; }
-        a { color: inherit; }
-        dialog.confirm-dialog { background:#171717; color:#eee; border:1px solid #444; border-radius:.65rem; padding:1.1rem; min-width:280px; }
-        dialog.confirm-dialog::backdrop { background:rgba(0,0,0,.72); }
-        .confirm-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:1rem; }
-        @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/tmp-theme.css' %}">
 </head>
 <body>
-<header>
-    <strong>TMP — Game Master Toolkit</strong>
+<header class="site-header">
+    <a class="site-brand" href="{% url 'table' %}" aria-label="The Moira Protocol — Game Master Toolkit">
+        <img class="brand-mark" src="{% static 'img/tmp-mark.png' %}" alt="Logo TMP" onerror="this.style.display='none'">
+        <img class="brand-wordmark" src="{% static 'img/tmp-gmtk-wordmark.png' %}" alt="The Moira Protocol — Game Master Toolkit" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
+        <strong hidden>THE MOIRA PROTOCOL — GAME MASTER TOOLKIT</strong>
+    </a>
     {% if user.is_authenticated %}
-    <nav>
-        <a href="{% url 'table' %}">Table</a>
-        <a href="{% url 'monster_builder' %}">Monster Builder</a>
-        <a href="{% url 'bestiary' %}">Bestiaire</a>
-        <a href="{% url 'encounters' %}">Rencontres</a>
+    <nav class="site-nav" aria-label="Navigation principale">
+        <a href="{% url 'table' %}" {% if request.resolver_match.url_name == 'table' %}aria-current="page"{% endif %}>Table</a>
+        <a href="{% url 'monster_builder' %}" {% if request.resolver_match.url_name == 'monster_builder' %}aria-current="page"{% endif %}>Monster Builder</a>
+        <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>Bestiaire</a>
+        <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>Rencontres</a>
     </nav>
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
