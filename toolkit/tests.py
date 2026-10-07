@@ -755,10 +755,12 @@ class UserImplantLibraryTests(TestCase):
         self.client.post(reverse("monster_builder_validate"), {"action": "all"})
         mob = TableMob.objects.get(game_table__owner=self.user)
         hp = mob.payload["current_hp"]
+        shield = mob.payload["shield"]
 
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "subtract", "value": 30})
         mob.refresh_from_db()
-        self.assertEqual(mob.payload["current_hp"], max(0, hp - 30))
+        self.assertEqual(mob.payload["shield"], max(0, shield - 30))
+        self.assertEqual(mob.payload["current_hp"], max(0, hp - max(0, 30 - shield)))
 
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "add", "value": 9999})
         mob.refresh_from_db()
