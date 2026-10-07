@@ -436,7 +436,7 @@
                         {% for card in mob.implant_cards %}
                         <div class="implant-entry">
                             <p><strong>{{ card.implant.name }}</strong>{% if card.resolved_property %} — {{ card.resolved_property }}{% endif %}</p>
-                            {% for line in card.extra_lines %}<p>{{ line }}</p>{% endfor %}
+                            {% for line in card.property_lines %}<p>{{ line }}</p>{% endfor %}
                             <form method="post" action="{% url 'monster_builder_implant' %}">
                                 {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="implant_index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="remove">
                                 <button type="submit">× Retirer</button>
@@ -464,7 +464,31 @@
                             </form>
                         </div>
                         {% empty %}<p>Aucune capacité.</p>{% endfor %}
-                        <button type="button" onclick="document.getElementById('ability-modal-{{ forloop.counter0 }}').showModal()">+ Capacité</button>
+                        <details>
+                            <summary>+ Capacité</summary>
+                            {% if user_abilities %}
+                            <form method="post" action="{% url 'monster_builder_ability_library' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                                <select name="ability_id">{% for ability in user_abilities %}<option value="{{ ability.id }}">{{ ability.name }}</option>{% endfor %}</select>
+                                <button type="submit">Ajouter une capacité sauvegardée</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'monster_builder_ability' %}">
+                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="add">
+                                <p><label>Nom <input type="text" name="name" maxlength="120" required></label></p>
+                                <p><label>Description <textarea name="description"></textarea></label></p>
+                                <p><label>Effet <select name="effect_type">
+                                    <option value="">Aucun effet mécanique</option>
+                                    <option value="damage_contact">Dégâts Contact</option><option value="damage_distance">Dégâts Distance</option>
+                                    <option value="aim">Visée</option><option value="armor">Armure</option><option value="shield">PB</option>
+                                    <option value="healing">Soin</option><option value="max_hp">PV</option><option value="reactions">Réactions</option><option value="vigilance">Vigilance</option>
+                                </select></label></p>
+                                <p><label>Calcul <select name="scaling"><option value="fixed">Fixe</option><option value="level">Par niveau</option></select></label></p>
+                                <p><label>Valeur <input type="number" name="value" value="0"></label></p>
+                                <p><label><input type="checkbox" name="save_to_library"> Sauvegarder dans ma bibliothèque</label></p>
+                                <button type="submit">Créer et ajouter</button>
+                            </form>
+                        </details>
                     </section>
                     <section class="edit-section">
                         <h3>Ressources</h3>
