@@ -133,13 +133,7 @@
                     {% if ability.resolved_effect %}
                     <p>{{ ability.resolved_effect.label }} : +{{ ability.resolved_effect.value }}</p>
                     {% endif %}
-                    <form class="edit-only block" method="post" action="{% url 'monster_builder_ability' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                        <input type="hidden" name="ability_index" value="{{ forloop.counter0 }}">
-                        <input type="hidden" name="action" value="remove">
-                        <button type="submit">Retirer</button>
-                    </form>
+                    
                 </div>
                 {% endfor %}
             </section>
@@ -185,29 +179,13 @@
                             </form>
                         </div>
                         {% endfor %}
-                        <details>
-                            <summary>+ Arme</summary>
-                            <form method="post" action="{% url 'monster_builder_weapon' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                                <input type="hidden" name="action" value="add">
-                                <select name="weapon_id" required>
-                                    {% for group_name, weapons in weapon_groups %}
-                                    <optgroup label="{{ group_name }}">
-                                        {% for weapon in weapons %}<option value="{{ weapon.id }}">T{{ weapon.tier }} — {{ weapon.name }}</option>{% endfor %}
-                                    </optgroup>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit">Ajouter</button>
-                            </form>
-                            {% if user_weapons %}
-                            <form method="post" action="{% url 'monster_builder_user_weapon_add' %}">
-                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                                <select name="weapon_id">{% for weapon in user_weapons %}<option value="{{ weapon.id }}">{{ weapon.name }}</option>{% endfor %}</select>
-                                <button type="submit">Ajouter mon arme</button>
-                            </form>
-                            {% endif %}
-                        </details>
+                        <button type="button" onclick="document.getElementById('weapon-picker-{{ forloop.counter0 }}').showModal()">+ Arme</button>
+<dialog class="confirm-dialog resource-dialog" id="weapon-picker-{{ forloop.counter0 }}"><h3>Ajouter une arme</h3>
+{% for group_name, weapons in weapon_groups %}<h4>{{ group_name }}</h4><div class="resource-picker">{% for weapon in weapons %}
+<form class="panel resource-choice" method="post" action="{% url 'monster_builder_weapon' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}"><strong>T{{ weapon.tier }} — {{ weapon.name }}</strong><button type="submit">Ajouter</button></form>
+{% endfor %}</div>{% endfor %}
+{% if user_weapons %}<h4>Mes armes</h4>{% for weapon in user_weapons %}<form class="panel resource-choice" method="post" action="{% url 'monster_builder_user_weapon_add' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="weapon_id" value="{{ weapon.id }}"><strong>{{ weapon.name }}</strong><button type="submit">Ajouter</button></form>{% endfor %}{% endif %}
+<button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
                     </section>
                     <section class="edit-section">
                         <h3>Implant(s)</h3>
@@ -221,16 +199,12 @@
                             </form>
                         </div>
                         {% empty %}<p>Aucun implant.</p>{% endfor %}
-                        <details>
-                            <summary>+ Implant</summary>
-                            <form method="post" action="{% url 'monster_builder_implant' %}">
-                                {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="action" value="add">
-                                <select name="implant_id" required>
-                                    {% for group_name, implants in implant_groups %}<optgroup label="{{ group_name }}">{% for implant in implants %}<option value="{{ implant.id }}">{{ implant.name }}</option>{% endfor %}</optgroup>{% endfor %}
-                                </select>
-                                <button type="submit">Ajouter</button>
-                            </form>
-                        </details>
+                        <button type="button" onclick="document.getElementById('implant-picker-{{ forloop.counter0 }}').showModal()">+ Implant</button>
+<dialog class="confirm-dialog resource-dialog" id="implant-picker-{{ forloop.counter0 }}"><h3>Ajouter un implant</h3>
+{% for group_name, implants in implant_groups %}<h4>{{ group_name }}</h4><div class="resource-picker">{% for implant in implants %}
+<form class="panel resource-choice" method="post" action="{% url 'monster_builder_implant' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="implant_id" value="{{ implant.id }}"><strong>{{ implant.name }}</strong><button type="submit">Ajouter</button></form>
+{% endfor %}</div>{% endfor %}
+<button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
                     </section>
                     <section class="edit-section">
                         <h3>Capacité(s)</h3>
@@ -242,8 +216,7 @@
                             </form>
                         </div>
                         {% empty %}<p>Aucune capacité.</p>{% endfor %}
-                        <details>
-                            <summary>+ Capacité</summary>
+                        <button type="button" onclick="document.getElementById('ability-picker-{{ forloop.counter0 }}').showModal()">+ Capacité</button><dialog class="confirm-dialog" id="ability-picker-{{ forloop.counter0 }}"><h3>Ajouter une capacité</h3>
                             {% if user_abilities %}
                             <form method="post" action="{% url 'monster_builder_ability_library' %}">
                                 {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
@@ -266,7 +239,7 @@
                                 <p><label><input type="checkbox" name="save_to_library"> Sauvegarder dans ma bibliothèque</label></p>
                                 <button type="submit">Créer et ajouter</button>
                             </form>
-                        </details>
+                        <button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
                     </section>
                     <section class="edit-section">
                         <h3>Ressources</h3>
