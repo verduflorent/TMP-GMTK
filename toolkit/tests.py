@@ -1277,3 +1277,23 @@ class GlobalModalUiContractTests(TestCase):
         self.client.post(url, {"resource": "hp", "action": "subtract", "value": 20})
         mob.refresh_from_db()
         self.assertEqual((mob.payload["current_hp"], mob.payload["shield"]), (290, 0))
+
+
+    def test_async_universal_roll_returns_json(self):
+        response = self.client.post(reverse("table_universal_roll"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertGreaterEqual(data["roll"], 1)
+        self.assertLessEqual(data["roll"], 20)
+
+    def test_async_resource_update_returns_json(self):
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
+        mob = TableMob.objects.create(game_table=table, name="Async", profile="C", level=1,
+            payload={"max_hp": 250, "current_hp": 150, "shield": 0, "armor": 0,
+                     "reactions": 1, "vigilance": 1, "weapons": [], "implants": [], "abilities": []})
+        response = self.client.post(reverse("table_mob_resource", args=[mob.id]),
+            {"resource": "hp", "action": "add", "value": 50},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["payload"]["current_hp"], 200)
