@@ -595,6 +595,10 @@ def table_mob_edit(request, mob_id):
         )
     payload["token_id"] = old_payload.get("token_id", "")
     payload["draft"] = draft
+    if request.POST.get("preview") == "1":
+        return JsonResponse({"ok": True, "preview": True, "id": mob.id,
+                             "name": values["name"], "level": values["level"],
+                             "payload": payload})
     mob.name = values["name"]
     mob.level = values["level"]
     mob.payload = payload
