@@ -165,7 +165,7 @@
     <h2>Mobs</h2>
     <div class="mob-grid">
     {% for mob in builder_mobs %}
-        <article class="panel mob-card">
+        <article class="panel mob-card" data-mob-id="{{ mob.id }}" data-max-hp="{{ mob.payload.max_hp }}">
             <header class="mob-card-header">
                 <span><strong>{{ mob.name }}</strong> <small>N{{ mob.level }}</small></span>
                 <span class="table-screen-only">
@@ -201,7 +201,7 @@
             <div class="combat-meta print-hide">
               <div class="combat-resource-row">
                 <span class="resource-icon" aria-hidden="true">♥</span>
-                <strong>PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }}</strong>
+                <strong data-resource-label="hp">PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }}</strong>
                 <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
                     {% csrf_token %}<input type="hidden" name="resource" value="hp">
                     <input type="number" name="value" min="0" value="10" aria-label="Dégâts ou soins">
@@ -211,7 +211,7 @@
               </div>
               <div class="combat-resource-row">
                 <span class="resource-icon shield" aria-hidden="true">⬡</span>
-                <strong>PB {{ mob.payload.shield }}</strong>
+                <strong data-resource-label="shield">PB {{ mob.payload.shield }}</strong>
                 <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row">
                     {% csrf_token %}<input type="hidden" name="resource" value="shield">
                     <input type="number" name="value" min="0" value="10" aria-label="Quantité de PB">
@@ -226,7 +226,7 @@
               <form method="post" action="{% url 'table_mob_resource' mob.id %}" class="combat-resource-row compact">
                 {% csrf_token %}<input type="hidden" name="resource" value="{{ resource }}"><input type="hidden" name="value" value="1">
                 <span class="resource-icon {% if resource == 'vigilance' %}vigilance{% else %}reactions{% endif %}" title="{{ label }}">{% if resource == 'vigilance' %}◉{% else %}⇄{% endif %}</span>
-                <strong>{{ value }}</strong>
+                <strong data-resource-label="{{ resource }}">{{ value }}</strong>
                 <button name="action" value="subtract" title="−1 {{ label }}" type="submit">‹</button>
                 <button name="action" value="add" title="+1 {{ label }}" type="submit">›</button>
               </form>
@@ -295,5 +295,52 @@ function editToken(button) {
   field.focus(); field.select();
   field.addEventListener('keydown',e=>{if(e.key==='Escape'){form.classList.remove('is-open');button.hidden=false;}}, {once:true});
 }
+</script>
+<script>
+document.addEventListener("submit", async function(event) {
+  const form=event.target;
+  if (!form.matches('form[action*="/resource/"], form[action*="/roll/"], form[action*="/next-round/"]')) return;
+  event.preventDefault();
+  const submitter=event.submitter;
+  const data=new FormData(form);
+  if(submitter && submitter.name) data.set(submitter.name,submitter.value);
+  try {
+    const response=await fetch(form.action,{method:"POST",body:data,headers:{"X-Requested-With":"XMLHttpRequest"}});
+    if(!response.ok) throw new Error("HTTP "+response.status);
+    const result=await response.json();
+    if(!result.ok) throw new Error("Invalid response");
+    function updateMob(id,payload){
+      const card=document.querySelector('.mob-card[data-mob-id="'+id+'"]');
+      if(!card)return;
+      const hp=Math.max(0,Number(payload.current_hp)||0);
+      const max=Math.max(0,Number(payload.max_hp)||0);
+      const shield=Math.max(0,Number(payload.shield)||0);
+      const total=Math.max(max,hp+shield,1);
+      const hpPercent=Math.round(100*hp/total),shieldPercent=Math.round(100*shield/total);
+      const hpFill=card.querySelector(".hp-bar-fill");
+      const pbFill=card.querySelector(".hp-shield-fill");
+      if(hpFill){hpFill.style.setProperty("--hp-percent",hpPercent+"%");hpFill.classList.remove("healthy","wounded","critical");hpFill.classList.add(max&&hp/max<=.25?"critical":max&&hp/max<=.5?"wounded":"healthy");}
+      if(pbFill)pbFill.style.setProperty("--shield-percent",shieldPercent+"%");
+      const labels={hp:"PV "+hp+"/"+max,shield:"PB "+shield,reactions:String(payload.reactions),vigilance:String(payload.vigilance)};
+      for(const [key,value] of Object.entries(labels)){const label=card.querySelector('[data-resource-label="'+key+'"]');if(label)label.textContent=value;}
+      const meter=card.querySelector(".hp-bar");
+      if(meter){meter.setAttribute("aria-valuenow",hp);meter.setAttribute("aria-label","PV "+hp+" sur "+max);}
+    }
+    if(result.payload)updateMob(result.mob_id,result.payload);
+    if(result.mobs)result.mobs.forEach(m=>updateMob(m.id,m.payload));
+    if(result.roll!==undefined){
+      const label=document.querySelector(".combat-d20 span");
+      if(label)label.textContent=result.roll;
+    }
+    if(result.result){
+      let panel=document.getElementById("combat-roll-feedback");
+      if(!panel){panel=document.createElement("div");panel.id="combat-roll-feedback";panel.setAttribute("role","status");form.closest(".mob-card")?.appendChild(panel);}
+      if(panel)panel.textContent=result.result.weapon+" — d20 "+result.result.roll+" — "+(result.result.success?"TOUCHÉ · "+result.result.damage+" dégâts":"RATÉ");
+    }
+  } catch(error) {
+    console.error("Combat action failed",error);
+    alert("Action non enregistrée. Réessaie.");
+  }
+});
 </script>
 {% endblock %}
