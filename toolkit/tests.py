@@ -1216,3 +1216,22 @@ class GlobalModalUiContractTests(TestCase):
         self.assertContains(response, "weapon-picker-0")
         self.assertContains(response, "implant-picker-0")
         self.assertContains(response, "ability-picker-0")
+
+
+    def test_table_mob_token_id_is_blank_by_default_and_persists(self):
+        table = ensure_game_table(self.user)
+        mob = TableMob.objects.create(
+            game_table=table, name="Garde", profile="C", level=1,
+            payload={"max_hp": 100, "current_hp": 100, "armor": 0, "shield": 0, "reactions": 1, "vigilance": 1, "weapons": [], "implants": [], "abilities": []},
+        )
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, 'name="token_id" value=""')
+        self.client.post(reverse("table_mob_token_id", args=[mob.id]), {"token_id": "18"})
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload["token_id"], "18")
+
+    def test_table_exposes_compact_print_action_and_print_css(self):
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, "Imprimer les Mobs")
+        self.assertContains(response, "window.print()")
+        self.assertContains(response, "@media print")
