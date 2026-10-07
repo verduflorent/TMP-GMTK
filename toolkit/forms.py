@@ -143,7 +143,3 @@ class TableUniversalRollForm(forms.Form):
     modifier = forms.IntegerField(required=False, initial=0)
 
 
-class UniversalRollerForm(forms.Form):
-    threshold = forms.IntegerField(min_value=1, max_value=99)
-    modifier = forms.IntegerField(required=False, initial=0)
-    label = forms.CharField(max_length=80, required=False)
