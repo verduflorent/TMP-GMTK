@@ -17,11 +17,31 @@ class GameTable(models.Model):
         return f"Table de {self.owner}"
 
 
+class UserFolder(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="gmtk_folders"
+    )
+    name = models.CharField(max_length=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "name"], name="unique_user_folder_name")
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class BestiaryMob(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="bestiary_mobs",
+    )
+    folder = models.ForeignKey(
+        UserFolder, on_delete=models.SET_NULL, null=True, blank=True, related_name="bestiary_mobs"
     )
     name = models.CharField(max_length=120)
     profile = models.CharField(max_length=1, choices=MobProfile.choices)
@@ -61,6 +81,9 @@ class Encounter(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="encounters",
+    )
+    folder = models.ForeignKey(
+        UserFolder, on_delete=models.SET_NULL, null=True, blank=True, related_name="encounters"
     )
     name = models.CharField(max_length=120)
     created_at = models.DateTimeField(auto_now_add=True)
