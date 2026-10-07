@@ -1,13 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Monster Builder — TMP-GMTK<script>
-document.addEventListener("DOMContentLoaded", function () {
-    {% if editing_index != None %}
-    const dialog = document.getElementById("mob-edit-{{ editing_index }}");
-    if (dialog && !dialog.open) dialog.showModal();
-    {% endif %}
-});
-</script>
-{% endblock %}
+{% block title %}Monster Builder — TMP-GMTK{% endblock %}
 {% block content %}
 <style>
 .mob-card:not(.is-editing) .edit-only { display: none !important; }
@@ -491,4 +483,12 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 </section>
 {% endif %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% if editing_index != None %}
+    const dialog = document.getElementById("mob-edit-{{ editing_index }}");
+    if (dialog && !dialog.open) dialog.showModal();
+    {% endif %}
+});
+</script>
 {% endblock %}
