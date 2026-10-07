@@ -345,7 +345,10 @@ class MonsterBuilderViewTests(TestCase):
             {"index": 0, "action": "add", "implant_id": override.id},
             follow=True,
         )
-        self.assertIn(override.id, self.client.session["monster_builder_mobs"][0]["implant_ids"])
+        self.assertIn(
+            {"source": "catalogue", "id": override.id},
+            self.client.session["monster_builder_mobs"][0]["implants"],
+        )
         self.assertTrue(any(card.implant.id == override.id for card in response.context["generated_mobs"][0]["implant_cards"]))
 
     def test_manual_implant_remove_can_leave_zero_implants(self):
