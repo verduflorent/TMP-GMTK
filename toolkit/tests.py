@@ -803,3 +803,39 @@ class UserImplantLibraryTests(TestCase):
         condition = TableCondition.objects.get(mob=mob, name="Aveuglé")
         self.client.post(reverse("table_condition_delete", args=[mob.id, condition.id]))
         self.assertFalse(TableCondition.objects.filter(id=condition.id).exists())
+
+
+    def test_table_weapon_roll_uses_effective_aim_and_reports_result(self):
+        from unittest.mock import patch
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        weapon = mob.payload["weapons"][0]
+
+        with patch("toolkit.views.random.randint", return_value=1):
+            response = self.client.post(
+                reverse("table_mob_roll_weapon", args=[mob.id, 0]),
+                follow=True,
+            )
+        result = response.context["roll_result"]
+        self.assertEqual(result["roll"], 1)
+        self.assertEqual(result["aim"], weapon["aim"])
+        self.assertTrue(result["success"])
+        self.assertEqual(result["weapon"], weapon["name"])
+
+    def test_table_weapon_roll_rejects_other_users_mob(self):
+        from .models import GameTable, TableMob
+
+        other = User.objects.create_user(username="rollother", password="pwd")
+        table = GameTable.objects.create(owner=other)
+        mob = TableMob.objects.create(
+            game_table=table, name="Secret", profile="C", level=1,
+            payload={"weapons": [{"name": "Secret gun", "aim": 20, "damage": 999}]},
+        )
+        response = self.client.post(
+            reverse("table_mob_roll_weapon", args=[mob.id, 0]),
+            follow=True,
+        )
+        self.assertIsNone(response.context["roll_result"])
