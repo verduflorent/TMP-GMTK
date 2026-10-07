@@ -2,16 +2,6 @@
 {% block title %}Monster Builder — TMP-GMTK{% endblock %}
 {% block content %}
 <style>
-.mob-card:not(.is-editing) .edit-only { display: none !important; }
-.mob-card.is-editing .view-only { display: initial !important; }
-.mob-card.is-editing .edit-only { display: none !important; }
-.mob-card.is-editing .edit-only.block { display: none !important; }
-.mob-card input[type="number"] { box-sizing: border-box; max-width: 100%; }
-.mob-card .stats input[type="number"] { width: 3.2rem; text-align: center; }
-.mob-card .derived-edit { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin: .55rem 0; }
-.mob-card .derived-edit input { width: 4rem; }
-.mob-card .card-edit-actions { display: flex; gap: .4rem; align-items: center; }
-.mob-card .inline-edit-form { display: inline; }
 .mob-edit-dialog { width:min(900px,92vw); max-height:88vh; overflow:auto; background:#171717; color:#eee; border:1px solid #444; border-radius:.7rem; padding:1.2rem; }
 .mob-edit-dialog::backdrop { background:rgba(0,0,0,.72); }
 .mob-edit-dialog .edit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
@@ -55,32 +45,18 @@
             <header class="mob-card-header">
                 <div>
                     <span class="view-only"><strong>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile_label }}</strong> N{{ mob.level }}</span>
-                    <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_role' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                        <select name="profile" onchange="this.form.submit()" aria-label="Changer le rôle">
-                            <option value="C"{% if mob.profile == "C" %} selected{% endif %}>Combattant</option>
-                            <option value="A"{% if mob.profile == "A" %} selected{% endif %}>Assassin</option>
-                            <option value="T"{% if mob.profile == "T" %} selected{% endif %}>Tireur</option>
-                            <option value="S"{% if mob.profile == "S" %} selected{% endif %}>Soutien</option>
-                            <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
-                        </select>
-                    </form>
-                    <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                        <input type="hidden" name="field" value="level">
-                        <label>N <input type="number" name="value" value="{{ mob.level }}" min="1" max="99" style="width:3.5rem;" onchange="this.form.submit()"></label>
-                    </form>
+                    
+                    
                 </div>
-                <strong class="view-only">{{ mob.max_hp }} PV</strong><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="max_hp"><input type="number" name="value" value="{{ mob.max_hp }}" min="0" onchange="this.form.submit()" aria-label="PV"> PV</form>
+                <strong class="view-only">{{ mob.max_hp }} PV</strong>
             </header>
-            <form class="view-only" method="post" action="{% url 'monster_builder_save' %}" style="display:inline-flex;gap:.35rem;">
+            <button type="button" onclick="document.getElementById('save-mob-{{ forloop.counter0 }}').showModal()">★ Sauvegarder</button>
+<dialog class="confirm-dialog" id="save-mob-{{ forloop.counter0 }}"><h3>Sauvegarder le Mob</h3><form method="post" action="{% url 'monster_builder_save' %}" style="display:inline-flex;gap:.35rem;">
                 {% csrf_token %}
                 <input type="hidden" name="index" value="{{ forloop.counter0 }}">
                 <input type="text" name="name" placeholder="Nom du Mob" required maxlength="120">
                 <button type="submit">★ Sauvegarder</button>
-            </form>
+            </form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
             <form class="view-only" method="post" action="{% url 'monster_builder_validate' %}">
                 {% csrf_token %}
                 <input type="hidden" name="index" value="{{ forloop.counter0 }}">
@@ -92,25 +68,16 @@
             </div>
 
             <dl class="stats">
-                <div><dt>FOR</dt><dd><span class="view-only">{{ mob.stats.force }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="force"><input type="number" name="value" value="{{ mob.stats.force }}" min="0" onchange="this.form.submit()" aria-label="FOR"></form></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
-                <div><dt>AGI</dt><dd><span class="view-only">{{ mob.stats.agility }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="agility"><input type="number" name="value" value="{{ mob.stats.agility }}" min="0" onchange="this.form.submit()" aria-label="AGI"></form></dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
-                <div><dt>PER</dt><dd><span class="view-only">{{ mob.stats.perception }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="perception"><input type="number" name="value" value="{{ mob.stats.perception }}" min="0" onchange="this.form.submit()" aria-label="PER"></form></dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
-                <div><dt>TECH</dt><dd><span class="view-only">{{ mob.stats.technique }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="technique"><input type="number" name="value" value="{{ mob.stats.technique }}" min="0" onchange="this.form.submit()" aria-label="TECH"></form></dd></div>
-                <div><dt>CON</dt><dd><span class="view-only">{{ mob.stats.constitution }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="constitution"><input type="number" name="value" value="{{ mob.stats.constitution }}" min="0" onchange="this.form.submit()" aria-label="CON"></form></dd></div>
-                <div><dt>VOL</dt><dd><span class="view-only">{{ mob.stats.willpower }}</span><form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_field' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="willpower"><input type="number" name="value" value="{{ mob.stats.willpower }}" min="0" onchange="this.form.submit()" aria-label="VOL"></form></dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
+                <div><dt>FOR</dt><dd><span class="view-only">{{ mob.stats.force }}</span></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
+                <div><dt>AGI</dt><dd><span class="view-only">{{ mob.stats.agility }}</span></dd><small>+{{ mob.stat_modifiers.agility }}</small></div>
+                <div><dt>PER</dt><dd><span class="view-only">{{ mob.stats.perception }}</span></dd><small>+{{ mob.stat_modifiers.perception }}</small></div>
+                <div><dt>TECH</dt><dd><span class="view-only">{{ mob.stats.technique }}</span></dd></div>
+                <div><dt>CON</dt><dd><span class="view-only">{{ mob.stats.constitution }}</span></dd></div>
+                <div><dt>VOL</dt><dd><span class="view-only">{{ mob.stats.willpower }}</span></dd><small>+{{ mob.stat_modifiers.willpower }}</small></div>
             </dl>
 
             <p class="view-only">Armure {{ mob.armor }} · PB {{ mob.shield }} · Réactions {{ mob.reactions }} · Vigilance {{ mob.vigilance }}</p>
-            <div class="derived-edit edit-only block">
-                {% for field, label, value in mob.editable_derived %}
-                <form method="post" action="{% url 'monster_builder_field' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                    <input type="hidden" name="field" value="{{ field }}">
-                    <label>{{ label }} <input type="number" name="value" value="{{ value }}" min="0" onchange="this.form.submit()"></label>
-                </form>
-                {% endfor %}
-            </div>
+            
 
             <section>
                 <h3>Arme(s)</h3>
@@ -130,30 +97,7 @@
                                 <p>{% if forloop.first %}{{ card.weapon.property_name }} — {% endif %}{{ line }}</p>
                             {% endfor %}
                         {% endif %}
-                        <div class="edit-only block">
-                            <form method="post" action="{% url 'monster_builder_weapon' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                                <input type="hidden" name="weapon_index" value="{{ forloop.counter0 }}">
-                                <input type="hidden" name="action" value="replace">
-                                <select name="weapon_id" onchange="this.form.submit()" aria-label="Remplacer l'arme">
-                                    {% for group_name, weapons in weapon_groups %}
-                                    <optgroup label="{{ group_name }}">
-                                        {% for weapon in weapons %}
-                                        <option value="{{ weapon.id }}"{% if weapon.id == card.weapon.id %} selected{% endif %}>T{{ weapon.tier }} — {{ weapon.name }}</option>
-                                        {% endfor %}
-                                    </optgroup>
-                                    {% endfor %}
-                                </select>
-                            </form>
-                            <form method="post" action="{% url 'monster_builder_weapon' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                                <input type="hidden" name="weapon_index" value="{{ forloop.counter0 }}">
-                                <input type="hidden" name="action" value="remove">
-                                <button type="submit">× Retirer</button>
-                            </form>
-                        </div>
+                        
                     </div>
                 {% endfor %}
 
@@ -174,30 +118,7 @@
                         {% else %}
                             <p><strong>{{ card.implant.name }}</strong> — {{ card.implant.property_name }}</p>
                         {% endif %}
-                        <div class="edit-only block">
-                            <form method="post" action="{% url 'monster_builder_implant' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                                <input type="hidden" name="implant_index" value="{{ forloop.counter0 }}">
-                                <input type="hidden" name="action" value="replace">
-                                <select name="implant_id" onchange="this.form.submit()" aria-label="Remplacer l'implant">
-                                    {% for group_name, implants in implant_groups %}
-                                    <optgroup label="{{ group_name }}">
-                                        {% for implant in implants %}
-                                        <option value="{{ implant.id }}"{% if implant.id == card.implant.id %} selected{% endif %}>{{ implant.name }}</option>
-                                        {% endfor %}
-                                    </optgroup>
-                                    {% endfor %}
-                                </select>
-                            </form>
-                            <form method="post" action="{% url 'monster_builder_implant' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
-                                <input type="hidden" name="implant_index" value="{{ forloop.counter0 }}">
-                                <input type="hidden" name="action" value="remove">
-                                <button type="submit">× Retirer</button>
-                            </form>
-                        </div>
+                        
                     </div>
                 {% empty %}
                     <p class="view-only">Aucun implant.</p>
@@ -228,16 +149,11 @@
                 <div class="edit-grid">
                     <section class="edit-section">
                         <h3>Profil & niveau</h3>
-                        <form method="post" action="{% url 'monster_builder_role' %}">
-                            {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                            <select name="profile" onchange="this.form.submit()">
-                                <option value="C"{% if mob.profile == "C" %} selected{% endif %}>Combattant</option>
-                                <option value="A"{% if mob.profile == "A" %} selected{% endif %}>Assassin</option>
-                                <option value="T"{% if mob.profile == "T" %} selected{% endif %}>Tireur</option>
-                                <option value="S"{% if mob.profile == "S" %} selected{% endif %}>Soutien</option>
-                                <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
-                            </select>
-                        </form>
+                        <button type="button" onclick="document.getElementById('profile-{{ forloop.counter0 }}').showModal()">Profil : {{ mob.profile_label }}</button>
+<dialog class="confirm-dialog" id="profile-{{ forloop.counter0 }}"><h3>Choisir le profil</h3>
+<form method="post" action="{% url 'monster_builder_role' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
+<button name="profile" value="C" type="submit">Combattant</button><button name="profile" value="A" type="submit">Assassin</button><button name="profile" value="T" type="submit">Tireur</button><button name="profile" value="S" type="submit">Soutien</button><button name="profile" value="K" type="submit">Contrôle</button>
+</form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
                         <form method="post" action="{% url 'monster_builder_field' %}">
                             {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="level">
                             <label>Niveau <input type="number" name="value" value="{{ mob.level }}" min="1" max="99" onchange="this.form.submit()"></label>
