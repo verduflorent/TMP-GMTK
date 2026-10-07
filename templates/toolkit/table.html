@@ -71,6 +71,8 @@
 .live-mob-editor footer button[type=submit]:hover{background:#921427}
 @media(max-width:700px){.live-mob-editor #live-mob-editor-form{padding:0 .85rem .85rem}.live-editor-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.live-editor-fields label:nth-child(-n+2){grid-column:span 3}.live-editor-fields label:nth-child(n+3):nth-child(-n+8){grid-column:span 1}.live-editor-fields label:nth-child(n+9){grid-column:span 1}.live-editor-equipment{grid-template-columns:1fr}.live-editor-equipment section:last-child{grid-column:auto}.live-mob-editor footer{margin:.8rem -.85rem -.85rem;padding:.8rem}}
 @media(max-width:430px){.live-editor-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.live-editor-fields label:nth-child(-n+2){grid-column:span 2}.live-editor-fields label:nth-child(n+3):nth-child(-n+8){grid-column:span 1}.live-editor-fields label:nth-child(n+9){grid-column:span 1}}
+.akimbo-switch{display:flex;align-items:center;gap:.5rem;font-weight:700;color:#a7192a;margin:.4rem 0 .8rem}
+.akimbo-switch input{accent-color:#b3192d}
 </style>
 
 <div class="table-heading">
@@ -269,7 +271,7 @@
       <label>VOL<input name="willpower" type="number" min="0" max="99" required></label>
     </div>
     <div class="live-editor-equipment">
-  <section><h3>ARMES</h3><div data-gear-list="weapons"></div><div class="gear-picker"><select data-gear-picker="weapons" aria-label="Choisir une arme"></select><button type="button" data-gear-add="weapons">+ Arme</button></div></section>
+  <section><h3>ARMES</h3><label class="akimbo-switch"><input type="checkbox" id="live-akimbo"> Akimbo — deux armes à une main</label><div data-gear-list="weapons"></div><div class="gear-picker"><select data-gear-picker="weapons" aria-label="Choisir une arme"></select><button type="button" data-gear-add="weapons">+ Arme</button></div></section>
   <section><h3>IMPLANTS</h3><div data-gear-list="implants"></div><div class="gear-picker"><select data-gear-picker="implants" aria-label="Choisir un implant"></select><button type="button" data-gear-add="implants">+ Implant</button></div></section>
   <section><h3>CAPACITÉS</h3><div data-gear-list="abilities"></div><div class="gear-picker"><select data-gear-picker="abilities" aria-label="Choisir une capacité enregistrée"></select><button type="button" data-gear-add="abilities">+ Capacité</button></div><div class="gear-picker"><input data-new-ability-name maxlength="120" placeholder="Nouvelle capacité"><button type="button" data-create-ability>Créer</button></div></section>
 </div>
@@ -418,6 +420,7 @@ document.addEventListener("submit", async function(event) {
    for(const kind of Object.keys(gear)){
      body.set(kind,JSON.stringify(kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
    }
+   body.set("akimbo",akimboToggle.checked?"1":"0");
    if(preview)body.set("preview","1");
    return body;
  }
@@ -455,9 +458,23 @@ document.addEventListener("submit", async function(event) {
    }
    if(previewFields.includes(event.target.name))schedulePreview();
  });
+ const akimboToggle=dialog.querySelector("#live-akimbo");
+ akimboToggle.addEventListener("change",()=>{
+   if(akimboToggle.checked){
+     gear.weapons=gear.weapons.filter(item=>item.hands===1).slice(0,2);
+   }
+   renderGear();schedulePreview();
+ });
  let gear={weapons:[],implants:[],abilities:[]};
  let catalogue={weapons:[],implants:[],abilities:[]};
  function renderGear(){
+   const weaponPicker=dialog.querySelector('[data-gear-picker="weapons"]');
+   for(const option of weaponPicker.options){
+     const item=catalogue.weapons[Number(option.value)];
+     option.hidden=akimboToggle.checked&&item?.hands!==1;
+     option.disabled=option.hidden;
+   }
+   if(weaponPicker.selectedOptions[0]?.disabled)weaponPicker.selectedIndex=Array.from(weaponPicker.options).findIndex(option=>!option.disabled);
    for(const kind of Object.keys(gear)){
      const list=dialog.querySelector('[data-gear-list="'+kind+'"]');
      list.replaceChildren();
@@ -465,7 +482,7 @@ document.addEventListener("submit", async function(event) {
        const row=document.createElement("div");row.className="gear-entry";
        const label=document.createElement("span");label.textContent=item.name||"Sans nom";
        const remove=document.createElement("button");remove.type="button";remove.textContent="✕";remove.setAttribute("aria-label","Retirer "+label.textContent);
-       remove.addEventListener("click",()=>{gear[kind].splice(index,1);renderGear();});
+       remove.addEventListener("click",()=>{gear[kind].splice(index,1);renderGear();schedulePreview();});
        row.append(label,remove);list.append(row);
      });
    }
@@ -475,14 +492,15 @@ document.addEventListener("submit", async function(event) {
      const select=dialog.querySelector('[data-gear-picker="'+kind+'"]');
      const item=catalogue[kind][Number(select.value)];
      if(!item)return;
-     gear[kind].push(kind==="abilities"?structuredClone(item.draft):{source:item.source,id:item.id,name:item.name});
-     renderGear();
+     if(kind==="weapons"&&akimboToggle.checked&&(item.hands!==1||gear.weapons.length>=2))return;
+     gear[kind].push(kind==="abilities"?structuredClone(item.draft):{source:item.source,id:item.id,name:item.name,hands:item.hands});
+     renderGear();schedulePreview();
    });
  }
  dialog.querySelector("[data-create-ability]").addEventListener("click",()=>{
    const input=dialog.querySelector("[data-new-ability-name]");
    const name=input.value.trim();if(!name)return;
-   gear.abilities.push({name,description:""});input.value="";renderGear();
+   gear.abilities.push({name,description:""});input.value="";renderGear();schedulePreview();
  });
  document.addEventListener("submit",async function(event){
    const trigger=event.target.closest("form.live-mob-edit-trigger");
@@ -507,7 +525,8 @@ document.addEventListener("submit", async function(event) {
        const option=document.createElement("option");option.value=String(index);option.textContent=item.name;picker.append(option);
      });
    }
-   gear.weapons=(draft.weapons||[]).map(ref=>({...ref,name:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Arme"}));
+   akimboToggle.checked=Boolean(draft.akimbo??mob.payload.akimbo);
+   gear.weapons=(draft.weapons||[]).map(ref=>({...ref,name:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Arme",hands:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.hands}));
    gear.implants=(draft.implants||[]).map(ref=>({...ref,name:catalogue.implants.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Implant"}));
    gear.abilities=structuredClone(draft.abilities||mob.payload.abilities||[]);
    renderGear();
