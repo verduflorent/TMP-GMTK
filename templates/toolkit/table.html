@@ -1,14 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Table de jeu — TMP-GMTK<script>
-function editToken(button) {
-  const form=button.nextElementSibling;
-  button.hidden=true;
-  form.classList.add('is-open');
-  const field=form.querySelector('input');
-  field.focus(); field.select();
-  field.addEventListener('keydown',e=>{if(e.key==='Escape'){form.classList.remove('is-open');button.hidden=false;}}, {once:true});
-}
-</script>
+{% block title %}Table de jeu — TMP-GMTK
 {% endblock %}
 {% block content %}
 <style>
@@ -278,8 +269,13 @@ function editToken(button) {
                 <p><strong>{{ ability.name }}</strong>{% if ability.description %} — {{ ability.description }}{% endif %}{% if ability.resolved_effect %} · {{ ability.resolved_effect.label }} +{{ ability.resolved_effect.value }}{% endif %}</p>
             {% endfor %}</div>
 
-                </dialog>
-            </div>
+            <dialog class="confirm-dialog" id="delete-table-mob-{{ mob.id }}">
+                <strong>Retirer {{ mob.name }} ?</strong>
+                <div class="confirm-actions">
+                    <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+                    <form method="post" action="{% url 'table_mob_delete' mob.id %}">{% csrf_token %}<button type="submit">Supprimer</button></form>
+                </div>
+            </dialog>
         </article>
     {% endfor %}
     </div>
@@ -290,4 +286,14 @@ function editToken(button) {
         {% if not builder_mobs %}<p>Aucun Mob sur la Table.</p>{% endif %}
     {% endfor %}
 </section>
+<script>
+function editToken(button) {
+  const form=button.nextElementSibling;
+  button.hidden=true;
+  form.classList.add('is-open');
+  const field=form.querySelector('input');
+  field.focus(); field.select();
+  field.addEventListener('keydown',e=>{if(e.key==='Escape'){form.classList.remove('is-open');button.hidden=false;}}, {once:true});
+}
+</script>
 {% endblock %}
