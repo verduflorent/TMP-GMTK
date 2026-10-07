@@ -1034,6 +1034,30 @@ class ScenarioFolderTests(TestCase):
         )
 
 
+    def test_edit_sheet_uses_resolved_implant_property_lines(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 5, "level": 10},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "card.extra_lines")
+
+    def test_ability_editing_is_embedded_in_mob_sheet_not_opened_as_nested_dialog(self):
+        from django.core.management import call_command
+
+        call_command("seed_monster_catalogue", verbosity=0)
+        response = self.client.post(
+            reverse("monster_builder"),
+            {"action": "generate", "quantity": 1, "level": 5},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "document.getElementById('ability-modal-")
+        self.assertContains(response, "<summary>+ Capacité</summary>", html=True)
+
+
     def test_modal_reopen_script_is_not_rendered_inside_title(self):
         response = self.client.get(reverse("monster_builder"))
         self.assertNotContains(response, "<title>Monster Builder — TMP-GMTK<script>")
