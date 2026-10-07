@@ -933,3 +933,46 @@ class EncounterPreparationTests(TestCase):
 
         self.client.post(reverse("table_load_encounter"), {"encounter_id": encounter.id})
         self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 2)
+
+
+class ScenarioFolderTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="folders", password="pwd")
+        self.client.login(username="folders", password="pwd")
+
+    def test_same_folder_can_classify_bestiary_mob_and_encounter(self):
+        from .models import UserFolder
+
+        self.client.post(reverse("folder_create"), {"name": "Épisode 1", "next": "bestiary"})
+        folder = UserFolder.objects.get(owner=self.user, name="Épisode 1")
+        mob = BestiaryMob.objects.create(owner=self.user, name="Ronin", profile="A", level=5)
+        encounter = Encounter.objects.create(owner=self.user, name="Embuscade")
+
+        self.client.post(reverse("bestiary_move_folder", args=[mob.id]), {"folder_id": folder.id})
+        self.client.post(reverse("encounter_move_folder", args=[encounter.id]), {"folder_id": folder.id})
+        mob.refresh_from_db()
+        encounter.refresh_from_db()
+        self.assertEqual(mob.folder, folder)
+        self.assertEqual(encounter.folder, folder)
+
+    def test_deleting_folder_returns_content_to_unclassified(self):
+        from .models import UserFolder
+
+        folder = UserFolder.objects.create(owner=self.user, name="Épisode 2")
+        mob = BestiaryMob.objects.create(owner=self.user, folder=folder, name="Garde", profile="C", level=2)
+        encounter = Encounter.objects.create(owner=self.user, folder=folder, name="Planque")
+        self.client.post(reverse("folder_delete", args=[folder.id]), {"next": "bestiary"})
+        mob.refresh_from_db()
+        encounter.refresh_from_db()
+        self.assertIsNone(mob.folder)
+        self.assertIsNone(encounter.folder)
+
+    def test_user_cannot_assign_another_users_folder(self):
+        from .models import UserFolder
+
+        other = User.objects.create_user(username="folderother", password="pwd")
+        foreign = UserFolder.objects.create(owner=other, name="Secret")
+        mob = BestiaryMob.objects.create(owner=self.user, name="Mine", profile="C", level=1)
+        self.client.post(reverse("bestiary_move_folder", args=[mob.id]), {"folder_id": foreign.id})
+        mob.refresh_from_db()
+        self.assertIsNone(mob.folder)
