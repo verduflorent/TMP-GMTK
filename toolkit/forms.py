@@ -168,3 +168,7 @@ class UserFolderForm(forms.Form):
 
 class FolderMoveForm(forms.Form):
     folder_id = forms.IntegerField(min_value=1, required=False)
+
+
+class TableMobTokenIdForm(forms.Form):
+    token_id = forms.CharField(max_length=32, required=False)
