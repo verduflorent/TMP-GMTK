@@ -70,6 +70,21 @@ class Encounter(models.Model):
         return self.name
 
 
+class EncounterDraftMob(models.Model):
+    """Modern reusable Mob snapshot inside a prepared encounter."""
+    encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="draft_mobs")
+    name = models.CharField(max_length=120)
+    quantity = models.PositiveSmallIntegerField(default=1)
+    payload = models.JSONField(default=dict)
+    rank = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["rank", "id"]
+
+    def __str__(self):
+        return f"{self.quantity}× {self.name}"
+
+
 class EncounterMob(models.Model):
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="mobs")
     source = models.ForeignKey(
