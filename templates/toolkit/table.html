@@ -16,6 +16,22 @@
     {% else %}<strong>RATÉ</strong>{% endif %}</p>
 </section>
 {% endif %}
+<section class="panel" style="margin-bottom:1rem;min-height:auto;">
+    <h2>Roller universel</h2>
+    <form method="post" action="{% url 'table_universal_roll' %}" style="display:flex;gap:.5rem;align-items:end;flex-wrap:wrap;">
+        {% csrf_token %}
+        <label>Nom <input name="label" placeholder="Esquive"></label>
+        <label>Seuil <input type="number" name="threshold" value="10" min="1" max="99" style="width:4rem;"></label>
+        <label>Mod. <input type="number" name="modifier" value="0" style="width:4rem;"></label>
+        <button type="submit">🎲 Lancer</button>
+    </form>
+    {% if universal_roll_result %}
+    <p><strong>{{ universal_roll_result.label }}</strong> — d20 : {{ universal_roll_result.roll }} / {{ universal_roll_result.threshold }} —
+        {% if universal_roll_result.success %}<strong>RÉUSSITE</strong>{% else %}<strong>ÉCHEC</strong>{% endif %}
+    </p>
+    {% endif %}
+</section>
+
 <section>
     <h2>Mobs</h2>
     <div class="mob-grid">
@@ -54,20 +70,6 @@
                     <button type="submit">+</button>
                 </form>
             </div>
-            <form method="post" action="{% url 'table_mob_roll_stat' mob.id %}" style="display:flex;gap:.3rem;align-items:center;margin:.5rem 0;">
-                {% csrf_token %}
-                <strong>Jet</strong>
-                <select name="stat">
-                    <option value="force">FOR</option>
-                    <option value="agility">AGI</option>
-                    <option value="perception">PER</option>
-                    <option value="technique">TECH</option>
-                    <option value="constitution">CON</option>
-                    <option value="willpower">VOL</option>
-                </select>
-                <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
-                <button type="submit">🎲</button>
-            </form>
             {% for weapon in mob.payload.weapons %}
                 <div style="display:flex;gap:.4rem;align-items:center;">
                     <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
