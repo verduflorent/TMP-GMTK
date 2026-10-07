@@ -12,7 +12,7 @@
 <section class="panel" style="margin-bottom:1rem;">
     <strong>{{ roll_result.mob }} — {{ roll_result.weapon }}</strong>
     <p>d20 : {{ roll_result.roll }} / Visée {{ roll_result.aim }} —
-    {% if roll_result.success %}<strong>TOUCHÉ</strong>{% if roll_result.damage != None %} · {{ roll_result.damage }} Dégâts{% endif %}
+    {% if roll_result.success %}<strong>TOUCHÉ</strong>{% if roll_result.damage != None %} · {{ roll_result.damage }} Dégâts <small>({% if roll_result.roll_damage >= 0 %}+{% endif %}{{ roll_result.roll_damage }} au jet)</small>{% endif %}
     {% else %}<strong>RATÉ</strong>{% endif %}</p>
 </section>
 {% endif %}
@@ -57,8 +57,13 @@
             {% for weapon in mob.payload.weapons %}
                 <div style="display:flex;gap:.4rem;align-items:center;">
                     <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
-                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}">
-                        {% csrf_token %}<button type="submit">🎲</button>
+                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}" style="display:flex;gap:.25rem;">
+                        {% csrf_token %}
+                        <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
+                        {% if weapon.contact_damage != None and weapon.distance_damage != None %}
+                        <select name="mode"><option value="distance">Distance</option><option value="contact">Contact</option></select>
+                        {% endif %}
+                        <button type="submit">🎲</button>
                     </form>
                 </div>
             {% endfor %}
