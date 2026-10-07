@@ -347,9 +347,10 @@ document.addEventListener("submit", async function(event) {
   if(submitter && submitter.name) data.set(submitter.name,submitter.value);
   try {
     const response=await fetch(form.action,{method:"POST",body:data,headers:{"X-Requested-With":"XMLHttpRequest"}});
-    if(!response.ok) throw new Error("HTTP "+response.status);
+    const contentType=response.headers.get("content-type")||"";
+    if(!contentType.includes("application/json")) throw new Error("Réponse non JSON : HTTP "+response.status+" · "+response.url);
     const result=await response.json();
-    if(!result.ok) throw new Error("Invalid response");
+    if(!response.ok || !result.ok) throw new Error(result.error ? result.error+" "+JSON.stringify(result.details||{}) : "HTTP "+response.status);
     function updateMob(id,payload){
       const card=document.querySelector('.mob-card[data-mob-id="'+id+'"]');
       if(!card)return;
@@ -380,7 +381,7 @@ document.addEventListener("submit", async function(event) {
     }
   } catch(error) {
     console.error("Combat action failed",error);
-    alert("Action non enregistrée. Réessaie.");
+    alert("Action non enregistrée : "+error.message);
   }
 });
 </script>
