@@ -54,6 +54,20 @@
                     <button type="submit">+</button>
                 </form>
             </div>
+            <form method="post" action="{% url 'table_mob_roll_stat' mob.id %}" style="display:flex;gap:.3rem;align-items:center;margin:.5rem 0;">
+                {% csrf_token %}
+                <strong>Jet</strong>
+                <select name="stat">
+                    <option value="force">FOR</option>
+                    <option value="agility">AGI</option>
+                    <option value="perception">PER</option>
+                    <option value="technique">TECH</option>
+                    <option value="constitution">CON</option>
+                    <option value="willpower">VOL</option>
+                </select>
+                <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
+                <button type="submit">🎲</button>
+            </form>
             {% for weapon in mob.payload.weapons %}
                 <div style="display:flex;gap:.4rem;align-items:center;">
                     <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
