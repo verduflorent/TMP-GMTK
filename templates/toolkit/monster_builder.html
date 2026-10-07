@@ -12,9 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
 <style>
 .mob-card:not(.is-editing) .edit-only { display: none !important; }
 .mob-card:not(.is-editing) .equipment-dialog-host { display:block !important; height:0; overflow:visible; }
-.mob-card.is-editing .view-only { display: none !important; }
-.mob-card.is-editing .edit-only { display: inline !important; }
-.mob-card.is-editing .edit-only.block { display: block !important; }
+.mob-card.is-editing .view-only { display: initial !important; }
+.mob-card.is-editing .edit-only { display: none !important; }
+.mob-card.is-editing .edit-only.block { display: none !important; }
 .mob-card input[type="number"] { box-sizing: border-box; max-width: 100%; }
 .mob-card .stats input[type="number"] { width: 3.2rem; text-align: center; }
 .mob-card .derived-edit { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin: .55rem 0; }
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
     <div class="mob-grid">
         {% for mob in generated_mobs %}
-        <article class="panel mob-card{% if editing_index == forloop.counter0 %} is-editing{% endif %}">
+        <article class="panel mob-card">
             <header class="mob-card-header">
                 <div>
                     <span class="view-only"><strong>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
