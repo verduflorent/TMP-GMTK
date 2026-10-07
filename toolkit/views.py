@@ -81,18 +81,29 @@ def monster_builder(request):
         saved = request.session.get("monster_builder_mobs", [])
         generated_mobs = [rebuild_mob(weapons, implants, data, user_weapons, user_implants) for data in saved]
 
+    profile_labels = {
+        "": "Commun", "C": "Combattant", "A": "Assassin",
+        "T": "Tireur", "S": "Soutien", "K": "Contrôle",
+    }
+
     for mob in generated_mobs:
+        mob["profile_label"] = profile_labels.get(str(mob["profile"]), str(mob["profile"]))
+        mob["editable_stats"] = (
+            ("force", "FOR", mob["stats"]["force"]),
+            ("agility", "AGI", mob["stats"]["agility"]),
+            ("perception", "PER", mob["stats"]["perception"]),
+            ("technique", "TECH", mob["stats"]["technique"]),
+            ("constitution", "CON", mob["stats"]["constitution"]),
+            ("willpower", "VOL", mob["stats"]["willpower"]),
+        )
         mob["editable_derived"] = (
+            ("max_hp", "PV", mob["max_hp"]),
             ("armor", "Armure", mob["armor"]),
             ("shield", "PB", mob["shield"]),
             ("reactions", "Réactions", mob["reactions"]),
             ("vigilance", "Vigilance", mob["vigilance"]),
         )
 
-    profile_labels = {
-        "": "Commun", "C": "Combattant", "A": "Assassin",
-        "T": "Tireur", "S": "Soutien", "K": "Contrôle",
-    }
     weapon_groups = []
     for code in ("", "C", "A", "T", "S", "K"):
         group = sorted(
