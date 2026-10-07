@@ -268,20 +268,14 @@ class MonsterBuilderViewTests(TestCase):
             {"action": "generate", "quantity": 1, "level": 5},
         )
         self.assertContains(response, "✎ Modifier")
-        self.assertContains(response, 'class="edit-only')
-        self.assertContains(response, 'class="view-only')
+        self.assertNotContains(response, 'class="edit-only')
+        self.assertContains(response, 'id="mob-edit-0"')
 
 
-    def test_edit_layer_css_strictly_hides_inactive_controls(self):
+    def test_legacy_inline_edit_layer_is_removed(self):
         response = self.client.get(reverse("monster_builder"))
-        self.assertContains(
-            response,
-            ".mob-card:not(.is-editing) .edit-only { display: none !important; }",
-        )
-        self.assertContains(
-            response,
-            ".mob-card.is-editing .edit-only { display: none !important; }",
-        )
+        self.assertNotContains(response, ".is-editing")
+        self.assertNotContains(response, ".edit-only")
 
 
     def test_manual_weapon_addition_supports_three_weapons(self):
@@ -1058,7 +1052,8 @@ class ScenarioFolderTests(TestCase):
         self.assertNotContains(response, "document.getElementById('weapon-modal-")
         self.assertNotContains(response, "document.getElementById('implant-modal-")
         self.assertNotContains(response, 'class="equipment-dialog-host"')
-        self.assertContains(response, "<summary>+ Capacité</summary>", html=True)
+        self.assertContains(response, 'id="ability-picker-0"')
+        self.assertContains(response, ">+ Capacité</button>", html=False)
 
 
     def test_modal_reopen_script_is_not_rendered_inside_title(self):
