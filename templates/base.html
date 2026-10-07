@@ -38,6 +38,7 @@
         <a href="{% url 'table' %}">Table</a>
         <a href="{% url 'monster_builder' %}">Monster Builder</a>
         <a href="{% url 'bestiary' %}">Bestiaire</a>
+        <a href="{% url 'encounters' %}">Rencontres</a>
     </nav>
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
