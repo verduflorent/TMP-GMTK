@@ -1205,3 +1205,19 @@ class GlobalModalUiContractTests(TestCase):
         self.assertNotContains(response, '<select name="mode"')
         self.assertContains(response, 'id="load-encounter-dialog"')
         self.assertContains(response, 'id="clear-table-dialog"')
+
+
+    def test_builder_has_no_legacy_inline_editor_or_resource_selects(self):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.get(reverse("monster_builder"))
+        self.assertNotContains(response, "edit-only")
+        self.assertNotContains(response, '<select name="profile"')
+        self.assertNotContains(response, '<select name="weapon_id"')
+        self.assertNotContains(response, '<select name="implant_id"')
+        self.assertNotContains(response, '<select name="ability_id"')
+        self.assertNotContains(response, "<details")
+        self.assertContains(response, "weapon-picker-0")
+        self.assertContains(response, "implant-picker-0")
+        self.assertContains(response, "ability-picker-0")
