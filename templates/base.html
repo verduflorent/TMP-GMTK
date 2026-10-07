@@ -15,7 +15,7 @@
     <a class="site-brand" href="{% url 'table' %}" aria-label="The Moira Protocol — Game Master Toolkit">
         <img class="brand-mark" src="{% static 'img/tmp-mark.png' %}" alt="Logo TMP" onerror="this.style.display='none'">
         <img class="brand-wordmark" src="{% static 'img/tmp-gmtk-wordmark.png' %}" alt="The Moira Protocol — Game Master Toolkit" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
-        <strong hidden>THE MOIRA PROTOCOL — GAME MASTER TOOLKIT</strong>
+        <strong class="brand-fallback" hidden>THE MOIRA PROTOCOL — GAME MASTER TOOLKIT</strong>
     </a>
     {% if user.is_authenticated %}
     <nav class="site-nav" aria-label="Navigation principale">
@@ -24,7 +24,7 @@
         <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>Bestiaire</a>
         <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>Rencontres</a>
     </nav>
-    <form method="post" action="{% url 'logout' %}">
+    <form class="site-logout" method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button type="submit">Déconnexion</button>
     </form>
