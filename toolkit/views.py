@@ -16,9 +16,7 @@ from .services import ensure_game_table
 
 
 def _builder_redirect_editing(request, index):
-    request.session["monster_builder_editing"] = index
-    request.session.modified = True
-    return redirect("monster_builder")
+    return redirect(f"{reverse('monster_builder')}?edit={index}")
 
 
 def _builder_clear_editing(request):
@@ -58,7 +56,11 @@ def monster_builder(request):
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     user_implants = list(UserImplant.objects.filter(owner=request.user))
     generated_mobs = []
-    editing_index = request.session.get("monster_builder_editing")
+    raw_editing = request.GET.get("edit")
+    try:
+        editing_index = int(raw_editing) if raw_editing is not None else None
+    except (TypeError, ValueError):
+        editing_index = None
     form = MonsterBuilderForm(request.POST or None)
 
     if request.method == "POST" and request.POST.get("action") == "generate" and form.is_valid():
