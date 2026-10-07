@@ -11,25 +11,24 @@
     <link rel="stylesheet" href="{% static 'css/tmp-theme.css' %}">
 </head>
 <body>
-<header class="site-header">
-    <a class="site-brand" href="{% url 'table' %}" aria-label="The Moira Protocol — Game Master Toolkit">
-        <img class="brand-mark" src="{% static 'img/tmp-mark.png' %}" alt="Logo TMP" onerror="this.style.display='none'">
-        <img class="brand-wordmark" src="{% static 'img/tmp-gmtk-wordmark.png' %}" alt="The Moira Protocol — Game Master Toolkit" onerror="this.style.display='none';this.nextElementSibling.hidden=false">
-        <strong class="brand-fallback" hidden>THE MOIRA PROTOCOL — GAME MASTER TOOLKIT</strong>
-    </a>
+<a class="skip-link" href="#main-content">Aller au contenu</a>
+<aside class="site-sidebar">
+    <a class="emblem-link" href="{% url 'table' %}" aria-label="Accueil TMP"><img src="{% static 'img/tmp-mark.png' %}" alt="TMP" width="128" height="128"></a>
     {% if user.is_authenticated %}
     <nav class="site-nav" aria-label="Navigation principale">
-        <a href="{% url 'table' %}" {% if request.resolver_match.url_name == 'table' %}aria-current="page"{% endif %}>Table</a>
-        <a href="{% url 'monster_builder' %}" {% if request.resolver_match.url_name == 'monster_builder' %}aria-current="page"{% endif %}>Monster Builder</a>
-        <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>Bestiaire</a>
-        <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>Rencontres</a>
+        <a href="{% url 'table' %}" {% if request.resolver_match.url_name == 'table' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='table' %}Table de jeu</a>
+        <a href="{% url 'monster_builder' %}" {% if request.resolver_match.url_name == 'monster_builder' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='builder' %}Monster Builder</a>
+        <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='book' %}Bestiaire</a>
+        <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='group' %}Rencontres</a>
     </nav>
-    <form class="site-logout" method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Déconnexion</button>
-    </form>
+    <form class="site-logout" method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">{% include 'includes/icon.html' with name='exit' %}Déconnexion</button></form>
     {% endif %}
+</aside>
+<header class="site-header">
+    <a class="site-brand" href="{% url 'table' %}"><img class="brand-wordmark" src="{% static 'img/tmp-gmtk-wordmark.png' %}" alt="The Moira Protocol — Game Master Tool Kit" width="450" height="150"></a>
+    <span class="header-caption">ASSISTANT DU MAÎTRE DE JEU</span>
 </header>
-<main>{% block content %}{% endblock %}</main>
+<main id="main-content">{% block content %}{% endblock %}</main>
+<script src="{% static 'js/tmp-ui.js' %}" defer></script>
 </body>
 </html>

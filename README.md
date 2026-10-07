@@ -39,3 +39,18 @@ PR1 fournit le socle Django et l'authentification privée.
 PR2 fournit le domaine Monster Builder, le moteur de scaling/attaque Mob et le référentiel reproductible des armes et implants.
 
 PR3 porte le premier Monster Builder visible : génération de lots, pondérations, attribution d'équipement, édition rapide et Bestiaire.
+
+## Interface TMP
+
+La présentation utilise les deux PNG officiels dans `toolkit/static/img/`, le thème
+`toolkit/static/css/tmp-theme.css` et les interactions visuelles `toolkit/static/js/tmp-ui.js`.
+Les assets sont dans le répertoire statique de l'application pour être trouvés par
+Django sans modifier ses settings. Le déploiement doit servir les fichiers statiques
+selon sa procédure habituelle (et collectstatic, s'il l'utilise).
+
+Le front conserve les formulaires, URLs, champs et calculs existants. La vue compacte
+est locale à la page. Le D20 affiche le résultat du serveur ; son animation et la
+mention Perfect sur un 1 ne modifient aucun résultat ni aucune règle Mob.
+Aucun compteur de tour ou statut de session fictif n'est ajouté.
+Les polices Anton et Rajdhani utilisent le chargement Google Fonts déjà présent,
+avec des polices de repli si le réseau est indisponible.
