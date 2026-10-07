@@ -750,3 +750,26 @@ class UserImplantLibraryTests(TestCase):
         self.assertIn({"source": "user", "id": implant.id}, self.client.session["monster_builder_mobs"][0]["implants"])
         self.client.post(reverse("monster_builder_user_implant_add"), {"index": 0, "implant_id": secret.id})
         self.assertNotIn({"source": "user", "id": secret.id}, self.client.session["monster_builder_mobs"][0]["implants"])
+
+
+    def test_table_resources_can_be_spent_restored_and_hp_is_capped(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        hp = mob.payload["current_hp"]
+
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "subtract", "value": 30})
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload["current_hp"], max(0, hp - 30))
+
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "add", "value": 9999})
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload["current_hp"], mob.payload["max_hp"])
+
+        initial_reactions = mob.payload["initial_resources"]["reactions"]
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "reactions", "action": "subtract", "value": 1})
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "reactions", "action": "reset", "value": 0})
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload["reactions"], initial_reactions)
