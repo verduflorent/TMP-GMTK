@@ -470,7 +470,8 @@ class MonsterBuilderViewTests(TestCase):
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 10})
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
-        draft["weapon_ids"] = [pistol.id]
+        draft["weapons"] = [{"source": "catalogue", "id": pistol.id}]
+        draft.pop("weapon_ids", None)
         session["monster_builder_mobs"] = [draft]
         session.save()
         before = self.client.get(reverse("monster_builder")).context["generated_mobs"][0]["weapon_cards"][0].neutral_damage
