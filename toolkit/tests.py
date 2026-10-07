@@ -1055,6 +1055,9 @@ class ScenarioFolderTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "document.getElementById('ability-modal-")
+        self.assertNotContains(response, "document.getElementById('weapon-modal-")
+        self.assertNotContains(response, "document.getElementById('implant-modal-")
+        self.assertNotContains(response, 'class="equipment-dialog-host"')
         self.assertContains(response, "<summary>+ Capacité</summary>", html=True)
 
 
