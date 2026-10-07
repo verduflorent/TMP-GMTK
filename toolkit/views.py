@@ -745,6 +745,8 @@ def table_mob_resource(request, mob_id):
     mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
     form = TableMobResourceForm(request.POST)
     if mob is None or not form.is_valid():
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": "Mob introuvable ou formulaire invalide", "details": form.errors.get_json_data()}, status=400)
         return redirect("table")
 
     payload = dict(mob.payload)
