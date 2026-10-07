@@ -551,6 +551,23 @@ class BuilderValidationTests(TestCase):
         self.assertEqual(mob.level, original_level)
         self.assertEqual(mob.payload, original_payload)
 
+    def test_builder_akimbo_pair_is_preserved_after_validation(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        choices = list(MobWeapon.objects.filter(hands=1).values_list("id", flat=True)[:2])
+        self.assertTrue(choices)
+        response = self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo",
+            "first_weapon_id": choices[0], "second_weapon_id": choices[-1],
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.client.session["monster_builder_mobs"][0]["akimbo"])
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        self.assertTrue(mob.payload["akimbo"])
+        self.assertEqual(len(mob.payload["weapons"]), 2)
+
     def test_table_mob_can_be_edited_in_place_without_losing_resources(self):
         from .models import TableMob
 
