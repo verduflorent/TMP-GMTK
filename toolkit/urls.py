@@ -40,4 +40,5 @@ urlpatterns = [
     path("table/encounter/load/", views.table_load_encounter, name="table_load_encounter"),
     path("table/mob/<int:mob_id>/condition/add/", views.table_condition_add, name="table_condition_add"),
     path("table/mob/<int:mob_id>/condition/<int:condition_id>/delete/", views.table_condition_delete, name="table_condition_delete"),
+    path("table/clear/", views.table_clear, name="table_clear"),
 ]
