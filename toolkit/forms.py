@@ -160,3 +160,11 @@ class TableEncounterSaveForm(forms.Form):
 
 class TableEncounterLoadForm(forms.Form):
     encounter_id = forms.IntegerField(min_value=1)
+
+
+class UserFolderForm(forms.Form):
+    name = forms.CharField(max_length=120)
+
+
+class FolderMoveForm(forms.Form):
+    folder_id = forms.IntegerField(min_value=1, required=False)
