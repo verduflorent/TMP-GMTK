@@ -9,7 +9,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, TableMob, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -627,3 +627,42 @@ def monster_builder_user_implant_add(request):
     request.session["monster_builder_mobs"] = saved
     request.session.modified = True
     return _builder_redirect_editing(request, index)
+
+
+@login_required
+def table_mob_resource(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    form = TableMobResourceForm(request.POST)
+    if mob is None or not form.is_valid():
+        return redirect("table")
+
+    payload = dict(mob.payload)
+    resource = form.cleaned_data["resource"]
+    action = form.cleaned_data["action"]
+    value = form.cleaned_data.get("value") or 0
+    key_map = {"hp": "current_hp", "shield": "shield", "reactions": "reactions", "vigilance": "vigilance"}
+    key = key_map[resource]
+    current = int(payload.get(key, 0))
+
+    if action == "add":
+        current += value
+    elif action == "subtract":
+        current = max(0, current - value)
+    elif action == "set":
+        current = value
+    elif action == "reset":
+        if resource == "hp":
+            current = int(payload.get("max_hp", current))
+        else:
+            initial = payload.get("initial_resources", {})
+            current = int(initial.get(key, current))
+
+    if resource == "hp":
+        current = min(current, int(payload.get("max_hp", current)))
+    payload[key] = current
+    mob.payload = payload
+    mob.save(update_fields=["payload", "updated_at"])
+    return redirect("table")
