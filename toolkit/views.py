@@ -9,8 +9,8 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
-from .models import BestiaryMob, TableMob, UserAbility, UserWeapon, UserImplant
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .models import BestiaryMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
 
@@ -679,4 +679,41 @@ def table_mob_resource(request, mob_id):
     payload[key] = current
     mob.payload = payload
     mob.save(update_fields=["payload", "updated_at"])
+    return redirect("table")
+
+
+@login_required
+def table_next_round(request):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    for mob in table.builder_mobs.all():
+        payload = dict(mob.payload)
+        initial = payload.get("initial_resources", {})
+        payload["reactions"] = int(initial.get("reactions", payload.get("reactions", 0)))
+        payload["vigilance"] = int(initial.get("vigilance", payload.get("vigilance", 0)))
+        mob.payload = payload
+        mob.save(update_fields=["payload", "updated_at"])
+    return redirect("table")
+
+
+@login_required
+def table_condition_add(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    form = TableConditionForm(request.POST)
+    if mob is not None and form.is_valid():
+        TableCondition.objects.create(mob=mob, name=form.cleaned_data["name"].strip())
+    return redirect("table")
+
+
+@login_required
+def table_condition_delete(request, mob_id, condition_id):
+    if request.method == "POST":
+        table = ensure_game_table(request.user)
+        TableCondition.objects.filter(
+            id=condition_id, mob_id=mob_id, mob__game_table=table
+        ).delete()
     return redirect("table")
