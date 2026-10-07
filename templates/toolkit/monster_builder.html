@@ -55,7 +55,7 @@
         <article class="panel mob-card">
             <header class="mob-card-header">
                 <div>
-                    <span class="view-only"><strong>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile.label }}</strong> N{{ mob.level }}</span>
+                    <span class="view-only"><strong>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile_label }}</strong> N{{ mob.level }}</span>
                     <form class="edit-only inline-edit-form" method="post" action="{% url 'monster_builder_role' %}">
                         {% csrf_token %}
                         <input type="hidden" name="index" value="{{ forloop.counter0 }}">
@@ -361,7 +361,7 @@
                 </div>
             </section>
             <dialog class="mob-edit-dialog" id="mob-edit-{{ forloop.counter0 }}">
-                <h2>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile.label }} N{{ mob.level }}</h2>
+                <h2>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile_label }} N{{ mob.level }}</h2>
                 <p>Les modifications sont appliquées immédiatement à la fiche.</p>
                 <div class="edit-grid">
                     <section class="edit-section">
