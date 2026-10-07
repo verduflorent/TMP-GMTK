@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -765,3 +765,33 @@ def table_mob_roll_weapon(request, mob_id, weapon_index):
     request.session.modified = True
     return redirect("table")
 
+
+
+@login_required
+def table_mob_roll_stat(request, mob_id):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    form = TableUniversalRollForm(request.POST)
+    if mob is None or not form.is_valid():
+        return redirect("table")
+
+    stat = form.cleaned_data["stat"]
+    labels = {
+        "force": "FOR", "agility": "AGI", "perception": "PER",
+        "technique": "TECH", "constitution": "CON", "willpower": "VOL",
+    }
+    value = int(mob.payload.get("stats", {}).get(stat, 10))
+    modifier = form.cleaned_data.get("modifier") or 0
+    threshold = value + modifier
+    roll = random.randint(1, 20)
+
+    request.session["table_roll_result"] = {
+        "mob": mob.name, "weapon": labels[stat],
+        "roll": roll, "aim": threshold, "modifier": modifier,
+        "success": roll <= threshold, "damage": None, "roll_damage": None,
+        "kind": "stat",
+    }
+    request.session.modified = True
+    return redirect("table")
