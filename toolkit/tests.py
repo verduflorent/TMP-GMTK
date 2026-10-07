@@ -773,3 +773,33 @@ class UserImplantLibraryTests(TestCase):
         self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "reactions", "action": "reset", "value": 0})
         mob.refresh_from_db()
         self.assertEqual(mob.payload["reactions"], initial_reactions)
+
+
+    def test_next_round_refreshes_reactions_and_vigilance_without_healing(self):
+        from .models import TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        initial = mob.payload["initial_resources"]
+        hp = mob.payload["current_hp"]
+
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "hp", "action": "subtract", "value": 20})
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "reactions", "action": "subtract", "value": 1})
+        self.client.post(reverse("table_mob_resource", args=[mob.id]), {"resource": "vigilance", "action": "subtract", "value": 1})
+        self.client.post(reverse("table_next_round"))
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload["current_hp"], max(0, hp - 20))
+        self.assertEqual(mob.payload["reactions"], initial["reactions"])
+        self.assertEqual(mob.payload["vigilance"], initial["vigilance"])
+
+    def test_table_conditions_can_be_added_and_removed(self):
+        from .models import TableMob, TableCondition
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        self.client.post(reverse("table_condition_add", args=[mob.id]), {"name": "Aveuglé"})
+        condition = TableCondition.objects.get(mob=mob, name="Aveuglé")
+        self.client.post(reverse("table_condition_delete", args=[mob.id, condition.id]))
+        self.assertFalse(TableCondition.objects.filter(id=condition.id).exists())
