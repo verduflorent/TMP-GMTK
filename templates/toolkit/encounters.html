@@ -2,12 +2,23 @@
 {% block title %}Rencontres — TMP-GMTK{% endblock %}
 {% block content %}
 <h1>Rencontres</h1>
+<form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
+    {% csrf_token %}<input type="hidden" name="next" value="encounters">
+    <input name="name" placeholder="Nouveau dossier" required maxlength="120"><button type="submit">+ Dossier</button>
+</form>
 <form method="post" action="{% url 'encounter_create' %}" class="panel" style="min-height:auto;display:flex;gap:.5rem;">
     {% csrf_token %}<input name="name" placeholder="Nom de la rencontre" required maxlength="120"><button type="submit">+ Créer</button>
 </form>
 {% for encounter in encounters %}
 <article class="panel" style="margin-top:1rem;">
     <h2>{{ encounter.name }}</h2>
+    <form method="post" action="{% url 'encounter_move_folder' encounter.id %}">
+        {% csrf_token %}
+        <select name="folder_id" onchange="this.form.submit()">
+            <option value="">Non classé</option>
+            {% for folder in folders %}<option value="{{ folder.id }}"{% if encounter.folder_id == folder.id %} selected{% endif %}>{{ folder.name }}</option>{% endfor %}
+        </select>
+    </form>
     {% for entry in encounter.draft_mobs.all %}
     <p><strong>{{ entry.quantity }}× {{ entry.name }}</strong>
         <form method="post" action="{% url 'encounter_remove_mob' encounter.id entry.id %}" style="display:inline;">
