@@ -509,18 +509,42 @@ class BuilderValidationTests(TestCase):
         self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 3)
         self.assertEqual(self.client.session["monster_builder_mobs"], [])
 
-    def test_table_mob_can_return_to_builder_for_editing(self):
+    def test_table_mob_can_be_edited_in_place_without_losing_resources(self):
         from .models import TableMob
 
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         self.client.post(reverse("monster_builder_validate"), {"action": "all"})
-        table_mob = TableMob.objects.get(game_table__owner=self.user)
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        before = dict(mob.payload)
+        response = self.client.get(reverse("table_mob_edit", args=[mob.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], mob.id)
 
-        response = self.client.post(reverse("table_mob_edit", args=[table_mob.id]), follow=True)
-        self.assertFalse(TableMob.objects.filter(id=table_mob.id).exists())
-        self.assertEqual(len(self.client.session["monster_builder_mobs"]), 1)
-        self.assertEqual(response.context["editing_index"], 0)
-
+        stats = before["stats"]
+        fields = {
+            "name": "Mob édité", "level": 5,
+            "current_hp": before["current_hp"],
+            "max_hp": before["max_hp"],
+            "shield": before["shield"],
+            "armor": before["armor"],
+            "reactions": before["reactions"],
+            "vigilance": before["vigilance"],
+            **{key: stats[key] for key in (
+                "force", "agility", "perception", "technique", "constitution", "willpower"
+            )},
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["ok"])
+        mob.refresh_from_db()
+        self.assertEqual(mob.name, "Mob édité")
+        self.assertEqual(mob.id, response.json()["id"])
+        for key in ("current_hp", "max_hp", "shield", "reactions", "vigilance"):
+            self.assertEqual(mob.payload[key], before[key])
+        self.assertEqual(mob.payload["weapons"], before["weapons"])
+        self.assertEqual(mob.payload["implants"], before["implants"])
+        self.assertEqual(mob.payload["abilities"], before["abilities"])
+        self.assertEqual(self.client.session.get("monster_builder_mobs", []), [])
 
     def test_table_mob_can_be_deleted_without_returning_to_builder(self):
         from .models import TableMob
