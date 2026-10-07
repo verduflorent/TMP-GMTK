@@ -537,34 +537,64 @@ def table_mob_edit(request, mob_id):
             return JsonResponse({"ok": False, "errors": {"abilities": ["Capacité invalide."]}}, status=400)
         draft["abilities"] = abilities
 
-    equipment_changed = any(requested[kind] is not None for kind in ("weapons", "implants", "abilities"))
-    rebuilt_payload = None
-    if equipment_changed:
-        draft["level"] = form.cleaned_data["level"]
-        draft["name"] = form.cleaned_data["name"]
-        try:
-            rebuilt = rebuild_mob(
-                list(MobWeapon.objects.all()), list(MobImplant.objects.all()), draft,
-                list(UserWeapon.objects.filter(owner=request.user)),
-                list(UserImplant.objects.filter(owner=request.user)),
-            )
-            rebuilt_payload = _table_payload(rebuilt)
-        except (ValueError, KeyError, TypeError) as exc:
-            return JsonResponse({"ok": False, "errors": {"equipment": [str(exc)]}}, status=400)
     values = form.cleaned_data
-    if values["current_hp"] > values["max_hp"]:
+    old_payload = dict(mob.payload)
+    old_max = int(old_payload.get("max_hp", 1))
+    old_hp = int(old_payload.get("current_hp", old_max))
+    stat_keys = ("force", "agility", "perception", "technique", "constitution", "willpower")
+    previous_stats = old_payload.get("stats", {})
+    stats_changed = any(values[key] != previous_stats.get(key) for key in stat_keys)
+    level_changed = values["level"] != mob.level
+    equipment_changed = any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
+    explicit_max = values["max_hp"] != old_max
+    explicit_hp = values["current_hp"] != old_hp
+
+    draft["level"] = values["level"]
+    draft["name"] = values["name"]
+    overrides = dict(draft.get("overrides") or {})
+    for key in stat_keys:
+        if values[key] != previous_stats.get(key):
+            overrides[key] = values[key]
+    # A previous manual HP override must not freeze scaling after a level/stat edit.
+    if (level_changed or stats_changed) and not explicit_max:
+        overrides.pop("max_hp", None)
+    elif explicit_max:
+        overrides["max_hp"] = values["max_hp"]
+    overrides.pop("current_hp", None)
+    draft["overrides"] = overrides
+
+    try:
+        rebuilt = rebuild_mob(
+            list(MobWeapon.objects.all()), list(MobImplant.objects.all()), draft,
+            list(UserWeapon.objects.filter(owner=request.user)),
+            list(UserImplant.objects.filter(owner=request.user)),
+        )
+        recalculated = _table_payload(rebuilt)
+    except (ValueError, KeyError, TypeError) as exc:
+        return JsonResponse({"ok": False, "errors": {"mob": [str(exc)]}}, status=400)
+
+    new_max = recalculated["max_hp"]
+    if explicit_max:
+        new_max = values["max_hp"]
+    if explicit_hp:
+        new_hp = values["current_hp"]
+    else:
+        # Keep existing wounds when the maximum increases or decreases.
+        new_hp = max(0, new_max - max(0, old_max - old_hp))
+    if new_hp > new_max:
         return JsonResponse({"ok": False, "errors": {"current_hp": ["Les PV dépassent le maximum."]}}, status=400)
-    payload = dict(mob.payload)
-    if rebuilt_payload is not None:
-        for key in ("weapons", "implants", "abilities", "stat_modifiers", "draft"):
-            payload[key] = rebuilt_payload[key]
-    payload.update({key: values[key] for key in (
-        "current_hp", "max_hp", "shield", "armor", "reactions", "vigilance"
-    )})
-    stats = dict(payload.get("stats", {}))
-    for key in ("force", "agility", "perception", "technique", "constitution", "willpower"):
-        stats[key] = values[key]
-    payload["stats"] = stats
+
+    payload = dict(old_payload)
+    payload.update(recalculated)
+    payload["max_hp"] = new_max
+    payload["current_hp"] = new_hp
+    # Preserve live resources unless the user explicitly edited them.
+    for key in ("shield", "armor", "reactions", "vigilance"):
+        payload[key] = values[key] if values[key] != old_payload.get(key) else (
+            recalculated[key] if level_changed or stats_changed or equipment_changed else old_payload.get(key, recalculated[key])
+        )
+    payload["token_id"] = old_payload.get("token_id", "")
+    payload["draft"] = draft
     mob.name = values["name"]
     mob.level = values["level"]
     mob.payload = payload
