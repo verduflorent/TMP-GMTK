@@ -8,6 +8,9 @@
 .mob-edit-dialog .edit-section { border:1px solid #333; border-radius:.5rem; padding:.8rem; }
 .mob-edit-dialog .edit-actions { position:sticky; bottom:0; display:flex; justify-content:flex-end; padding-top:.8rem; background:#171717; }
 @media(max-width:760px){ .mob-edit-dialog .edit-grid { grid-template-columns:1fr; } }
+.akimbo-builder-form{display:grid;gap:.75rem;max-width:520px}
+.akimbo-builder-form label{display:grid;gap:.25rem}
+.akimbo-builder-form select{width:100%;min-width:0}
 </style>
 <h1>Monster Builder</h1>
 <p>Génère un groupe de Mobs à partir du référentiel MONSTER.</p>
@@ -180,6 +183,24 @@
                         </div>
                         {% endfor %}
                         <button type="button" onclick="document.getElementById('weapon-picker-{{ forloop.counter0 }}').showModal()">+ Arme</button>
+<button type="button" onclick="document.getElementById('akimbo-picker-{{ forloop.counter0 }}').showModal()">⚔ Akimbo</button>
+<dialog class="confirm-dialog resource-dialog" id="akimbo-picker-{{ forloop.counter0 }}">
+  <h3>Composer un Akimbo</h3>
+  <p>Deux armes à une main dans un même slot.</p>
+  <form method="post" action="{% url 'monster_builder_weapon' %}" class="akimbo-builder-form">
+    {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
+    <input type="hidden" name="action" value="akimbo">
+    <label>Première arme<select name="first_weapon_id" required>
+      {% for group_name, weapons in weapon_groups %}{% for weapon in weapons %}{% if weapon.hands == 1 %}<option value="{{ weapon.id }}">{{ weapon.name }}</option>{% endif %}{% endfor %}{% endfor %}
+    </select></label>
+    <label>Seconde arme<select name="second_weapon_id" required>
+      {% for group_name, weapons in weapon_groups %}{% for weapon in weapons %}{% if weapon.hands == 1 %}<option value="{{ weapon.id }}">{{ weapon.name }}</option>{% endif %}{% endfor %}{% endfor %}
+    </select></label>
+    <button type="submit">Valider l'Akimbo</button>
+  </form>
+  <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+</dialog>
+
 <dialog class="confirm-dialog resource-dialog" id="weapon-picker-{{ forloop.counter0 }}"><h3>Ajouter une arme</h3>
 {% for group_name, weapons in weapon_groups %}<h4>{{ group_name }}</h4><div class="resource-picker">{% for weapon in weapons %}
 <form class="panel resource-choice" method="post" action="{% url 'monster_builder_weapon' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}"><strong>T{{ weapon.tier }} — {{ weapon.name }}</strong><button type="submit">Ajouter</button></form>
