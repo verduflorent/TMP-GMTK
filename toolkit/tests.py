@@ -1219,7 +1219,7 @@ class GlobalModalUiContractTests(TestCase):
 
 
     def test_table_mob_token_id_is_blank_by_default_and_persists(self):
-        table = ensure_game_table(self.user)
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
         mob = TableMob.objects.create(
             game_table=table, name="Garde", profile="C", level=1,
             payload={"max_hp": 100, "current_hp": 100, "armor": 0, "shield": 0, "reactions": 1, "vigilance": 1, "weapons": [], "implants": [], "abilities": []},
