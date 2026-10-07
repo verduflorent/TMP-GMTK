@@ -28,6 +28,7 @@ urlpatterns = [
     path("table/mob/<int:mob_id>/weapon/<int:weapon_index>/roll/", views.table_mob_roll_weapon, name="table_mob_roll_weapon"),
     path("table/mob/<int:mob_id>/roll/", views.table_mob_roll_stat, name="table_mob_roll_stat"),
     path("table/next-round/", views.table_next_round, name="table_next_round"),
+    path("table/roll/", views.table_universal_roll, name="table_universal_roll"),
     path("table/mob/<int:mob_id>/condition/add/", views.table_condition_add, name="table_condition_add"),
     path("table/mob/<int:mob_id>/condition/<int:condition_id>/delete/", views.table_condition_delete, name="table_condition_delete"),
 ]
