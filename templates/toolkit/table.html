@@ -8,6 +8,14 @@
     </form>
 </div>
 
+{% if roll_result %}
+<section class="panel" style="margin-bottom:1rem;">
+    <strong>{{ roll_result.mob }} — {{ roll_result.weapon }}</strong>
+    <p>d20 : {{ roll_result.roll }} / Visée {{ roll_result.aim }} —
+    {% if roll_result.success %}<strong>TOUCHÉ</strong>{% if roll_result.damage != None %} · {{ roll_result.damage }} Dégâts{% endif %}
+    {% else %}<strong>RATÉ</strong>{% endif %}</p>
+</section>
+{% endif %}
 <section>
     <h2>Mobs</h2>
     <div class="mob-grid">
@@ -47,7 +55,12 @@
                 </form>
             </div>
             {% for weapon in mob.payload.weapons %}
-                <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée +{{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
+                <div style="display:flex;gap:.4rem;align-items:center;">
+                    <p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
+                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}">
+                        {% csrf_token %}<button type="submit">🎲</button>
+                    </form>
+                </div>
             {% endfor %}
             {% for implant in mob.payload.implants %}
                 <p><strong>{{ implant.name }}</strong>{% if implant.property_lines %} — {{ implant.property_lines|join:" · " }}{% endif %}</p>
