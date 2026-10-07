@@ -1382,6 +1382,41 @@ class GlobalModalUiContractTests(TestCase):
         self.assertEqual(response.json()["payload"]["current_hp"], 200)
 
 
+
+class AkimboBuilderContractTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.user = User.objects.create_user(username="akimbo-test", password="pwd")
+        self.client.login(username="akimbo-test", password="pwd")
+
+    def test_builder_accepts_identical_one_hand_pair(self):
+        from catalogue.models import MobWeapon
+        weapon = MobWeapon.objects.filter(hands=1).first()
+        self.assertIsNotNone(weapon)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        response = self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo",
+            "first_weapon_id": weapon.id, "second_weapon_id": weapon.id,
+        })
+        self.assertEqual(response.status_code, 302)
+        draft = self.client.session["monster_builder_mobs"][0]
+        self.assertTrue(draft["akimbo"])
+        self.assertEqual(len(draft["weapons"]), 2)
+        self.assertEqual(draft["weapons"][0], draft["weapons"][1])
+
+    def test_builder_rejects_two_hand_pair_without_changing_draft(self):
+        from catalogue.models import MobWeapon
+        weapon = MobWeapon.objects.filter(hands=2).first()
+        self.assertIsNotNone(weapon)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        before = self.client.session["monster_builder_mobs"][0].copy()
+        self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo",
+            "first_weapon_id": weapon.id, "second_weapon_id": weapon.id,
+        })
+        self.assertEqual(self.client.session["monster_builder_mobs"][0], before)
+
 class WeaponRollModalContractTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="rollmodal", password="pwd")
