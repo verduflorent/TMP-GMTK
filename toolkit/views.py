@@ -21,6 +21,11 @@ def _builder_redirect_editing(request, index):
     return redirect("monster_builder")
 
 
+def _builder_clear_editing(request):
+    request.session.pop("monster_builder_editing", None)
+    request.session.modified = True
+
+
 
 @login_required
 def table_home(request):
@@ -53,7 +58,7 @@ def monster_builder(request):
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     user_implants = list(UserImplant.objects.filter(owner=request.user))
     generated_mobs = []
-    editing_index = request.session.pop("monster_builder_editing", None)
+    editing_index = request.session.get("monster_builder_editing")
     form = MonsterBuilderForm(request.POST or None)
 
     if request.method == "POST" and request.POST.get("action") == "generate" and form.is_valid():
