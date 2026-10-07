@@ -12,6 +12,12 @@
 .mob-card .derived-edit input { width: 4rem; }
 .mob-card .card-edit-actions { display: flex; gap: .4rem; align-items: center; }
 .mob-card .inline-edit-form { display: inline; }
+.mob-edit-dialog { width:min(900px,92vw); max-height:88vh; overflow:auto; background:#171717; color:#eee; border:1px solid #444; border-radius:.7rem; padding:1.2rem; }
+.mob-edit-dialog::backdrop { background:rgba(0,0,0,.72); }
+.mob-edit-dialog .edit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.mob-edit-dialog .edit-section { border:1px solid #333; border-radius:.5rem; padding:.8rem; }
+.mob-edit-dialog .edit-actions { position:sticky; bottom:0; display:flex; justify-content:flex-end; padding-top:.8rem; background:#171717; }
+@media(max-width:760px){ .mob-edit-dialog .edit-grid { grid-template-columns:1fr; } }
 </style>
 <h1>Monster Builder</h1>
 <p>Génère un groupe de Mobs à partir du référentiel MONSTER.</p>
@@ -82,8 +88,7 @@
                 <button type="submit">✓ Valider</button>
             </form>
             <div class="card-edit-actions">
-                <button type="button" class="view-only" onclick="this.closest('.mob-card').classList.add('is-editing')">✎ Modifier</button>
-                <button type="button" class="edit-only" onclick="this.closest('.mob-card').classList.remove('is-editing')">✓ Terminer</button>
+                <button type="button" class="view-only" onclick="document.getElementById('mob-edit-{{ forloop.counter0 }}').showModal()">✎ Modifier</button>
             </div>
 
             <dl class="stats">
@@ -354,6 +359,39 @@
                     </dialog>
                 </div>
             </section>
+            <dialog class="mob-edit-dialog" id="mob-edit-{{ forloop.counter0 }}">
+                <h2>{% if mob.name %}{{ mob.name }} — {% endif %}{{ mob.profile.label }} N{{ mob.level }}</h2>
+                <p>Les modifications sont appliquées immédiatement à la fiche.</p>
+                <div class="edit-grid">
+                    <section class="edit-section">
+                        <h3>Profil & niveau</h3>
+                        <form method="post" action="{% url 'monster_builder_role' %}">
+                            {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                            <select name="profile" onchange="this.form.submit()">
+                                <option value="C"{% if mob.profile == "C" %} selected{% endif %}>Combattant</option>
+                                <option value="A"{% if mob.profile == "A" %} selected{% endif %}>Assassin</option>
+                                <option value="T"{% if mob.profile == "T" %} selected{% endif %}>Tireur</option>
+                                <option value="S"{% if mob.profile == "S" %} selected{% endif %}>Soutien</option>
+                                <option value="K"{% if mob.profile == "K" %} selected{% endif %}>Contrôle</option>
+                            </select>
+                        </form>
+                        <form method="post" action="{% url 'monster_builder_field' %}">
+                            {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}"><input type="hidden" name="field" value="level">
+                            <label>Niveau <input type="number" name="value" value="{{ mob.level }}" min="1" max="99" onchange="this.form.submit()"></label>
+                        </form>
+                    </section>
+                    <section class="edit-section">
+                        <h3>Ressources</h3>
+                        {% for field, label, value in mob.editable_derived %}
+                        <form method="post" action="{% url 'monster_builder_field' %}">
+                            {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="field" value="{{ field }}">
+                            <label>{{ label }} <input type="number" name="value" value="{{ value }}" min="0" onchange="this.form.submit()"></label>
+                        </form>
+                        {% endfor %}
+                    </section>
+                </div>
+                <div class="edit-actions"><button type="button" onclick="this.closest('dialog').close()">Terminer</button></div>
+            </dialog>
         </article>
         {% endfor %}
     </div>
