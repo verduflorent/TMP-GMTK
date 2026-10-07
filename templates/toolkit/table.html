@@ -16,6 +16,26 @@
     {% else %}<strong>RATÉ</strong>{% endif %}</p>
 </section>
 {% endif %}
+<section class="panel" style="margin-bottom:1rem;min-height:auto;">
+    <h2>Rencontres</h2>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <form method="post" action="{% url 'table_save_encounter' %}" style="display:flex;gap:.35rem;">
+            {% csrf_token %}
+            <input name="name" placeholder="Nom de la rencontre" required maxlength="120">
+            <button type="submit">Sauvegarder la Table</button>
+        </form>
+        {% if encounters %}
+        <form method="post" action="{% url 'table_load_encounter' %}" style="display:flex;gap:.35rem;">
+            {% csrf_token %}
+            <select name="encounter_id">
+                {% for encounter in encounters %}<option value="{{ encounter.id }}">{{ encounter.name }}</option>{% endfor %}
+            </select>
+            <button type="submit">Charger sur la Table</button>
+        </form>
+        {% endif %}
+    </div>
+</section>
+
 <section class="panel" style="margin-bottom:1rem;min-height:auto;display:flex;gap:.75rem;align-items:center;">
     <strong>Roller</strong>
     <form method="post" action="{% url 'table_universal_roll' %}">
