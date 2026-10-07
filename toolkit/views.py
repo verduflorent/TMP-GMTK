@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+import random
 
 from catalogue.models import MobImplant, MobWeapon
 from rules.randomizer import (
@@ -33,10 +34,12 @@ def table_home(request):
             ("reactions", "Réactions", payload.get("reactions", 0)),
             ("vigilance", "Vigilance", payload.get("vigilance", 0)),
         )
+    roll_result = request.session.pop("table_roll_result", None)
     return render(request, "toolkit/table.html", {
         "game_table": game_table,
         "instances": game_table.instances.all(),
         "builder_mobs": builder_mobs,
+        "roll_result": roll_result,
     })
 
 
@@ -716,4 +719,41 @@ def table_condition_delete(request, mob_id, condition_id):
         TableCondition.objects.filter(
             id=condition_id, mob_id=mob_id, mob__game_table=table
         ).delete()
+    return redirect("table")
+
+
+@login_required
+def table_mob_roll_weapon(request, mob_id, weapon_index):
+    if request.method != "POST":
+        return redirect("table")
+    table = ensure_game_table(request.user)
+    mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
+    if mob is None:
+        return redirect("table")
+    weapons = mob.payload.get("weapons", [])
+    if not 0 <= weapon_index < len(weapons):
+        return redirect("table")
+
+    weapon = weapons[weapon_index]
+    roll = random.randint(1, 20)
+    aim = int(weapon.get("aim", 0))
+    success = roll <= aim
+    damage = None
+    if success:
+        if weapon.get("contact_damage") is not None:
+            damage = weapon["contact_damage"]
+        elif weapon.get("distance_damage") is not None:
+            damage = weapon["distance_damage"]
+        else:
+            damage = weapon.get("damage")
+
+    request.session["table_roll_result"] = {
+        "mob": mob.name,
+        "weapon": weapon.get("name", "Arme"),
+        "roll": roll,
+        "aim": aim,
+        "success": success,
+        "damage": damage,
+    }
+    request.session.modified = True
     return redirect("table")
