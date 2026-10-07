@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, UniversalRollerForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -35,11 +35,13 @@ def table_home(request):
             ("vigilance", "Vigilance", payload.get("vigilance", 0)),
         )
     roll_result = request.session.pop("table_roll_result", None)
+    universal_roll_result = request.session.pop("universal_roll_result", None)
     return render(request, "toolkit/table.html", {
         "game_table": game_table,
         "instances": game_table.instances.all(),
         "builder_mobs": builder_mobs,
         "roll_result": roll_result,
+        "universal_roll_result": universal_roll_result,
     })
 
 
@@ -792,6 +794,26 @@ def table_mob_roll_stat(request, mob_id):
         "roll": roll, "aim": threshold, "modifier": modifier,
         "success": roll <= threshold, "damage": None, "roll_damage": None,
         "kind": "stat",
+    }
+    request.session.modified = True
+    return redirect("table")
+
+
+@login_required
+def table_universal_roll(request):
+    if request.method != "POST":
+        return redirect("table")
+    form = UniversalRollerForm(request.POST)
+    if not form.is_valid():
+        return redirect("table")
+    base = form.cleaned_data["threshold"]
+    modifier = form.cleaned_data.get("modifier") or 0
+    threshold = base + modifier
+    roll = random.randint(1, 20)
+    request.session["universal_roll_result"] = {
+        "label": (form.cleaned_data.get("label") or "Jet").strip(),
+        "base": base, "modifier": modifier, "threshold": threshold,
+        "roll": roll, "success": roll <= threshold,
     }
     request.session.modified = True
     return redirect("table")
