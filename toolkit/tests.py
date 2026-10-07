@@ -869,3 +869,44 @@ class UserImplantLibraryTests(TestCase):
             response = self.client.post(reverse("table_universal_roll"), follow=True)
         self.assertEqual(response.context["universal_roll_result"], 13)
 
+
+
+class EncounterPreparationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="encounterprep", password="pwd")
+        self.client.login(username="encounterprep", password="pwd")
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_save"), {"index": 0, "name": "Muerto"})
+        self.mob = BestiaryMob.objects.get(owner=self.user, name="Muerto")
+
+    def test_encounter_can_store_quantity_and_load_independent_table_mobs(self):
+        self.client.post(reverse("encounter_create"), {"name": "Planque Muertos"})
+        encounter = Encounter.objects.get(owner=self.user, name="Planque Muertos")
+        self.client.post(
+            reverse("encounter_add_mob", args=[encounter.id]),
+            {"bestiary_id": self.mob.id, "quantity": 3},
+        )
+        entry = encounter.draft_mobs.get()
+        self.assertEqual(entry.quantity, 3)
+        self.client.post(reverse("encounter_load_table", args=[encounter.id]))
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 3)
+
+    def test_encounter_snapshot_survives_bestiary_deletion(self):
+        self.client.post(reverse("encounter_create"), {"name": "Snapshot"})
+        encounter = Encounter.objects.get(owner=self.user, name="Snapshot")
+        self.client.post(reverse("encounter_add_mob", args=[encounter.id]), {"bestiary_id": self.mob.id, "quantity": 1})
+        self.mob.delete()
+        self.assertTrue(encounter.draft_mobs.exists())
+
+    def test_encounter_can_be_duplicated(self):
+        self.client.post(reverse("encounter_create"), {"name": "Original"})
+        encounter = Encounter.objects.get(owner=self.user, name="Original")
+        self.client.post(reverse("encounter_add_mob", args=[encounter.id]), {"bestiary_id": self.mob.id, "quantity": 2})
+        self.client.post(reverse("encounter_duplicate", args=[encounter.id]))
+        copy = Encounter.objects.get(owner=self.user, name="Original — Copie")
+        self.assertEqual(copy.draft_mobs.get().quantity, 2)
