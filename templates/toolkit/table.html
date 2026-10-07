@@ -73,6 +73,9 @@
 @media(max-width:430px){.live-editor-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.live-editor-fields label:nth-child(-n+2){grid-column:span 2}.live-editor-fields label:nth-child(n+3):nth-child(-n+8){grid-column:span 1}.live-editor-fields label:nth-child(n+9){grid-column:span 1}}
 .akimbo-switch{display:flex;align-items:center;gap:.5rem;font-weight:700;color:#a7192a;margin:.4rem 0 .8rem}
 .akimbo-switch input{accent-color:#b3192d}
+.weapon-row.akimbo-linked{position:relative;padding-left:20px;border-left:2px solid #b3192d;margin-left:8px}
+.weapon-row.akimbo-first:before{content:"⚔";position:absolute;left:-12px;top:0;background:#faf8f0;color:#b3192d;font-size:17px}
+.weapon-row.akimbo-second{border-top:0}
 </style>
 
 <div class="table-heading">
@@ -213,7 +216,7 @@
                 </form>
             </div>
             {% for weapon in mob.payload.weapons %}
-                <div class="weapon-row">
+                <div class="weapon-row{% if mob.payload.akimbo and forloop.counter <= 2 %} akimbo-linked{% endif %}{% if mob.payload.akimbo and forloop.first %} akimbo-first{% endif %}{% if mob.payload.akimbo and forloop.counter == 2 %} akimbo-second{% endif %}">
                     <span aria-hidden="true">⌖</span><p><strong>{{ weapon.name }}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
                     <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}" style="display:flex;gap:.25rem;">
                         {% csrf_token %}
