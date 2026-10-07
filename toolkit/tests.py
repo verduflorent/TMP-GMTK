@@ -911,3 +911,25 @@ class EncounterPreparationTests(TestCase):
         self.client.post(reverse("encounter_duplicate", args=[encounter.id]))
         copy = Encounter.objects.get(owner=self.user, name="Original — Copie")
         self.assertEqual(copy.draft_mobs.get().quantity, 2)
+
+
+    def test_current_table_can_be_saved_as_encounter_without_bestiary(self):
+        from .models import Encounter
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 3, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        self.client.post(reverse("table_save_encounter"), {"name": "Improvisée"})
+        encounter = Encounter.objects.get(owner=self.user, name="Improvisée")
+        self.assertEqual(encounter.draft_mobs.count(), 3)
+
+    def test_saved_encounter_can_be_loaded_directly_from_table(self):
+        from .models import Encounter, TableMob
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        self.client.post(reverse("table_save_encounter"), {"name": "Reload"})
+        encounter = Encounter.objects.get(owner=self.user, name="Reload")
+        TableMob.objects.filter(game_table__owner=self.user).delete()
+
+        self.client.post(reverse("table_load_encounter"), {"encounter_id": encounter.id})
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 2)
