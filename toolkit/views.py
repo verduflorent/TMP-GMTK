@@ -234,6 +234,20 @@ def monster_builder_weapon(request):
             return _builder_redirect_editing(request, index)
         refs.pop(weapon_index)
 
+    if action == "akimbo":
+        try:
+            first_id = int(request.POST.get("first_weapon_id", ""))
+            second_id = int(request.POST.get("second_weapon_id", ""))
+        except (TypeError, ValueError):
+            return _builder_redirect_editing(request, index)
+        pair = list(MobWeapon.objects.filter(id__in=[first_id, second_id], hands=1))
+        if len({w.id for w in pair}) != len({first_id, second_id}):
+            return _builder_redirect_editing(request, index)
+        refs = [{"source": "catalogue", "id": first_id}, {"source": "catalogue", "id": second_id}]
+        data["akimbo"] = True
+    elif action in ("add", "replace", "remove"):
+        data["akimbo"] = False
+
     data["weapons"] = refs
     data.pop("weapon_ids", None)
     saved[index] = data
