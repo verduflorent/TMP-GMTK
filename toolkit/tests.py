@@ -1252,8 +1252,10 @@ class GlobalModalUiContractTests(TestCase):
             )
         response = self.client.get(reverse("table"))
         for state, _current, _maximum, _shield, percent in cases:
-            self.assertContains(response, f'class="hp-bar-fill {state}"')
+            expected_hp_state = "wounded" if state == "shield" else state
+            self.assertContains(response, f'class="hp-bar-fill {expected_hp_state}"')
             self.assertContains(response, f'--hp-percent:{percent}%')
+        self.assertContains(response, 'class="hp-shield-fill"')
 
 
     def test_damage_absorbs_shield_before_real_hp(self):
