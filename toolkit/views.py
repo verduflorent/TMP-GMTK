@@ -33,9 +33,23 @@ def table_home(request):
     builder_mobs = list(game_table.builder_mobs.all())
     for mob in builder_mobs:
         payload = mob.payload
+        current_hp = max(0, int(payload.get("current_hp", 0)))
+        max_hp = max(0, int(payload.get("max_hp", 0)))
+        hp_percent = min(100, round((current_hp / max_hp) * 100)) if max_hp else 0
+        shield = max(0, int(payload.get("shield", 0)))
+        if shield > 0:
+            hp_state = "shield"
+        elif hp_percent <= 25:
+            hp_state = "critical"
+        elif hp_percent <= 50:
+            hp_state = "wounded"
+        else:
+            hp_state = "healthy"
+        mob.hp_percent = hp_percent
+        mob.hp_state = hp_state
         mob.live_resources = (
-            ("hp", "PV", f"{payload.get('current_hp', 0)}/{payload.get('max_hp', 0)}"),
-            ("shield", "PB", payload.get("shield", 0)),
+            ("hp", "PV", f"{current_hp}/{max_hp}"),
+            ("shield", "PB", shield),
             ("reactions", "Réactions", payload.get("reactions", 0)),
             ("vigilance", "Vigilance", payload.get("vigilance", 0)),
         )
