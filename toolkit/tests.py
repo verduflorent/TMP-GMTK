@@ -1179,3 +1179,29 @@ class ModalResourcePickerTests(TestCase):
         self.assertContains(response, "encounter-mob-dialog-")
         self.assertContains(response, 'data-folder="' + str(folder.id) + '"')
         self.assertNotContains(response, '<select name="bestiary_id">')
+
+
+class GlobalModalUiContractTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="modalcontract", password="pwd")
+        self.client.login(username="modalcontract", password="pwd")
+
+    def test_bestiary_has_no_folder_selects(self):
+        response = self.client.get(reverse("bestiary"))
+        self.assertNotContains(response, '<select name="folder"')
+        self.assertNotContains(response, '<select name="folder_id"')
+        self.assertContains(response, 'id="bestiary-filter-dialog"')
+
+    def test_encounters_has_no_resource_or_folder_selects(self):
+        response = self.client.get(reverse("encounters"))
+        self.assertNotContains(response, '<select name="folder"')
+        self.assertNotContains(response, '<select name="folder_id"')
+        self.assertNotContains(response, '<select name="bestiary_id"')
+        self.assertContains(response, 'id="encounter-filter-dialog"')
+
+    def test_table_has_no_encounter_or_attack_mode_selects(self):
+        response = self.client.get(reverse("table"))
+        self.assertNotContains(response, '<select name="encounter_id"')
+        self.assertNotContains(response, '<select name="mode"')
+        self.assertContains(response, 'id="load-encounter-dialog"')
+        self.assertContains(response, 'id="clear-table-dialog"')
