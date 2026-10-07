@@ -30,6 +30,9 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
 .hp-bar-fill.wounded { background:#d8841c; }
 .hp-bar-fill.critical { background:#c33; }
 .hp-bar-fill.shield { background:#7b4bc4; }
+.hp-bar { display:flex; }
+.hp-bar-fill { flex:none; }
+.hp-shield-fill { background:#7b4bc4; height:100%; flex:none; width:var(--shield-percent); }
 </style>
 
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -96,14 +99,15 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
         <article class="panel mob-card">
             <header class="mob-card-header">
                 <strong>{{ mob.name }}</strong>
-                <strong>{{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} PV</strong>
+                <strong>{{ mob.effective_hp }}/{{ mob.payload.max_hp }} effectifs</strong>
             </header>
             <form class="table-screen-only" method="post" action="{% url 'table_mob_token_id' mob.id %}" style="display:flex;gap:.35rem;align-items:center;margin:.4rem 0;">
                 {% csrf_token %}<label>ID jeton <input name="token_id" value="{{ mob.payload.token_id|default:'' }}" placeholder="—" maxlength="32" style="width:5rem;"></label><button type="submit">✓</button>
             </form>
             <p class="print-only"><strong>ID {{ mob.payload.token_id|default:"—" }}</strong></p>
             <div class="hp-bar print-hide" role="meter" aria-label="PV {{ mob.payload.current_hp }} sur {{ mob.payload.max_hp }}" aria-valuemin="0" aria-valuemax="{{ mob.payload.max_hp }}" aria-valuenow="{{ mob.payload.current_hp }}">
-                <div class="hp-bar-fill {{ mob.hp_state }}" style="--hp-percent:{{ mob.hp_percent }}%;"></div>
+                <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent }}%;"></div>
+                <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent }}%;"></div>
             </div>
             <p>Armure {{ mob.payload.armor }}</p>
             <div class="table-resources print-hide">
