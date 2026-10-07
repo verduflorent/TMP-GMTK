@@ -1312,7 +1312,7 @@ class WeaponRollModalContractTests(TestCase):
                          "reactions": 1, "vigilance": 1, "weapons": [{"name": "Pistolet", "aim": 2, "damage": 70}], "implants": [], "abilities": []})
         response = self.client.get(reverse("table"))
         self.assertContains(response, 'id="weapon-roll-dialog"', count=1)
-        self.assertContains(response, 'data-last-roll', count=2)
+        self.assertContains(response, 'data-last-roll hidden', count=2)
 
     def test_weapon_roll_async_response_keeps_mob_identity(self):
         table, _ = GameTable.objects.get_or_create(owner=self.user)
