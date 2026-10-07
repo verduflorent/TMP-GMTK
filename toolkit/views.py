@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
@@ -728,7 +728,8 @@ def table_mob_roll_weapon(request, mob_id, weapon_index):
         return redirect("table")
     table = ensure_game_table(request.user)
     mob = TableMob.objects.filter(id=mob_id, game_table=table).first()
-    if mob is None:
+    form = TableWeaponRollForm(request.POST)
+    if mob is None or not form.is_valid():
         return redirect("table")
     weapons = mob.payload.get("weapons", [])
     if not 0 <= weapon_index < len(weapons):
@@ -736,24 +737,31 @@ def table_mob_roll_weapon(request, mob_id, weapon_index):
 
     weapon = weapons[weapon_index]
     roll = random.randint(1, 20)
-    aim = int(weapon.get("aim", 0))
-    success = roll <= aim
+    modifier = form.cleaned_data.get("modifier") or 0
+    threshold = 10 + int(weapon.get("aim", 0)) + modifier
+    success = roll <= threshold
+    roll_damage = (10 - roll) * 5
     damage = None
     if success:
-        if weapon.get("contact_damage") is not None:
-            damage = weapon["contact_damage"]
+        mode = form.cleaned_data.get("mode") or "default"
+        if mode == "contact" and weapon.get("contact_damage") is not None:
+            base = weapon["contact_damage"]
+        elif mode == "distance" and weapon.get("distance_damage") is not None:
+            base = weapon["distance_damage"]
+        elif weapon.get("damage") is not None:
+            base = weapon["damage"]
         elif weapon.get("distance_damage") is not None:
-            damage = weapon["distance_damage"]
+            base = weapon["distance_damage"]
         else:
-            damage = weapon.get("damage")
+            base = weapon.get("contact_damage", 0)
+        damage = base + roll_damage
 
     request.session["table_roll_result"] = {
-        "mob": mob.name,
-        "weapon": weapon.get("name", "Arme"),
-        "roll": roll,
-        "aim": aim,
-        "success": success,
-        "damage": damage,
+        "mob": mob.name, "weapon": weapon.get("name", "Arme"),
+        "roll": roll, "aim": threshold, "modifier": modifier,
+        "success": success, "damage": damage,
+        "roll_damage": roll_damage if success else None,
     }
     request.session.modified = True
     return redirect("table")
+
