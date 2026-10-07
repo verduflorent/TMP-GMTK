@@ -143,3 +143,12 @@ class TableUniversalRollForm(forms.Form):
     modifier = forms.IntegerField(required=False, initial=0)
 
 
+
+
+class EncounterCreateForm(forms.Form):
+    name = forms.CharField(max_length=120)
+
+
+class EncounterMobAddForm(forms.Form):
+    bestiary_id = forms.IntegerField(min_value=1)
+    quantity = forms.IntegerField(min_value=1, max_value=50)
