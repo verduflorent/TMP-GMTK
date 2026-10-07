@@ -1254,3 +1254,20 @@ class GlobalModalUiContractTests(TestCase):
         for state, _current, _maximum, _shield, percent in cases:
             self.assertContains(response, f'class="hp-bar-fill {state}"')
             self.assertContains(response, f'--hp-percent:{percent}%')
+
+
+    def test_damage_absorbs_shield_before_real_hp(self):
+        table, _ = GameTable.objects.get_or_create(owner=self.user)
+        mob = TableMob.objects.create(game_table=table, name="Bouclier", profile="C", level=1,
+            payload={"max_hp": 420, "current_hp": 300, "armor": 0, "shield": 0,
+                     "reactions": 1, "vigilance": 1, "weapons": [], "implants": [], "abilities": []})
+        url = reverse("table_mob_resource", args=[mob.id])
+        self.client.post(url, {"resource": "shield", "action": "add", "value": 30})
+        mob.refresh_from_db()
+        self.assertEqual((mob.payload["current_hp"], mob.payload["shield"]), (300, 30))
+        self.client.post(url, {"resource": "hp", "action": "subtract", "value": 20})
+        mob.refresh_from_db()
+        self.assertEqual((mob.payload["current_hp"], mob.payload["shield"]), (300, 10))
+        self.client.post(url, {"resource": "hp", "action": "subtract", "value": 20})
+        mob.refresh_from_db()
+        self.assertEqual((mob.payload["current_hp"], mob.payload["shield"]), (290, 0))
