@@ -41,4 +41,8 @@ urlpatterns = [
     path("table/mob/<int:mob_id>/condition/add/", views.table_condition_add, name="table_condition_add"),
     path("table/mob/<int:mob_id>/condition/<int:condition_id>/delete/", views.table_condition_delete, name="table_condition_delete"),
     path("table/clear/", views.table_clear, name="table_clear"),
+    path("folders/create/", views.folder_create, name="folder_create"),
+    path("folders/<int:folder_id>/delete/", views.folder_delete, name="folder_delete"),
+    path("bestiary/<int:mob_id>/folder/", views.bestiary_move_folder, name="bestiary_move_folder"),
+    path("encounters/<int:encounter_id>/folder/", views.encounter_move_folder, name="encounter_move_folder"),
 ]
