@@ -313,6 +313,11 @@ def _table_payload(mob):
         "shield": mob["shield"],
         "reactions": mob["reactions"],
         "vigilance": mob["vigilance"],
+        "initial_resources": {
+            "shield": mob["shield"],
+            "reactions": mob["reactions"],
+            "vigilance": mob["vigilance"],
+        },
         "stats": {
             "force": mob["stats"].force, "agility": mob["stats"].agility,
             "perception": mob["stats"].perception, "technique": mob["stats"].technique,
