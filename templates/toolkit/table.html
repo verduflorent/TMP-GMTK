@@ -27,6 +27,7 @@
 .hp-bar { display:flex; }
 .hp-bar-fill { flex:none; }
 .hp-shield-fill { background:#7b4bc4; height:100%; flex:none; width:var(--shield-percent); }
+.hp-bar-fill, .hp-shield-fill { min-width:0; }
 </style>
 
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -100,16 +101,17 @@
             </form>
             <p class="print-only"><strong>ID {{ mob.payload.token_id|default:"—" }}</strong></p>
             <div class="hp-bar print-hide" role="meter" aria-label="PV {{ mob.payload.current_hp }} sur {{ mob.payload.max_hp }}" aria-valuemin="0" aria-valuemax="{{ mob.payload.max_hp }}" aria-valuenow="{{ mob.payload.current_hp }}">
-                <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent }}%;"></div>
-                <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent }}%;"></div>
+                <div class="hp-bar-fill {% if mob.hp_percent <= 25 %}critical{% elif mob.hp_percent <= 50 %}wounded{% else %}healthy{% endif %}" style="--hp-percent:{{ mob.hp_percent|stringformat:"d" }}%;"></div>
+                <div class="hp-shield-fill" style="--shield-percent:{{ mob.shield_percent|stringformat:"d" }}%;"></div>
             </div>
             <p>Armure {{ mob.payload.armor }}</p>
             <div class="print-only">
               <p><strong>PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }} · PB {{ mob.payload.shield }} · Total {{ mob.effective_hp }}</strong></p>
               <p>Réactions {{ mob.payload.reactions }} · Vigilance {{ mob.payload.vigilance }}</p>
               <div class="print-stats">
-                <span>FOR {{ mob.payload.stats.force }}</span><span>AGI {{ mob.payload.stats.agility }}</span><span>PER {{ mob.payload.stats.perception }}</span>
-                <span>TECH {{ mob.payload.stats.technique }}</span><span>CON {{ mob.payload.stats.constitution }}</span><span>VOL {{ mob.payload.stats.willpower }}</span>
+                {% for label, value, modifier in mob.stat_display %}
+                <span>{{ label }} {{ value }} ({% if modifier >= 0 %}+{% endif %}{{ modifier }})</span>
+                {% endfor %}
               </div>
             </div>
             <div class="table-resources print-hide">
