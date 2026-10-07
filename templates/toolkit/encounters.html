@@ -1,16 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Rencontres — TMP-GMTK<script>
-document.querySelectorAll('.resource-dialog').forEach(function(dialog){
-  dialog.querySelectorAll('[data-folder-filter]').forEach(function(button){
-    button.addEventListener('click', function(){
-      const wanted=button.dataset.folderFilter;
-      dialog.querySelectorAll('.resource-choice').forEach(function(card){ card.hidden=wanted!=='all' && card.dataset.folder!==wanted; });
-    });
-  });
-});
-</script>
-{% endblock %}
-{% block content %}
+{% block title %}Rencontres — TMP-GMTK{% endblock %}{% block content %}
 <h1>Rencontres</h1>
 <button type="button" onclick="document.getElementById('encounter-filter-dialog').showModal()">Dossier : {% if folder_filter == "all" %}Tout{% elif folder_filter == "unclassified" %}Non classé{% else %}{% for folder in folders %}{% if folder.id|stringformat:"s" == folder_filter %}{{ folder.name }}{% endif %}{% endfor %}{% endif %}</button>
 <dialog class="confirm-dialog" id="encounter-filter-dialog"><h3>Afficher un dossier</h3>
@@ -68,4 +57,15 @@ document.querySelectorAll('.resource-dialog').forEach(function(dialog){
     </div>
 </article>
 {% empty %}<p>Aucune rencontre sauvegardée.</p>{% endfor %}
+<script>
+document.querySelectorAll('.resource-dialog').forEach(function(dialog){
+  dialog.querySelectorAll('[data-folder-filter]').forEach(function(button){
+    button.addEventListener('click', function(){
+      const wanted=button.dataset.folderFilter;
+      dialog.querySelectorAll('.resource-choice').forEach(function(card){ card.hidden=wanted!=='all' && card.dataset.folder!==wanted; });
+    });
+  });
+});
+</script>
+
 {% endblock %}
