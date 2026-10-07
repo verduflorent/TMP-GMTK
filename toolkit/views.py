@@ -16,7 +16,9 @@ from .services import ensure_game_table
 
 
 def _builder_redirect_editing(request, index):
-    return redirect(f"{reverse('monster_builder')}?edit={index}")
+    request.session["monster_builder_reopen_index"] = index
+    request.session.modified = True
+    return redirect("monster_builder")
 
 
 def _builder_clear_editing(request):
@@ -56,11 +58,12 @@ def monster_builder(request):
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     user_implants = list(UserImplant.objects.filter(owner=request.user))
     generated_mobs = []
-    raw_editing = request.GET.get("edit")
-    try:
-        editing_index = int(raw_editing) if raw_editing is not None else None
-    except (TypeError, ValueError):
-        editing_index = None
+    # One-shot UI state: an edit POST asks the next Builder render to reopen
+    # the edited Mob, then the state is consumed. Refresh/generate/navigation
+    # must never reopen a stale dialog.
+    editing_index = request.session.pop("monster_builder_reopen_index", None)
+    if editing_index is not None:
+        request.session.modified = True
     form = MonsterBuilderForm(request.POST or None)
 
     if request.method == "POST" and request.POST.get("action") == "generate" and form.is_valid():
