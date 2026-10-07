@@ -3,6 +3,7 @@
 {% block content %}
 <div style="display:flex;justify-content:space-between;align-items:center;">
     <h1>Table de jeu</h1>
+<form method="post" action="{% url 'table_clear' %}" style="display:inline-block;">{% csrf_token %}<button type="submit">Nettoyer la Table</button></form>
     <form method="post" action="{% url 'table_next_round' %}">
         {% csrf_token %}<button type="submit">Tour suivant ↻</button>
     </form>
