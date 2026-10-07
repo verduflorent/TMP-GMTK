@@ -1,5 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Rencontres — TMP-GMTK{% endblock %}
+{% block title %}Rencontres — TMP-GMTK<script>
+document.querySelectorAll('.resource-dialog').forEach(function(dialog){
+  dialog.querySelectorAll('[data-folder-filter]').forEach(function(button){
+    button.addEventListener('click', function(){
+      const wanted=button.dataset.folderFilter;
+      dialog.querySelectorAll('.resource-choice').forEach(function(card){ card.hidden=wanted!=='all' && card.dataset.folder!==wanted; });
+    });
+  });
+});
+</script>
+{% endblock %}
 {% block content %}
 <h1>Rencontres</h1>
 <form method="get" style="display:flex;gap:.4rem;align-items:center;margin-bottom:1rem;">
@@ -38,12 +48,26 @@
     </p>
     {% empty %}<p>Aucun Mob.</p>{% endfor %}
     {% if bestiary_mobs %}
-    <form method="post" action="{% url 'encounter_add_mob' encounter.id %}" style="display:flex;gap:.4rem;">
-        {% csrf_token %}
-        <select name="bestiary_id">{% for mob in bestiary_mobs %}<option value="{{ mob.id }}">{{ mob.name }} — N{{ mob.level }}</option>{% endfor %}</select>
-        <label>× <input type="number" name="quantity" value="1" min="1" max="50" style="width:3.5rem;"></label>
-        <button type="submit">Ajouter</button>
-    </form>
+    <button type="button" onclick="document.getElementById('encounter-mob-dialog-{{ encounter.id }}').showModal()">+ Ajouter un Mob</button>
+    <dialog class="confirm-dialog resource-dialog" id="encounter-mob-dialog-{{ encounter.id }}">
+        <h3>Ajouter un Mob — {{ encounter.name }}</h3>
+        <div>
+            <button type="button" data-folder-filter="all">Tout</button>
+            {% for folder in folders %}<button type="button" data-folder-filter="{{ folder.id }}">{{ folder.name }}</button>{% endfor %}
+            <button type="button" data-folder-filter="unclassified">Non classé</button>
+        </div>
+        {% for mob in bestiary_mobs %}
+        <article class="panel resource-choice" data-folder="{% if mob.folder_id %}{{ mob.folder_id }}{% else %}unclassified{% endif %}">
+            <strong>{{ mob.name }}</strong> — N{{ mob.level }}
+            <form method="post" action="{% url 'encounter_add_mob' encounter.id %}">
+                {% csrf_token %}<input type="hidden" name="bestiary_id" value="{{ mob.id }}">
+                <label>× <input type="number" name="quantity" value="1" min="1" max="50" style="width:3.5rem;"></label>
+                <button type="submit">Ajouter</button>
+            </form>
+        </article>
+        {% empty %}<p>Bestiaire vide.</p>{% endfor %}
+        <button type="button" onclick="this.closest('dialog').close()">Fermer</button>
+    </dialog>
     {% endif %}
     <div style="display:flex;gap:.4rem;margin-top:.75rem;">
         <form method="post" action="{% url 'encounter_load_table' encounter.id %}">{% csrf_token %}<button type="submit">Charger sur Table</button></form>
