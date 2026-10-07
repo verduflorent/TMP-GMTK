@@ -430,8 +430,26 @@ def table_mob_delete(request, mob_id):
 
 @login_required
 def bestiary_home(request):
-    mobs = BestiaryMob.objects.filter(owner=request.user).order_by("name", "id")
-    return render(request, "toolkit/bestiary.html", {"bestiary_mobs": mobs})
+    folders = UserFolder.objects.filter(owner=request.user)
+    folder_filter = request.GET.get("folder", "all")
+    mobs = BestiaryMob.objects.filter(owner=request.user).select_related("folder").order_by("name", "id")
+    if folder_filter == "unclassified":
+        mobs = mobs.filter(folder__isnull=True)
+    elif folder_filter != "all":
+        try:
+            folder_id = int(folder_filter)
+        except ValueError:
+            folder_filter = "all"
+        else:
+            if folders.filter(id=folder_id).exists():
+                mobs = mobs.filter(folder_id=folder_id)
+            else:
+                folder_filter = "all"
+    return render(request, "toolkit/bestiary.html", {
+        "bestiary_mobs": mobs,
+        "folders": folders,
+        "folder_filter": folder_filter,
+    })
 
 
 @login_required
