@@ -35,6 +35,18 @@
 @media(prefers-reduced-motion:reduce){.roll-modal-die{transition:none}}
 .mob-last-roll{margin-top:auto;border-top:1px solid #b7bec9;padding-top:.5rem;font-size:.82rem;font-weight:700;color:#193252}
 @media print{.roll-result-dialog,.mob-last-roll{display:none!important}}
+
+.live-mob-editor{width:min(780px,94vw);max-height:90vh;overflow:auto;background:#f9f7f0;color:#13233b;border:1px solid #aab3c0;border-radius:12px;padding:1.5rem}
+.live-mob-editor::backdrop{background:#101c32b3}
+.live-editor-head{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.live-editor-head h2{margin:0}.live-editor-close{background:transparent;color:#b21b2c;border:0}
+.live-editor-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin:1.2rem 0}
+.live-editor-fields label{display:grid;gap:.3rem;font-weight:700}
+.live-editor-fields input{width:100%;min-width:0}
+.live-editor-note{color:#5d6572;font-size:.9rem}
+.live-editor-error{color:#a20e25}
+.live-mob-editor footer{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1rem}
+@media(max-width:600px){.live-editor-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 <div class="table-heading">
@@ -105,7 +117,7 @@
                     </form>
                 </span>
                 <span class="combat-card-actions table-screen-only">
-                    <form method="post" action="{% url 'table_mob_edit' mob.id %}">{% csrf_token %}
+                    <form method="get" action="{% url 'table_mob_edit' mob.id %}" class="live-mob-edit-trigger">
                         <button class="icon-action edit" title="Rééditer" aria-label="Rééditer" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 20 4.5-1 11-11-3.5-3.5-11 11L4 20Z M14 6l4 4"/></svg></button>
                     </form>
                     <button class="icon-action delete" type="button" title="Supprimer" aria-label="Supprimer" onclick="document.getElementById('delete-table-mob-{{ mob.id }}').showModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 5 19 19M19 5 5 19"/></svg></button>
@@ -212,6 +224,31 @@
         {% if not builder_mobs %}<p>Aucun Mob sur la Table.</p>{% endif %}
     {% endfor %}
 </section>
+<dialog id="live-mob-editor" class="live-mob-editor" aria-labelledby="live-mob-editor-title">
+  <form id="live-mob-editor-form" method="post">
+    {% csrf_token %}
+    <header class="live-editor-head"><h2 id="live-mob-editor-title">MODIFIER LE MOB</h2><button type="button" class="live-editor-close" aria-label="Fermer">✕</button></header>
+    <div class="live-editor-fields">
+      <label>Nom<input name="name" required maxlength="120"></label>
+      <label>Niveau<input name="level" type="number" min="1" max="99" required></label>
+      <label>PV<input name="current_hp" type="number" min="0" required></label>
+      <label>PV max<input name="max_hp" type="number" min="1" required></label>
+      <label>Bouclier<input name="shield" type="number" min="0" required></label>
+      <label>Armure<input name="armor" type="number" min="0" required></label>
+      <label>Réactions<input name="reactions" type="number" min="0" required></label>
+      <label>Vigilance<input name="vigilance" type="number" min="0" required></label>
+      <label>FOR<input name="force" type="number" min="0" max="99" required></label>
+      <label>AGI<input name="agility" type="number" min="0" max="99" required></label>
+      <label>PER<input name="perception" type="number" min="0" max="99" required></label>
+      <label>TECH<input name="technique" type="number" min="0" max="99" required></label>
+      <label>CON<input name="constitution" type="number" min="0" max="99" required></label>
+      <label>VOL<input name="willpower" type="number" min="0" max="99" required></label>
+    </div>
+    <p class="live-editor-note">Les armes, implants et capacités restent inchangés dans cette première étape.</p>
+    <p class="live-editor-error" role="alert" hidden></p>
+    <footer><button type="button" class="live-editor-cancel">Annuler</button><button type="submit">Enregistrer</button></footer>
+  </form>
+</dialog>
 <dialog id="weapon-roll-dialog" class="roll-result-dialog" aria-labelledby="roll-result-title">
     <div class="roll-modal-inner">
         <p class="roll-modal-eyebrow" id="roll-result-title">JET D'ATTAQUE</p>
@@ -333,5 +370,63 @@ document.addEventListener("submit", async function(event) {
     alert("Action non enregistrée : "+error.message);
   }
 });
+</script>
+<script>
+(function(){
+ const dialog=document.getElementById("live-mob-editor");
+ const editor=document.getElementById("live-mob-editor-form");
+ if(!dialog||!editor)return;
+ const fields=["name","level","current_hp","max_hp","shield","armor","reactions","vigilance","force","agility","perception","technique","constitution","willpower"];
+ const stats=["force","agility","perception","technique","constitution","willpower"];
+ let activeId=null;
+ document.addEventListener("submit",async function(event){
+   const trigger=event.target.closest("form.live-mob-edit-trigger");
+   if(!trigger)return;
+   event.preventDefault();
+   const response=await fetch(trigger.getAttribute("action"),{headers:{"X-Requested-With":"XMLHttpRequest"}});
+   if(!response.ok){alert("Impossible de charger la fiche.");return;}
+   const mob=await response.json();
+   activeId=mob.id;
+   editor.setAttribute("action",trigger.getAttribute("action"));
+   for(const key of fields){
+     const input=editor.elements.namedItem(key);
+     if(input)input.value=stats.includes(key)?(mob.payload.stats?.[key]??0):(mob[key]??mob.payload[key]??0);
+   }
+   dialog.querySelector(".live-editor-error").hidden=true;
+   dialog.showModal();
+ });
+ function close(){dialog.close();}
+ dialog.querySelector(".live-editor-close").addEventListener("click",close);
+ dialog.querySelector(".live-editor-cancel").addEventListener("click",close);
+ dialog.addEventListener("click",e=>{if(e.target===dialog)close();});
+ editor.addEventListener("submit",async function(event){
+   event.preventDefault();
+   const response=await fetch(editor.getAttribute("action"),{method:"POST",body:new FormData(editor),headers:{"X-Requested-With":"XMLHttpRequest"}});
+   const data=await response.json();
+   if(!response.ok||!data.ok){
+     const error=dialog.querySelector(".live-editor-error");
+     error.textContent=JSON.stringify(data.errors||data.error||"Modification refusée");
+     error.hidden=false;return;
+   }
+   const card=document.querySelector('.mob-card[data-mob-id="'+activeId+'"]');
+   if(card){
+     const heading=card.querySelector(".mob-card-header strong");
+     if(heading)heading.textContent=data.name;
+     const level=card.querySelector(".mob-card-header small");
+     if(level)level.textContent="N"+data.level;
+     const labels=card.querySelectorAll(".table-stats span");
+     stats.forEach((key,i)=>{const value=labels[i]?.querySelector("b");if(value)value.textContent=data.payload.stats[key];});
+     const hp=card.querySelector('[data-resource-label="hp"]');
+     if(hp)hp.textContent=data.payload.current_hp+"/"+data.payload.max_hp;
+     for(const key of ["shield","reactions","vigilance"]){const el=card.querySelector('[data-resource-label="'+key+'"]');if(el)el.textContent=data.payload[key];}
+     card.dataset.maxHp=data.payload.max_hp;
+     const hpFill=card.querySelector(".hp-bar-fill"),shieldFill=card.querySelector(".hp-shield-fill");
+     const max=data.payload.max_hp,current=data.payload.current_hp,shield=data.payload.shield,total=Math.max(max,current+shield,1);
+     if(hpFill)hpFill.style.setProperty("--hp-percent",Math.round(100*current/total)+"%");
+     if(shieldFill)shieldFill.style.setProperty("--shield-percent",Math.round(100*shield/total)+"%");
+   }
+   close();
+ });
+})();
 </script>
 {% endblock %}
