@@ -133,3 +133,11 @@ class TableConditionForm(forms.Form):
 class TableWeaponRollForm(forms.Form):
     modifier = forms.IntegerField(required=False, initial=0)
     mode = forms.ChoiceField(choices=[("default", "Standard"), ("contact", "Contact"), ("distance", "Distance")], required=False)
+
+
+class TableUniversalRollForm(forms.Form):
+    stat = forms.ChoiceField(choices=[
+        ("force", "FOR"), ("agility", "AGI"), ("perception", "PER"),
+        ("technique", "TECH"), ("constitution", "CON"), ("willpower", "VOL"),
+    ])
+    modifier = forms.IntegerField(required=False, initial=0)
