@@ -976,3 +976,31 @@ class ScenarioFolderTests(TestCase):
         self.client.post(reverse("bestiary_move_folder", args=[mob.id]), {"folder_id": foreign.id})
         mob.refresh_from_db()
         self.assertIsNone(mob.folder)
+
+
+    def test_bestiary_folder_filter_supports_all_folder_and_unclassified(self):
+        from .models import UserFolder
+
+        folder = UserFolder.objects.create(owner=self.user, name="Épisode 1")
+        BestiaryMob.objects.create(owner=self.user, folder=folder, name="Classé", profile="C", level=1)
+        BestiaryMob.objects.create(owner=self.user, name="Libre", profile="A", level=1)
+
+        response = self.client.get(reverse("bestiary"), {"folder": folder.id})
+        self.assertContains(response, "Classé")
+        self.assertNotContains(response, "Libre")
+        response = self.client.get(reverse("bestiary"), {"folder": "unclassified"})
+        self.assertContains(response, "Libre")
+        self.assertNotContains(response, "Classé")
+        response = self.client.get(reverse("bestiary"), {"folder": "all"})
+        self.assertContains(response, "Classé")
+        self.assertContains(response, "Libre")
+
+    def test_encounter_folder_filter_uses_same_folder_selector(self):
+        from .models import UserFolder
+
+        folder = UserFolder.objects.create(owner=self.user, name="Épisode 2")
+        Encounter.objects.create(owner=self.user, folder=folder, name="Planque")
+        Encounter.objects.create(owner=self.user, name="Impro")
+        response = self.client.get(reverse("encounters"), {"folder": folder.id})
+        self.assertContains(response, "Planque")
+        self.assertNotContains(response, "Impro")
