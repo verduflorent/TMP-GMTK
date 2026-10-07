@@ -10,7 +10,7 @@ from rules.randomizer import (
     serialize_mob,
 )
 
-from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
+from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
 from .models import BestiaryMob, Encounter, EncounterDraftMob, TableMob, TableCondition, UserAbility, UserWeapon, UserImplant
 from .services import ensure_game_table
 
