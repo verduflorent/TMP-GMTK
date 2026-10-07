@@ -411,6 +411,7 @@ document.addEventListener("submit", async function(event) {
  let previewTimer=null;
  let previewSequence=0;
  let applyingPreview=false;
+ let manualResourceEdits=new Set();
  const previewFields=["level","force","agility","perception","technique","constitution","willpower"];
  function prepareBody(preview=false){
    const body=new FormData(editor);
@@ -424,6 +425,9 @@ document.addEventListener("submit", async function(event) {
    if(!dialog.open||!original||!editor.checkValidity())return;
    const sequence=++previewSequence;
    const body=prepareBody(true);
+   for(const key of ["current_hp","max_hp","shield","armor","reactions","vigilance"]){
+     if(!manualResourceEdits.has(key))body.set(key,String(original.payload[key]));
+   }
    const response=await fetch(editor.getAttribute("action"),{method:"POST",body,headers:{"X-Requested-With":"XMLHttpRequest"}});
    const result=await response.json();
    if(sequence!==previewSequence||!dialog.open)return;
@@ -446,6 +450,9 @@ document.addEventListener("submit", async function(event) {
    previewTimer=setTimeout(()=>{updatePreview().catch(console.error);},180);
  }
  editor.addEventListener("input",event=>{
+   if(["current_hp","max_hp","shield","armor","reactions","vigilance"].includes(event.target.name)){
+     manualResourceEdits.add(event.target.name);
+   }
    if(previewFields.includes(event.target.name))schedulePreview();
  });
  let gear={weapons:[],implants:[],abilities:[]};
@@ -486,6 +493,7 @@ document.addEventListener("submit", async function(event) {
    const mob=await response.json();
    activeId=mob.id;
    original=structuredClone(mob);
+   manualResourceEdits=new Set();
    const draft=mob.payload.draft||{};
    catalogue={
      weapons:[...mob.catalogue.weapons,...mob.catalogue.user_weapons],
@@ -520,6 +528,9 @@ document.addEventListener("submit", async function(event) {
    clearTimeout(previewTimer);
    previewSequence++;
    const body=prepareBody();
+   for(const key of ["current_hp","max_hp","shield","armor","reactions","vigilance"]){
+     if(!manualResourceEdits.has(key))body.set(key,String(original.payload[key]));
+   }
    const response=await fetch(editor.getAttribute("action"),{method:"POST",body,headers:{"X-Requested-With":"XMLHttpRequest"}});
    const data=await response.json();
    if(!response.ok||!data.ok){
