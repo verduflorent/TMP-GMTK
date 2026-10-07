@@ -3,11 +3,22 @@
 {% block content %}
 <h1>Bestiaire</h1>
 <p>Mobs sauvegardés et réutilisables.</p>
+<form method="post" action="{% url 'folder_create' %}" style="display:flex;gap:.4rem;margin-bottom:1rem;">
+    {% csrf_token %}<input type="hidden" name="next" value="bestiary">
+    <input name="name" placeholder="Nouveau dossier" required maxlength="120"><button type="submit">+ Dossier</button>
+</form>
 <div class="mob-grid">
 {% for mob in bestiary_mobs %}
 <article class="panel mob-card">
     <h3>{{ mob.name }}</h3>
-    <p>{{ mob.get_profile_display }} · N{{ mob.level }}</p>
+    <p>{{ mob.get_profile_display }} · N{{ mob.level }} · <strong>{% if mob.folder %}{{ mob.folder.name }}{% else %}Non classé{% endif %}</strong></p>
+    <form method="post" action="{% url 'bestiary_move_folder' mob.id %}" style="margin-bottom:.5rem;">
+        {% csrf_token %}
+        <select name="folder_id" onchange="this.form.submit()">
+            <option value="">Non classé</option>
+            {% for folder in folders %}<option value="{{ folder.id }}"{% if mob.folder_id == folder.id %} selected{% endif %}>{{ folder.name }}</option>{% endfor %}
+        </select>
+    </form>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
         <form method="post" action="{% url 'bestiary_load' mob.id %}" style="display:flex;gap:.35rem;align-items:center;">
             {% csrf_token %}
