@@ -509,6 +509,27 @@ class BuilderValidationTests(TestCase):
         self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 3)
         self.assertEqual(self.client.session["monster_builder_mobs"], [])
 
+    def test_table_editor_catalogues_are_available_and_invalid_equipment_is_rejected(self):
+        from .models import TableMob
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        response = self.client.get(reverse("table_mob_edit", args=[mob.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("weapons", response.json()["catalogue"])
+        before = mob.payload
+        stats = before["stats"]
+        fields = {
+            "name": mob.name, "level": mob.level,
+            **{key: before[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **{key: stats[key] for key in ("force", "agility", "perception", "technique", "constitution", "willpower")},
+            "weapons": '[{"source":"catalogue","id":99999999}]',
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 400)
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload, before)
+
     def test_table_mob_can_be_edited_in_place_without_losing_resources(self):
         from .models import TableMob
 
