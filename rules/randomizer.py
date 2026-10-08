@@ -341,7 +341,18 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
 def weapon_slots_from_draft(data):
     """Canonical slots with backwards compatibility for flat legacy drafts."""
     if "weapon_slots" in data:
-        return data["weapon_slots"]
+        slots = data["weapon_slots"]
+        # Legacy consumers still edit the flat weapons list directly.
+        # A divergent flat list is an explicit replacement, not stale slot data.
+        flat = data.get("weapons")
+        if flat is not None and flat != [
+            ref for slot in slots for ref in slot["weapons"]
+        ]:
+            return weapon_slots_from_draft({
+                "weapons": flat,
+                "akimbo": bool(data.get("akimbo")) and len(flat) == 2,
+            })
+        return slots
     refs = data.get("weapons")
     if refs is None:
         ids = data.get("weapon_ids")
