@@ -20,7 +20,7 @@
 </style>
 <h1>Éditeur d'équipements</h1>
 <p>Armes, implants et capacités personnels. Les équipements officiels restent inchangés.</p>
-{% if errors %}<div role="alert"><strong>Erreur dans {{ error_kind }} :</strong> {{ errors }}</div>{% endif %}
+{% if errors %}<div role="alert"><strong>Impossible d'enregistrer l'équipement.</strong> Vérifie les champs indiqués dans le formulaire.</div>{% endif %}
 <div class="equip-tabs" role="tablist" aria-label="Type d'équipement">
 {% for section in sections %}
 <button type="button" role="tab" data-equip-tab="{{ section.kind }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ section.title }}</button>
@@ -61,7 +61,7 @@
 <form class="equip-form" method="post" action="{% url 'equipment_create' section.kind %}">
 {% csrf_token %}
 {% for field in section.create_form %}
-<p>{{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</p>
+<p>{{ field.label_tag }}{{ field }}{% for error in field.errors %}<small role="alert">{{ error }}</small>{% endfor %}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</p>
 {% endfor %}
 <footer><button type="button" data-close-dialog>Annuler</button><button type="submit">Créer</button></footer>
 </form>
@@ -69,6 +69,10 @@
 </section>
 {% endfor %}
 <script>
+{% if errors %}
+document.querySelector('[data-equip-tab="{{ error_kind }}"]')?.click();
+document.getElementById("equip-new-{{ error_kind }}")?.showModal();
+{% endif %}
 document.querySelectorAll("[data-equip-tab]").forEach(button=>button.addEventListener("click",()=>{
  document.querySelectorAll("[data-equip-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
  document.querySelectorAll("[data-equip-panel]").forEach(p=>p.hidden=p.dataset.equipPanel!==button.dataset.equipTab);
