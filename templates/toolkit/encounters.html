@@ -12,9 +12,20 @@
 <button type="button" onclick="document.getElementById('enc-create').showModal()">+ Rencontre</button><dialog class="confirm-dialog" id="enc-create"><h3>Créer une rencontre</h3><form method="post" action="{% url 'encounter_create' %}" class="panel" style="min-height:auto;display:flex;gap:.5rem;">
     {% csrf_token %}<input name="name" placeholder="Nom de la rencontre" required maxlength="120"><button type="submit">+ Créer</button>
 </form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
+<style>
+.encounter-compact{margin-top:.65rem;padding:0;background:#fffdf8;border:1px solid var(--tmp-line,#c6c6c6);border-radius:5px}
+.encounter-compact summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;padding:.8rem 1rem;list-style:none}
+.encounter-compact summary::-webkit-details-marker{display:none}
+.encounter-compact summary h2{margin:0;font:400 1.2rem Anton,Impact,sans-serif}
+.encounter-compact summary::after{content:"+";font-size:1.35rem;font-weight:700;color:#a7191c}
+.encounter-compact[open] summary::after{content:"−"}
+.encounter-compact[open] summary{border-bottom:1px solid var(--tmp-line,#c6c6c6)}
+.encounter-content{padding:1rem}
+</style>
 {% for encounter in encounters %}
-<article class="panel" style="margin-top:1rem;">
-    <h2>{{ encounter.name }}</h2>
+<details class="encounter-compact">
+    <summary><h2>{{ encounter.name }}</h2></summary>
+    <div class="encounter-content">
     <button type="button" onclick="document.getElementById('move-enc-{{ encounter.id }}').showModal()">Déplacer</button>
 <dialog class="confirm-dialog" id="move-enc-{{ encounter.id }}"><h3>Déplacer {{ encounter.name }}</h3>
 <form method="post" action="{% url 'encounter_move_folder' encounter.id %}">{% csrf_token %}
@@ -55,7 +66,8 @@
         <button type="button" onclick="document.getElementById('delete-enc-{{ encounter.id }}').showModal()">Supprimer</button>
 <dialog class="confirm-dialog" id="delete-enc-{{ encounter.id }}"><strong>Supprimer {{ encounter.name }} ?</strong><div class="confirm-actions"><button type="button" onclick="this.closest('dialog').close()">Annuler</button><form method="post" action="{% url 'encounter_delete' encounter.id %}">{% csrf_token %}<button type="submit">Supprimer</button></form></div></dialog>
     </div>
-</article>
+    </div>
+</details>
 {% empty %}<p>Aucune rencontre sauvegardée.</p>{% endfor %}
 <script>
 document.querySelectorAll('.resource-dialog').forEach(function(dialog){
