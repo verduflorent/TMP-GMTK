@@ -173,6 +173,9 @@ class UserWeapon(models.Model):
     aim = models.IntegerField(default=0)
     property_name = models.CharField(max_length=120, blank=True)
     property_text = models.TextField(blank=True)
+    effect_type = models.CharField(max_length=40, blank=True, default="")
+    scaling = models.CharField(max_length=10, default="fixed")
+    value = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -191,6 +194,9 @@ class UserImplant(models.Model):
     name = models.CharField(max_length=120)
     property_name = models.CharField(max_length=120, blank=True)
     property_text = models.TextField(blank=True)
+    effect_type = models.CharField(max_length=40, blank=True, default="")
+    scaling = models.CharField(max_length=10, default="fixed")
+    value = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
