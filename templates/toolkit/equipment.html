@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Équipements — TMP-GMTK{% endblock %}
+{% block content %}
+<style>
+.equip-tabs{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
+.equip-tabs button[aria-selected="true"]{background:#a7191c;color:#fff}
+.equip-panel[hidden]{display:none!important}
+.equip-top{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.equip-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.8rem}
+.equip-card{background:#fffdf8;border:1px solid #c5c8cc;border-radius:6px;padding:.9rem}
+.equip-card h3{margin:0 0 .4rem}
+.equip-actions{display:flex;gap:.5rem;margin-top:.8rem}
+.equip-dialog{background:#faf8f2;color:#15243c;width:min(650px,94vw);max-height:86vh;overflow:auto;padding:1.4rem;border:1px solid #adb5c0;border-radius:10px}
+.equip-dialog::backdrop{background:#0c1829aa}
+.equip-form{display:grid;gap:.7rem}
+.equip-form p{display:grid;gap:.25rem;margin:0}
+.equip-form label{font-weight:700}
+.equip-form input,.equip-form select,.equip-form textarea{width:100%;box-sizing:border-box}
+.equip-form footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem}
+</style>
+<h1>Éditeur d'équipements</h1>
+<p>Armes, implants et capacités personnels. Les équipements officiels restent inchangés.</p>
+{% if errors %}<div role="alert"><strong>Erreur dans {{ error_kind }} :</strong> {{ errors }}</div>{% endif %}
+<div class="equip-tabs" role="tablist" aria-label="Type d'équipement">
+{% for section in sections %}
+<button type="button" role="tab" data-equip-tab="{{ section.kind }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ section.title }}</button>
+{% endfor %}
+</div>
+{% for section in sections %}
+<section class="equip-panel" data-equip-panel="{{ section.kind }}" {% if not forloop.first %}hidden{% endif %}>
+<div class="equip-top"><h2>{{ section.title }}</h2><button type="button" data-open-dialog="equip-new-{{ section.kind }}">+ Créer</button></div>
+<div class="equip-list">
+{% for item in section.items %}
+<article class="equip-card">
+<h3>{{ item.name }}</h3>
+{% if section.kind == "weapon" %}
+<p>{{ item.hands }} main(s) · P{{ item.power }} · Visée {{ item.aim }} · {{ item.optimal_range }}</p>
+<p>{{ item.property_name }} {{ item.property_text }}</p>
+{% elif section.kind == "implant" %}
+<p>{{ item.property_name }} — {{ item.property_text }}</p>
+{% else %}
+<p>{{ item.description }}</p><p>{{ item.effect_type|default:"Sans effet" }} · {{ item.value }} {% if item.scaling == "level" %}× niveau{% else %}fixe{% endif %}</p>
+{% endif %}
+<div class="equip-actions">
+<button type="button" data-open-dialog="equip-edit-{{ section.kind }}-{{ item.pk }}">Modifier</button>
+<form method="post" action="{% url 'equipment_delete' section.kind item.pk %}" onsubmit="return confirm('Supprimer cet équipement personnel ?')">{% csrf_token %}<button type="submit">Supprimer</button></form>
+</div>
+</article>
+<dialog class="equip-dialog" id="equip-edit-{{ section.kind }}-{{ item.pk }}">
+<h2>Modifier {{ item.name }}</h2>
+<form class="equip-form" method="post" action="{% url 'equipment_edit' section.kind item.pk %}">
+{% csrf_token %}
+{% include "toolkit/includes/equipment_fields.html" with kind=section.kind item=item %}
+<footer><button type="button" data-close-dialog>Annuler</button><button type="submit">Enregistrer</button></footer>
+</form>
+</dialog>
+{% empty %}<p>Aucun équipement personnel.</p>{% endfor %}
+</div>
+<dialog class="equip-dialog" id="equip-new-{{ section.kind }}">
+<h2>Créer — {{ section.title }}</h2>
+<form class="equip-form" method="post" action="{% url 'equipment_create' section.kind %}">
+{% csrf_token %}
+{% for field in section.create_form %}
+<p>{{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</p>
+{% endfor %}
+<footer><button type="button" data-close-dialog>Annuler</button><button type="submit">Créer</button></footer>
+</form>
+</dialog>
+</section>
+{% endfor %}
+<script>
+document.querySelectorAll("[data-equip-tab]").forEach(button=>button.addEventListener("click",()=>{
+ document.querySelectorAll("[data-equip-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
+ document.querySelectorAll("[data-equip-panel]").forEach(p=>p.hidden=p.dataset.equipPanel!==button.dataset.equipTab);
+}));
+document.querySelectorAll("[data-open-dialog]").forEach(b=>b.addEventListener("click",()=>document.getElementById(b.dataset.openDialog).showModal()));
+document.querySelectorAll("[data-close-dialog]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog").close()));
+</script>
+{% endblock %}
