@@ -1,8 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import views, equipment_views
 
 urlpatterns = [
+    path("equipment/", equipment_views.equipment_home, name="equipment_home"),
+    path("equipment/<str:kind>/create/", equipment_views.equipment_save, name="equipment_create"),
+    path("equipment/<str:kind>/<int:item_id>/edit/", equipment_views.equipment_save, name="equipment_edit"),
+    path("equipment/<str:kind>/<int:item_id>/delete/", equipment_views.equipment_delete, name="equipment_delete"),
     path("", views.table_home, name="table"),
     path("monster-builder/", views.monster_builder, name="monster_builder"),
     path("monster-builder/role/", views.monster_builder_role, name="monster_builder_role"),
