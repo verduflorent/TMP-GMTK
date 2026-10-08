@@ -2,6 +2,13 @@
 {% block title %}Monster Builder — TMP-GMTK{% endblock %}
 {% block content %}
 <style>
+.builder-card-actions{display:flex;align-items:center;gap:.35rem;margin:.4rem 0 .8rem}
+.builder-card-actions form{display:inline-flex;margin:0}
+.builder-icon-action{display:inline-grid;place-items:center;width:36px;height:36px;min-width:36px;padding:7px;background:#fffdf8;color:#142640;border:1px solid #c5c7c8;border-radius:5px;cursor:pointer}
+.builder-icon-action svg{width:19px;height:19px;display:block}
+.builder-icon-action:hover{background:#e9eef3;border-color:#8493a5}
+.builder-icon-validate{color:#b3192d}
+.builder-icon-action:focus-visible{outline:2px solid #b3192d;outline-offset:2px}
 .mob-edit-dialog{width:min(980px,96vw);max-width:96vw;max-height:92vh;overflow:auto;background:#f8f6ef;color:#102443;border:1px solid #aeb4bd;border-radius:14px;padding:1.5rem;box-shadow:0 24px 80px #081a3270}
 .mob-edit-dialog::backdrop{background:#101b30bd}
 .mob-edit-dialog *{box-sizing:border-box}
@@ -69,22 +76,32 @@
                 </div>
                 <strong class="view-only">{{ mob.max_hp }} PV</strong>
             </header>
-            <button type="button" onclick="document.getElementById('save-mob-{{ forloop.counter0 }}').showModal()">★ Sauvegarder</button>
-<dialog class="confirm-dialog" id="save-mob-{{ forloop.counter0 }}"><h3>Sauvegarder le Mob</h3><form method="post" action="{% url 'monster_builder_save' %}" style="display:inline-flex;gap:.35rem;">
-                {% csrf_token %}
-                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                <input type="text" name="name" placeholder="Nom du Mob" required maxlength="120">
-                <button type="submit">★ Sauvegarder</button>
-            </form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
-            <form class="view-only" method="post" action="{% url 'monster_builder_validate' %}">
-                {% csrf_token %}
-                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
-                <input type="hidden" name="action" value="one">
-                <button type="submit">✓ Valider</button>
-            </form>
-            <div class="card-edit-actions">
-                <button type="button" class="view-only" onclick="document.getElementById('mob-edit-{{ forloop.counter0 }}').showModal()">✎ Modifier</button>
+            <div class="builder-card-actions view-only" aria-label="Actions du Mob">
+                <button type="button" class="builder-icon-action" title="Sauvegarder le Mob" aria-label="Sauvegarder le Mob" onclick="document.getElementById('save-mob-{{ forloop.counter0 }}').showModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h13l3 3v15H4zM8 3v6h8V3M8 21v-8h8v8"/></svg>
+                </button>
+                <form method="post" action="{% url 'monster_builder_validate' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                    <input type="hidden" name="action" value="one">
+                    <button type="submit" class="builder-icon-action builder-icon-validate" title="Valider vers la Table" aria-label="Valider vers la Table">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg>
+                    </button>
+                </form>
+                <button type="button" class="builder-icon-action" title="Modifier le Mob" aria-label="Modifier le Mob" onclick="document.getElementById('mob-edit-{{ forloop.counter0 }}').showModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 20 4.5-1 11-11-3.5-3.5-11 11L4 20Z M14 6l4 4"/></svg>
+                </button>
             </div>
+            <dialog class="confirm-dialog" id="save-mob-{{ forloop.counter0 }}">
+                <h3>Sauvegarder le Mob</h3>
+                <form method="post" action="{% url 'monster_builder_save' %}" style="display:inline-flex;gap:.35rem;">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                    <input type="text" name="name" placeholder="Nom du Mob" required maxlength="120">
+                    <button type="submit">Sauvegarder</button>
+                </form>
+                <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
+            </dialog>
 
             <dl class="stats">
                 <div><dt>FOR</dt><dd><span class="view-only">{{ mob.stats.force }}</span></dd><small>+{{ mob.stat_modifiers.force }}</small></div>
