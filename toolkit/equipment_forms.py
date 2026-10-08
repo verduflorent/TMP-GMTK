@@ -23,7 +23,14 @@ class WeaponLibraryForm(FrenchEquipmentForm, forms.ModelForm):
     ))
 
     effect_type = forms.ChoiceField(choices=[("", "Aucun effet mécanique"), *ABILITY_EFFECT_CHOICES], required=False)
-    scaling = forms.ChoiceField(choices=(("fixed", "Fixe"), ("level", "Par niveau")))
+    scaling = forms.ChoiceField(choices=(("fixed", "Fixe"), ("level", "Par niveau")), required=False, initial="fixed")
+    value = forms.IntegerField(required=False, initial=0)
+
+    def clean(self):
+        data = super().clean()
+        data["scaling"] = data.get("scaling") or "fixed"
+        data["value"] = data.get("value") if data.get("value") is not None else 0
+        return data
 
     class Meta:
         model = UserWeapon
