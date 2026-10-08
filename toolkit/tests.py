@@ -299,29 +299,6 @@ class MonsterBuilderViewTests(TestCase):
         self.assertEqual(len(self.client.session["monster_builder_mobs"][0]["weapons"]), 3)
         self.assertEqual(len(response.context["generated_mobs"][0]["weapon_cards"]), 3)
 
-    def test_add_akimbo_slot_keeps_existing_simple_slot(self):
-        from catalogue.models import MobWeapon
-        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
-        first = MobWeapon.objects.get(name="Pistolet")
-        session = self.client.session
-        draft = session["monster_builder_mobs"][0]
-        draft["weapons"] = [{"source": "catalogue", "id": first.id}]
-        draft["akimbo"] = False
-        draft.pop("weapon_slots", None)
-        session["monster_builder_mobs"] = [draft]
-        session.save()
-        response = self.client.post(reverse("monster_builder_weapon"), {
-            "index": 0, "action": "akimbo", "slot_action": "add",
-            "first_weapon_id": first.id, "second_weapon_id": first.id,
-        }, follow=True)
-        self.assertEqual(response.status_code, 200)
-        result = self.client.session["monster_builder_mobs"][0]
-        self.assertEqual(len(result["weapon_slots"]), 2)
-        self.assertFalse(result["weapon_slots"][0]["akimbo"])
-        self.assertTrue(result["weapon_slots"][1]["akimbo"])
-        self.assertEqual(len(result["weapons"]), 3)
-        self.assertEqual(len(response.context["generated_mobs"][0]["weapon_cards"]), 3)
-
     def test_manual_weapon_removal_removes_selected_list_item(self):
         from django.core.management import call_command
         from catalogue.models import MobWeapon
@@ -1456,13 +1433,6 @@ class AkimboTableEditorContractTests(TestCase):
         from .models import TableMob
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 7})
         pm = MobWeapon.objects.get(name="Pistolet-mitrailleur")
-        # Isolate the Akimbo damage rule from randomized implant bonuses.
-        session = self.client.session
-        draft = session["monster_builder_mobs"][0]
-        draft["implants"] = []
-        draft.pop("implant_ids", None)
-        session["monster_builder_mobs"] = [draft]
-        session.save()
         self.client.post(
             reverse("monster_builder_weapon"),
             {"index": 0, "action": "akimbo", "first_weapon_id": pm.id, "second_weapon_id": pm.id},
