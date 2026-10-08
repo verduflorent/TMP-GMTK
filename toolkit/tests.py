@@ -1433,6 +1433,13 @@ class AkimboTableEditorContractTests(TestCase):
         from .models import TableMob
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 7})
         pm = MobWeapon.objects.get(name="Pistolet-mitrailleur")
+        # Fixed damage expectations must not depend on randomized implants.
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["implants"] = []
+        draft.pop("implant_ids", None)
+        session["monster_builder_mobs"] = [draft]
+        session.save()
         self.client.post(
             reverse("monster_builder_weapon"),
             {"index": 0, "action": "akimbo", "first_weapon_id": pm.id, "second_weapon_id": pm.id},
