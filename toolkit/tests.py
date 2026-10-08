@@ -159,6 +159,38 @@ class EquipmentPickerIndexTests(TestCase):
         self.assertEqual(len(self.client.session["monster_builder_mobs"][1]["weapons"]), before + 1)
 
 
+class PersonalEquipmentIntegrationTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        self.user = User.objects.create_user(username="equip_integration", password="secure")
+        self.client.force_login(self.user)
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def test_personal_implant_appears_in_builder_picker_and_can_be_added(self):
+        implant = UserImplant.objects.create(owner=self.user, name="Prototype privé")
+        self.client.post(reverse("monster_builder"), {
+            "action": "generate", "quantity": 1, "level": 10,
+        })
+        response = self.client.get(reverse("monster_builder"))
+        self.assertContains(response, "Prototype privé")
+        self.assertContains(response, reverse("monster_builder_user_implant_add"))
+        result = self.client.post(reverse("monster_builder_user_implant_add"), {
+            "index": 0, "implant_id": implant.id,
+        })
+        self.assertEqual(result.status_code, 302)
+        self.assertIn({"source": "user", "id": implant.id},
+                      self.client.session["monster_builder_mobs"][0]["implants"])
+
+    def test_other_users_implants_are_not_exposed(self):
+        other = User.objects.create_user(username="equip_other", password="secure")
+        UserImplant.objects.create(owner=other, name="Secret inaccessible")
+        self.client.post(reverse("monster_builder"), {
+            "action": "generate", "quantity": 1, "level": 10,
+        })
+        self.assertNotContains(self.client.get(reverse("monster_builder")),
+                               "Secret inaccessible")
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
