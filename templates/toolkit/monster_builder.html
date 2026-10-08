@@ -188,14 +188,13 @@
                         </div>
                         {% endfor %}
                         <button type="button" onclick="document.getElementById('weapon-picker-{{ forloop.counter0 }}').showModal()">+ Arme</button>
-<button type="button" onclick="document.getElementById('akimbo-picker-{{ forloop.counter0 }}').showModal()">⚔ + Slot Akimbo</button>
+<button type="button" onclick="document.getElementById('akimbo-picker-{{ forloop.counter0 }}').showModal()">⚔ Akimbo</button>
 <dialog class="confirm-dialog resource-dialog" id="akimbo-picker-{{ forloop.counter0 }}">
   <h3>Composer un Akimbo</h3>
   <p>Deux armes à une main dans un même slot.</p>
   <form method="post" action="{% url 'monster_builder_weapon' %}" class="akimbo-builder-form">
     {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">
     <input type="hidden" name="action" value="akimbo">
-    <input type="hidden" name="slot_action" value="add">
     <label>Première arme<select name="first_weapon_id" required>
       {% for group_name, weapons in weapon_groups %}{% for weapon in weapons %}{% if weapon.hands == 1 %}<option value="{{ weapon.id }}">{{ weapon.name }}</option>{% endif %}{% endfor %}{% endfor %}
     </select></label>
