@@ -1558,6 +1558,39 @@ class WeaponSlotContractTests(TestCase):
         self.assertEqual(mob.payload["weapon_slots"][-1]["weapons"][0]["power"], 20)
         self.assertEqual(mob.payload["weapon_slots"][-1]["weapons"][1]["power"], 10)
 
+    def test_table_editor_saves_mixed_slots_without_changing_mob_id(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        import json
+
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        before = dict(mob.payload)
+        pistol = MobWeapon.objects.get(name="Pistolet")
+        rifle = MobWeapon.objects.filter(hands=2).first()
+        slots = [
+            {"akimbo": True, "weapons": [
+                {"source": "catalogue", "id": pistol.id},
+                {"source": "catalogue", "id": pistol.id},
+            ]},
+            {"akimbo": False, "weapons": [{"source": "catalogue", "id": rifle.id}]},
+        ]
+        fields = {
+            "name": mob.name, "level": mob.level,
+            **{key: before[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **before["stats"], "weapon_slots": json.dumps(slots),
+            "weapons": json.dumps([ref for slot in slots for ref in slot["weapons"]]),
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 200, response.content)
+        mob.refresh_from_db()
+        self.assertEqual(mob.id, response.json()["id"])
+        self.assertEqual(len(mob.payload["weapon_slots"]), 2)
+        self.assertTrue(mob.payload["weapon_slots"][0]["akimbo"])
+        self.assertFalse(mob.payload["weapon_slots"][1]["akimbo"])
+        self.assertEqual(mob.payload["current_hp"], before["current_hp"])
+
     def test_reject_invalid_akimbo_slot_without_mutating_table(self):
         from catalogue.models import MobWeapon
         from .models import TableMob
