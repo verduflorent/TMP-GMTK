@@ -1553,6 +1553,16 @@ class WeaponSlotContractTests(TestCase):
         from .models import TableMob
         self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
         pistol = MobWeapon.objects.get(name="Pistolet")
+        # The generated starting loadout may itself be Akimbo. Start from
+        # one deterministic ordinary slot to test the mixed-slot transition.
+        session = self.client.session
+        draft = session["monster_builder_mobs"][0]
+        draft["weapons"] = [{"source": "catalogue", "id": pistol.id}]
+        draft["weapon_slots"] = [{"akimbo": False, "weapons": list(draft["weapons"])}]
+        draft["akimbo"] = False
+        draft["implants"] = []
+        session["monster_builder_mobs"] = [draft]
+        session.save()
         self.client.post(reverse("monster_builder_weapon"), {
             "index": 0, "action": "akimbo", "slot_action": "add",
             "first_weapon_id": pistol.id, "second_weapon_id": pistol.id,
