@@ -19,6 +19,32 @@
   .mob-card .print-hide { display:none !important; }
 }
 @media screen { .print-only { display:none; } }
+/* Compact GM reference sheets: target 6–9 ordinary mobs per A4 page. */
+@page{size:A4 portrait;margin:8mm}
+@media print{
+  html,body,main,.table-combat{margin:0!important;padding:0!important;width:auto!important;max-width:none!important}
+  body{font-size:8pt!important;line-height:1.18!important}
+  .site-sidebar,.site-header,.table-heading,.table-view-controls,.table-screen-only,.mob-last-roll{display:none!important}
+  .table-combat .mob-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:2.5mm!important;align-items:start!important}
+  .table-combat .mob-card{display:block!important;box-sizing:border-box!important;width:auto!important;min-width:0!important;min-height:0!important;height:auto!important;margin:0!important;padding:2mm!important;border:1px solid #777!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}
+  .table-combat .mob-card header.mob-card-header{display:flex!important;align-items:baseline!important;justify-content:space-between!important;min-height:0!important;margin:0 0 1mm!important;padding:0 0 .8mm!important;border-bottom:1px solid #999!important}
+  .table-combat .mob-card header.mob-card-header strong{font-size:9pt!important}
+  .table-combat .mob-card .print-only{display:block!important}
+  .table-combat .mob-card .print-only p,.table-combat .mob-card .print-gear p{margin:.5mm 0!important;line-height:1.18!important}
+  .table-combat .mob-card .print-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.5mm!important;margin:1mm 0!important}
+  .table-combat .mob-card .print-stats span{font-size:7pt!important;line-height:1.1!important;white-space:nowrap!important;padding:.45mm!important;border:1px solid #ccc!important}
+  .table-combat .mob-card .weapon-slot{margin:1mm 0!important;padding:0!important}
+  .table-combat .mob-card .weapon-slot.akimbo-linked{padding-left:2mm!important;margin-left:1mm!important;border-left:1px solid #a22!important}
+  .table-combat .mob-card .weapon-slot.akimbo-linked::before{font-size:8pt!important;left:-2mm!important;top:1mm!important}
+  .table-combat .mob-card .weapon-row{display:block!important;min-height:0!important;margin:0!important;padding:.7mm 0!important;border-bottom:1px solid #ddd!important}
+  .table-combat .mob-card .weapon-row>span:first-child{display:none!important}
+  .table-combat .mob-card .weapon-row p{font-size:7.5pt!important;line-height:1.15!important;margin:0!important;padding:0!important}
+  .table-combat .mob-card .weapon-row strong{font-size:8pt!important}
+  .table-combat .mob-card .print-gear{display:block!important;margin-top:1mm!important;font-size:7.5pt!important;overflow-wrap:anywhere!important}
+  .table-combat .mob-card .print-gear strong{font-size:8pt!important}
+  .table-combat .mob-card form,.table-combat .mob-card button,.table-combat .mob-card dialog{display:none!important}
+}
+
 
 .roll-result-dialog{width:min(380px,92vw);padding:2rem 1.5rem;text-align:center;background:#faf8f0;color:#13233b;border:1px solid #b9b5ac;border-radius:12px;box-shadow:0 22px 75px #0006}
 .roll-result-dialog::backdrop{background:#0d1c36a8}
