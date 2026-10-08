@@ -69,15 +69,16 @@
 </section>
 {% endfor %}
 <script>
-{% if errors %}
-document.querySelector('[data-equip-tab="{{ error_kind }}"]')?.click();
-document.getElementById("equip-new-{{ error_kind }}")?.showModal();
-{% endif %}
 document.querySelectorAll("[data-equip-tab]").forEach(button=>button.addEventListener("click",()=>{
  document.querySelectorAll("[data-equip-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
  document.querySelectorAll("[data-equip-panel]").forEach(p=>p.hidden=p.dataset.equipPanel!==button.dataset.equipTab);
 }));
 document.querySelectorAll("[data-open-dialog]").forEach(b=>b.addEventListener("click",()=>document.getElementById(b.dataset.openDialog).showModal()));
 document.querySelectorAll("[data-close-dialog]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog").close()));
+{% if errors %}
+document.querySelector('[data-equip-tab="{{ error_kind }}"]')?.click();
+document.getElementById("equip-new-{{ error_kind }}")?.showModal();
+{% endif %}
+
 </script>
 {% endblock %}
