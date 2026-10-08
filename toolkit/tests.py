@@ -215,6 +215,50 @@ class EquipmentFormContractTests(TestCase):
         self.assertContains(result, 'equip-new-weapon', status_code=400)
 
 
+class PersonalEquipmentEffectTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        self.user = User.objects.create_user(username="effect_user", password="secret")
+        self.client.force_login(self.user)
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def test_weapon_effect_saved_and_scales_in_builder(self):
+        from rules.randomizer import assemble_draft_mob
+        weapon = UserWeapon.objects.create(
+            owner=self.user, name="Test distance", hands=1,
+            optimal_range="SHORT", power=10, aim=2,
+            effect_type="damage_distance", scaling="level", value=5,
+        )
+        plain = UserWeapon.objects.create(
+            owner=self.user, name="Témoin", hands=1,
+            optimal_range="SHORT", power=10, aim=2,
+        )
+        base = assemble_draft_mob(level=5, profile="C", weapons=[plain], implants=[])
+        boosted = assemble_draft_mob(level=5, profile="C", weapons=[weapon], implants=[])
+        self.assertEqual(boosted["weapon_cards"][0].neutral_damage - base["weapon_cards"][0].neutral_damage, 25)
+
+    def test_implant_effect_updates_armor(self):
+        from rules.randomizer import assemble_draft_mob
+        from catalogue.models import MobWeapon
+        weapon = MobWeapon.objects.get(name="Pistolet")
+        implant = UserImplant.objects.create(
+            owner=self.user, name="Bouclier maison",
+            effect_type="armor", scaling="level", value=5,
+        )
+        base = assemble_draft_mob(level=4, profile="C", weapons=[weapon], implants=[])
+        modified = assemble_draft_mob(level=4, profile="C", weapons=[weapon], implants=[implant])
+        self.assertEqual(modified["armor"] - base["armor"], 20)
+
+    def test_effect_fields_persist_from_editor(self):
+        response = self.client.post(reverse("equipment_create", args=["implant"]), {
+            "name": "Implant mécanique", "effect_type": "aim",
+            "scaling": "fixed", "value": 3,
+        })
+        self.assertEqual(response.status_code, 302)
+        implant = UserImplant.objects.get(owner=self.user, name="Implant mécanique")
+        self.assertEqual((implant.effect_type, implant.scaling, implant.value), ("aim", "fixed", 3))
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
