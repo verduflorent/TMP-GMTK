@@ -267,7 +267,9 @@ class MonsterBuilderViewTests(TestCase):
             reverse("monster_builder"),
             {"action": "generate", "quantity": 1, "level": 5},
         )
-        self.assertContains(response, "✎ Modifier")
+        self.assertContains(response, 'aria-label="Modifier le Mob"')
+        self.assertContains(response, 'aria-label="Sauvegarder le Mob"')
+        self.assertContains(response, 'aria-label="Valider vers la Table"')
         self.assertNotContains(response, 'class="edit-only')
         self.assertContains(response, 'id="mob-edit-0"')
 
