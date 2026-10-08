@@ -3,8 +3,19 @@ from django import forms
 from .models import UserWeapon, UserImplant, UserAbility
 from .forms import ABILITY_EFFECT_CHOICES
 
+FRENCH_LABELS = {"name": "Nom", "hands": "Prise en main", "optimal_range": "Portée", "power": "Puissance", "aim": "Visée", "property_name": "Propriété", "property_text": "Description de la propriété", "description": "Description", "effect_type": "Effet mécanique", "scaling": "Calcul", "value": "Valeur"}
 
-class WeaponLibraryForm(forms.ModelForm):
+
+class FrenchEquipmentForm:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for key, label in FRENCH_LABELS.items():
+            if key in self.fields:
+                self.fields[key].label = label
+
+
+
+class WeaponLibraryForm(FrenchEquipmentForm, forms.ModelForm):
     hands = forms.TypedChoiceField(choices=((1, "1 main"), (2, "2 mains")), coerce=int)
     optimal_range = forms.ChoiceField(choices=(
         ("CONTACT", "Contact"), ("SHORT", "Courte"),
@@ -16,13 +27,13 @@ class WeaponLibraryForm(forms.ModelForm):
         fields = ("name", "hands", "optimal_range", "power", "aim", "property_name", "property_text")
 
 
-class ImplantLibraryForm(forms.ModelForm):
+class ImplantLibraryForm(FrenchEquipmentForm, forms.ModelForm):
     class Meta:
         model = UserImplant
         fields = ("name", "property_name", "property_text")
 
 
-class AbilityLibraryForm(forms.ModelForm):
+class AbilityLibraryForm(FrenchEquipmentForm, forms.ModelForm):
     effect_type = forms.ChoiceField(
         choices=[("", "Aucun effet mécanique"), *ABILITY_EFFECT_CHOICES],
         required=False,
