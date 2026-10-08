@@ -19,6 +19,29 @@
   .mob-card .print-hide { display:none !important; }
 }
 @media screen { .print-only { display:none; } }
+/* Dedicated compact print roster: independent of interactive combat cards. */
+@media screen{.print-roster{display:none!important}}
+@media print{
+  @page{size:A4 portrait;margin:7mm}
+  body,main{margin:0!important;padding:0!important;background:#fff!important}
+  .site-sidebar,.site-header,.table-heading,.table-combat,.live-mob-editor,.table-screen-only{display:none!important}
+  .print-roster{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:2mm 4mm!important;align-items:start!important;margin:0!important;padding:0!important;width:100%!important}
+  .print-roster-entry{box-sizing:border-box!important;min-width:0!important;break-inside:avoid!important;page-break-inside:avoid!important;padding:1.5mm 2mm!important;margin:0!important;border:0!important;border-bottom:1px solid #aaa!important;font:7.5pt/1.12 Arial,sans-serif!important;color:#000!important}
+  .print-roster-heading{display:flex!important;justify-content:space-between!important;gap:2mm!important;border-bottom:1px solid #333!important;padding-bottom:.6mm!important;font-size:9pt!important}
+  .print-roster-heading small{font-size:7pt!important}
+  .print-roster-resources{margin:.7mm 0!important;font-size:7pt!important}
+  .print-roster-stats{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;margin:.8mm 0!important;gap:0!important}
+  .print-roster-stats span{display:flex!important;flex-direction:column!important;text-align:center!important;border:1px solid #bbb!important;border-right:0!important;padding:.25mm 0!important;min-width:0!important}
+  .print-roster-stats span:last-child{border-right:1px solid #bbb!important}
+  .print-roster-stats b{font-size:7pt!important}
+  .print-roster-stats small{font-size:6.5pt!important}
+  .print-roster-weapons{margin:.7mm 0!important}
+  .print-roster-slot{margin:.5mm 0!important;padding:0!important}
+  .print-roster-slot p,.print-roster-effect{margin:.2mm 0!important;line-height:1.12!important;overflow-wrap:anywhere!important}
+  .print-roster-slot>strong{font-size:7.5pt!important}
+  .print-roster-effect{font-size:7pt!important}
+}
+
 /* Compact GM reference sheets: target 6–9 ordinary mobs per A4 page. */
 @page{size:A4 portrait;margin:8mm}
 @media print{
@@ -295,6 +318,43 @@
     {% empty %}
         {% if not builder_mobs %}<p>Aucun Mob sur la Table.</p>{% endif %}
     {% endfor %}
+</section>
+<section class="print-roster" aria-label="Fiches de combat imprimables">
+  {% for mob in builder_mobs %}
+  <article class="print-roster-entry">
+    <div class="print-roster-heading"><strong>{{ mob.name }} <small>N{{ mob.level }}</small></strong><strong>PV {{ mob.payload.current_hp }}/{{ mob.payload.max_hp }}</strong></div>
+    <div class="print-roster-resources">ID {{ mob.payload.token_id|default:"—" }} · Armure {{ mob.payload.armor }} · PB {{ mob.payload.shield }} · R {{ mob.payload.reactions }} · V {{ mob.payload.vigilance }}</div>
+    <div class="print-roster-stats">
+      {% for label, value, modifier in mob.stat_display %}
+      <span><b>{{ label }}</b><b>{{ value }}</b><small>{% if modifier >= 0 %}+{% endif %}{{ modifier }}</small></span>
+      {% endfor %}
+    </div>
+    <div class="print-roster-weapons">
+      {% for slot in mob.payload.weapon_slots %}
+      <div class="print-roster-slot">
+        {% if slot.akimbo %}
+        <strong>⚔ {% if slot.weapons.0.name == slot.weapons.1.name %}{{ slot.weapons.0.name }} ×2{% else %}{{ slot.weapons.0.name }} × {{ slot.weapons.1.name }}{% endif %}</strong>
+        {% endif %}
+        {% for weapon in slot.weapons %}
+        {% if not slot.akimbo or slot.weapons.0.name != slot.weapons.1.name or forloop.first %}
+        <p>{% if not slot.akimbo %}<b>{{ weapon.name }}</b> · {% endif %}P{{ weapon.power }} · V{{ weapon.aim }} · {% if weapon.contact_damage != None %}C{{ weapon.contact_damage }} / D{{ weapon.distance_damage }}{% else %}DGT {{ weapon.damage }}{% endif %}</p>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% empty %}
+      {% for weapon in mob.payload.weapons %}
+      <p><b>{{ weapon.name }}</b> · P{{ weapon.power }} · V{{ weapon.aim }} · DGT {{ weapon.damage }}</p>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    {% for implant in mob.payload.implants %}
+    <p class="print-roster-effect"><b>{{ implant.name }}</b>{% if implant.property_lines %} — {{ implant.property_lines|join:" · " }}{% endif %}</p>
+    {% endfor %}
+    {% for ability in mob.payload.abilities %}
+    <p class="print-roster-effect"><b>{{ ability.name }}</b>{% if ability.description %} — {{ ability.description }}{% endif %}{% if ability.resolved_effect %} · {{ ability.resolved_effect.label }} +{{ ability.resolved_effect.value }}{% endif %}</p>
+    {% endfor %}
+  </article>
+  {% endfor %}
 </section>
 <dialog id="live-mob-editor" class="live-mob-editor" aria-labelledby="live-mob-editor-title">
   <form id="live-mob-editor-form" method="post">
