@@ -18,6 +18,7 @@
     <nav class="site-nav" aria-label="Navigation principale">
         <a href="{% url 'table' %}" {% if request.resolver_match.url_name == 'table' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='table' %}Table de jeu</a>
         <a href="{% url 'monster_builder' %}" {% if request.resolver_match.url_name == 'monster_builder' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='builder' %}Monster Builder</a>
+        <a href="{% url 'equipment_home' %}" {% if request.resolver_match.url_name == 'equipment_home' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='builder' %}Équipements</a>
         <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='book' %}Bestiaire</a>
         <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='group' %}Rencontres</a>
     </nav>
