@@ -471,6 +471,19 @@ def resolve_abilities(abilities, level):
     return result
 
 
+def _personal_effect(item, level):
+    """Resolve the same structured effect contract used by custom abilities."""
+    kind = getattr(item, "effect_type", "")
+    if not kind or item.__class__.__name__ not in ("UserWeapon", "UserImplant"):
+        return None
+    if kind not in ABILITY_EFFECT_LABELS:
+        return None
+    value = int(getattr(item, "value", 0))
+    if getattr(item, "scaling", "fixed") == "level":
+        value *= level
+    return kind, value
+
+
 def _apply_draft_overrides(mob):
     """Apply MJ sources and custom ability effects, then recalculate the draft."""
     from dataclasses import replace
@@ -506,6 +519,21 @@ def _apply_draft_overrides(mob):
         if resolved and effect:
             effects[effect["type"]] = effects.get(effect["type"], 0) + resolved["value"]
 
+    # Equipped personal implants affect the whole Mob, exactly like abilities.
+    # Weapon damage/aim bonuses are applied to that weapon only below.
+    for implant in mob["implants"]:
+        resolved = _personal_effect(implant, mob["level"])
+        if resolved:
+            kind, value = resolved
+            effects[kind] = effects.get(kind, 0) + value
+
+    # Non-weapon-specific effects on a personal weapon apply while equipped.
+    for weapon in mob["weapons"]:
+        resolved = _personal_effect(weapon, mob["level"])
+        if resolved and resolved[0] not in ("damage_contact", "damage_distance", "aim"):
+            kind, value = resolved
+            effects[kind] = effects.get(kind, 0) + value
+
     calculated_hp = max_hp(mob["level"], stats.constitution)
     mob["max_hp"] = overrides.get("max_hp", calculated_hp) + effects.get("max_hp", 0)
     mob["current_hp"] = overrides.get("current_hp", mob["max_hp"])
@@ -527,13 +555,18 @@ def _apply_draft_overrides(mob):
             perception=stats.perception,
             technique=stats.technique,
         )
+        own = _personal_effect(weapon, mob["level"])
+        own_contact = own[1] if own and own[0] == "damage_contact" else 0
+        own_distance = own[1] if own and own[0] == "damage_distance" else 0
         card = apply_weapon_damage_bonuses(
-            card, contact_bonus=contact_bonus, distance_bonus=distance_bonus,
+            card, contact_bonus=contact_bonus + own_contact,
+            distance_bonus=distance_bonus + own_distance,
         )
-        if aim_bonus:
+        own_aim = own[1] if own and own[0] == "aim" else 0
+        if aim_bonus or own_aim:
             card = ResolvedWeapon(
                 card.weapon, card.effective_power, card.neutral_damage,
-                card.effective_aim + aim_bonus, card.resolved_property,
+                card.effective_aim + aim_bonus + own_aim, card.resolved_property,
                 card.property_lines, card.contact_damage, card.distance_damage,
             )
         cards.append(card)
