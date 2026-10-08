@@ -25,37 +25,21 @@ class AuthenticationTests(TestCase):
         self.assertTrue(GameTable.objects.filter(owner=self.user).exists())
 
 
-class PublicSignupTests(TestCase):
-    def test_signup_creates_normal_user_and_logs_in(self):
-        response = self.client.post(reverse("signup"), {
-            "username": "nouveau_mj",
-            "password1": "LongMotDePasse-2026!42",
-            "password2": "LongMotDePasse-2026!42",
-        })
-        self.assertRedirects(response, reverse("table"))
-        user = User.objects.get(username="nouveau_mj")
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
-        self.assertEqual(str(self.client.session["_auth_user_id"]), str(user.pk))
-        self.client.get(reverse("table"))
-        self.assertTrue(GameTable.objects.filter(owner=user).exists())
+class PrivateAccessTests(TestCase):
+    def test_public_signup_is_not_available(self):
+        self.assertEqual(self.client.get("/signup/").status_code, 404)
+        self.assertEqual(self.client.post("/signup/", {
+            "username": "intrus",
+            "password1": "Password-2026-Private!",
+            "password2": "Password-2026-Private!",
+        }).status_code, 404)
+        self.assertFalse(User.objects.filter(username="intrus").exists())
 
-    def test_signup_rejects_duplicate_username(self):
-        response = self.client.post(reverse("signup"), {
-            "username": "florent",
-            "password1": "LongMotDePasse-2026!42",
-            "password2": "LongMotDePasse-2026!42",
-        })
+    def test_login_does_not_offer_public_registration(self):
+        response = self.client.get(reverse("login"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "existe déjà")
-
-    def test_anonymous_can_reach_signup_and_login_link(self):
-        self.assertEqual(self.client.get(reverse("signup")).status_code, 200)
-        self.assertContains(self.client.get(reverse("login")), reverse("signup"))
-
-    def test_authenticated_user_redirected_from_signup(self):
-        self.client.force_login(User.objects.create_user(username="already", password="secure"))
-        self.assertRedirects(self.client.get(reverse("signup")), reverse("table"))
+        self.assertNotContains(response, "Créer un compte")
+        self.assertNotContains(response, "/signup/")
 
     def test_two_users_have_separate_tables(self):
         alice = User.objects.create_user(username="alice2", password="secure")
