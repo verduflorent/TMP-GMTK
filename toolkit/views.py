@@ -264,9 +264,15 @@ def monster_builder_weapon(request):
             ])
         except (StopIteration, ValueError):
             return _builder_redirect_editing(request, index)
-        slots.append({"akimbo": True, "weapons": [
+        new_slot = {"akimbo": True, "weapons": [
             {"source": "catalogue", "id": first_id}, {"source": "catalogue", "id": second_id}
-        ]})
+        ]}
+        # Historical "akimbo" replaces the current loadout. The new UI
+        # explicitly requests an additional independent slot.
+        if request.POST.get("slot_action") == "add":
+            slots.append(new_slot)
+        else:
+            slots = [new_slot]
 
     data["weapon_slots"] = slots
     data["akimbo"] = any(slot["akimbo"] for slot in slots)

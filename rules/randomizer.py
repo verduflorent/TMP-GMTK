@@ -341,7 +341,16 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
 def weapon_slots_from_draft(data):
     """Read slot equipment; legacy Akimbo occupies a single logical slot."""
     if "weapon_slots" in data:
-        return data["weapon_slots"]
+        slots = data["weapon_slots"]
+        # Legacy callers may still update the flat list directly. In that case,
+        # honour the explicit replacement rather than resurrecting stale slots.
+        refs = data.get("weapons")
+        if refs is not None and refs != [ref for slot in slots for ref in slot["weapons"]]:
+            return weapon_slots_from_draft({
+                "weapons": refs,
+                "akimbo": bool(data.get("akimbo")) and len(refs) == 2,
+            })
+        return slots
     refs = data.get("weapons")
     if refs is None:
         ids = data.get("weapon_ids")
