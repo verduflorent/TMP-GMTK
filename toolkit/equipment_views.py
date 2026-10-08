@@ -10,7 +10,7 @@ def _sections(user):
     return [
         {"kind": kind, "title": title,
          "items": model.objects.filter(owner=user).order_by("name", "id"),
-         "create_form": form_class(prefix=kind)}
+         "create_form": form_class()}
         for kind, (model, form_class, title) in EQUIPMENT_FORMS.items()
     ]
 
@@ -30,8 +30,12 @@ def equipment_save(request, kind, item_id=None):
     instance = get_object_or_404(model, pk=item_id, owner=request.user) if item_id else None
     form = form_class(request.POST, instance=instance)
     if not form.is_valid():
+        sections = _sections(request.user)
+        for section in sections:
+            if section["kind"] == kind:
+                section["create_form"] = form
         return render(request, "toolkit/equipment.html", {
-            "sections": _sections(request.user),
+            "sections": sections,
             "errors": form.errors,
             "error_kind": kind,
         }, status=400)
