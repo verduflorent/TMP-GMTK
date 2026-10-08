@@ -191,6 +191,30 @@ class PersonalEquipmentIntegrationTests(TestCase):
                                "Secret inaccessible")
 
 
+class EquipmentFormContractTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="form_contract", password="secret")
+        self.client.force_login(self.user)
+
+    def test_create_weapon_using_rendered_unprefixed_fields(self):
+        page = self.client.get(reverse("equipment_home"))
+        self.assertContains(page, 'name="name"')
+        self.assertNotContains(page, 'name="weapon-name"')
+        result = self.client.post(reverse("equipment_create", args=["weapon"]), {
+            "name": "GridLock expérimental", "hands": "2",
+            "optimal_range": "LONG", "power": "10", "aim": "4",
+            "property_name": "Essai", "property_text": "Prototype",
+        })
+        self.assertRedirects(result, reverse("equipment_home"))
+        self.assertTrue(UserWeapon.objects.filter(owner=self.user, name="GridLock expérimental").exists())
+
+    def test_invalid_creation_preserves_form_and_reopens_dialog(self):
+        result = self.client.post(reverse("equipment_create", args=["weapon"]), {"name": "Incomplet"})
+        self.assertEqual(result.status_code, 400)
+        self.assertContains(result, "Incomplet", status_code=400)
+        self.assertContains(result, 'equip-new-weapon', status_code=400)
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
