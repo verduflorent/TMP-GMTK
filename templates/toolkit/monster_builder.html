@@ -304,6 +304,19 @@
     {% endfor %}
   </div></section>
   {% endfor %}
+  {% if user_implants %}
+  <section class="catalogue-group"><h4>Mes implants</h4><div class="catalogue-list">
+  {% for implant in user_implants %}
+    <form class="catalogue-item" method="post" action="{% url 'monster_builder_user_implant_add' %}">
+      {% csrf_token %}
+      <input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}">
+      <input type="hidden" name="implant_id" value="{{ implant.id }}">
+      <strong>{{ implant.name }}</strong>
+      <button type="submit" title="Ajouter {{ implant.name }}" aria-label="Ajouter {{ implant.name }}">+</button>
+    </form>
+  {% endfor %}
+  </div></section>
+  {% endif %}
   <p class="catalogue-empty">Aucun implant trouvé.</p>
 </dialog>
                     </section>
