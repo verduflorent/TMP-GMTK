@@ -105,6 +105,60 @@ class EquipmentLibraryTests(TestCase):
         self.assertTrue(UserImplant.objects.filter(owner=self.alice, name="Mon implant").exists())
 
 
+class EquipmentPickerIndexTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        self.user = User.objects.create_user(username="picker_user", password="secret")
+        self.client.force_login(self.user)
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def test_nested_catalogue_picker_submits_correct_mob_index(self):
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        from catalogue.models import MobWeapon
+        from .views import monster_builder
+        from django.urls import reverse
+        from django.utils.html import escape
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 10})
+        response = self.client.get(reverse("monster_builder"))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        from html.parser import HTMLParser
+
+        class PickerParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.current_dialog = None
+                self.current_form = None
+                self.matches = []
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "dialog":
+                    self.current_dialog = attrs.get("id")
+                if tag == "form" and self.current_dialog and self.current_dialog.startswith("weapon-picker-"):
+                    self.current_form = {}
+                if tag == "input" and self.current_form is not None:
+                    self.current_form[attrs.get("name")] = attrs.get("value")
+            def handle_endtag(self, tag):
+                if tag == "form" and self.current_form is not None:
+                    self.matches.append((self.current_dialog, self.current_form))
+                    self.current_form = None
+                if tag == "dialog":
+                    self.current_dialog = None
+        parser = PickerParser()
+        parser.feed(html)
+        self.assertTrue(parser.matches)
+        for dialog_id, form in parser.matches:
+            self.assertEqual(form.get("index"), dialog_id.rsplit("-", 1)[-1])
+        gridlock = MobWeapon.objects.get(name="GridLock")
+        before = len(self.client.session["monster_builder_mobs"][1]["weapons"])
+        response = self.client.post(reverse("monster_builder_weapon"), {
+            "index": 1, "action": "add", "weapon_id": gridlock.pk,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(self.client.session["monster_builder_mobs"][1]["weapons"]), before + 1)
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
