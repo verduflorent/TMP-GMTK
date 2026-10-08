@@ -16,6 +16,7 @@
 <p><label>Description de propriété<textarea name="property_text">{{ item.property_text|default:'' }}</textarea></label></p>
 {% elif kind == "ability" %}
 <p><label>Description<textarea name="description">{{ item.description|default:'' }}</textarea></label></p>
+{% endif %}
 <p><label>Effet<select name="effect_type">
 <option value="">Aucun effet mécanique</option>
 <option value="damage_contact" {% if item.effect_type == "damage_contact" %}selected{% endif %}>Dégâts Contact</option>
@@ -30,4 +31,4 @@
 </select></label></p>
 <p><label>Calcul<select name="scaling"><option value="fixed" {% if item.scaling != "level" %}selected{% endif %}>Fixe</option><option value="level" {% if item.scaling == "level" %}selected{% endif %}>Par niveau</option></select></label></p>
 <p><label>Valeur<input type="number" name="value" required value="{{ item.value|default:0 }}"></label></p>
-{% endif %}
+
