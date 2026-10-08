@@ -466,6 +466,7 @@ class MonsterBuilderViewTests(TestCase):
         session = self.client.session
         draft = session["monster_builder_mobs"][0]
         draft["weapons"] = [{"source": "catalogue", "id": pistol.id}]
+        draft["akimbo"] = False  # Explicitly replace the generated pair with a single weapon.
         draft.pop("weapon_ids", None)
         session["monster_builder_mobs"] = [draft]
         session.save()

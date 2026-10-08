@@ -569,7 +569,7 @@ def table_mob_edit(request, mob_id):
     previous_stats = old_payload.get("stats", {})
     stats_changed = any(values[key] != previous_stats.get(key) for key in stat_keys)
     level_changed = values["level"] != mob.level
-    akimbo = request.POST.get("akimbo") == "1"
+    akimbo = request.POST.get("akimbo", "1" if draft.get("akimbo") else "0") == "1"
     if akimbo:
         weapon_refs = draft.get("weapons", [])
         if len(weapon_refs) != 2:
