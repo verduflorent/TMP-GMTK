@@ -22,15 +22,21 @@ class WeaponLibraryForm(FrenchEquipmentForm, forms.ModelForm):
         ("MEDIUM", "Moyenne"), ("LONG", "Longue"),
     ))
 
+    effect_type = forms.ChoiceField(choices=[("", "Aucun effet mécanique"), *ABILITY_EFFECT_CHOICES], required=False)
+    scaling = forms.ChoiceField(choices=(("fixed", "Fixe"), ("level", "Par niveau")))
+
     class Meta:
         model = UserWeapon
-        fields = ("name", "hands", "optimal_range", "power", "aim", "property_name", "property_text")
+        fields = ("name", "hands", "optimal_range", "power", "aim", "property_name", "property_text", "effect_type", "scaling", "value")
 
 
 class ImplantLibraryForm(FrenchEquipmentForm, forms.ModelForm):
+    effect_type = forms.ChoiceField(choices=[("", "Aucun effet mécanique"), *ABILITY_EFFECT_CHOICES], required=False)
+    scaling = forms.ChoiceField(choices=(("fixed", "Fixe"), ("level", "Par niveau")))
+
     class Meta:
         model = UserImplant
-        fields = ("name", "property_name", "property_text")
+        fields = ("name", "property_name", "property_text", "effect_type", "scaling", "value")
 
 
 class AbilityLibraryForm(FrenchEquipmentForm, forms.ModelForm):
