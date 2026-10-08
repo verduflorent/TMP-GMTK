@@ -12,6 +12,14 @@
 .mob-edit-dialog input,.mob-edit-dialog select{min-width:0;max-width:100%;background:#fffdf8;color:#102443;border:1px solid #b7c0c9;border-radius:5px;padding:.35rem}
 .mob-edit-dialog .edit-actions{position:sticky;bottom:-1.5rem;z-index:3;display:flex;justify-content:flex-end;gap:.6rem;margin:1rem -1.5rem -1.5rem;padding:.9rem 1.5rem;background:#f8f6ef;border-top:1px solid #b9c2ca}
 .mob-edit-dialog .weapon-entry{padding:.6rem 0;border-bottom:1px solid #d8dde2}
+.mob-edit-dialog .stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:0;min-width:0}
+.mob-edit-dialog .stats>div{display:flex;flex-direction:column;align-items:stretch;min-width:0;border:1px solid #c8cbd0;background:#f0efeb;padding:.4rem .2rem;gap:.25rem}
+.mob-edit-dialog .stats dt{font:600 .68rem Rajdhani,sans-serif;text-align:center;color:#253954}
+.mob-edit-dialog .stats dd{margin:0;min-width:0;width:100%}
+.mob-edit-dialog .stats form{display:block;width:100%;min-width:0;margin:0}
+.mob-edit-dialog .stats input[type=number]{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0;padding:.35rem .05rem;text-align:center;font:700 1rem Rajdhani,sans-serif}
+@media(max-width:560px){.mob-edit-dialog .stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
 @media(max-width:760px){ .mob-edit-dialog .edit-grid { grid-template-columns:1fr; } }
  .akimbo-builder-form{display:grid;gap:.75rem;max-width:520px}
 .akimbo-builder-form label{display:grid;gap:.25rem}
