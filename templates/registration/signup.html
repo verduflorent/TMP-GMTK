@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Inscription — TMP-GMTK{% endblock %}
+{% block content %}
+<h1>Créer un compte</h1>
+<p>Chaque maître de jeu possède sa propre Table, ses Mobs et ses Rencontres.</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Créer mon compte</button>
+</form>
+<p>Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a></p>
+{% endblock %}
