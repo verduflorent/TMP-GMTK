@@ -1485,6 +1485,50 @@ class AkimboTableEditorContractTests(TestCase):
         mob.refresh_from_db()
         self.assertEqual(mob.payload, before)
 
+class AkimboCompactDisplayTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="akimbo-compact", password="pwd")
+        self.client.login(username="akimbo-compact", password="pwd")
+
+    def test_identical_pair_displays_one_roll_control_without_losing_second_weapon(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        weapon = MobWeapon.objects.get(name="Pistolet")
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 1})
+        self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo",
+            "first_weapon_id": weapon.id, "second_weapon_id": weapon.id,
+        })
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        self.assertEqual(len(mob.payload["weapons"]), 2)
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, "Pistolet ×2")
+        self.assertContains(response, reverse("table_mob_roll_weapon", args=[mob.id, 0]))
+        self.assertNotContains(response, reverse("table_mob_roll_weapon", args=[mob.id, 1]))
+
+    def test_mixed_pair_keeps_both_roll_controls(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        first = MobWeapon.objects.get(name="Pistolet")
+        second = MobWeapon.objects.get(name="Arme de lancer")
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 1})
+        self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo",
+            "first_weapon_id": first.id, "second_weapon_id": second.id,
+        })
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        response = self.client.get(reverse("table"))
+        self.assertContains(response, reverse("table_mob_roll_weapon", args=[mob.id, 0]))
+        self.assertContains(response, reverse("table_mob_roll_weapon", args=[mob.id, 1]))
+
+
 class WeaponRollModalContractTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="rollmodal", password="pwd")
