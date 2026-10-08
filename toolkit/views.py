@@ -10,6 +10,8 @@ from rules.randomizer import (
     reroll_mob_role,
     serialize_mob,
     validate_akimbo_weapons,
+    weapon_slots_from_draft,
+    validate_weapon_slots,
 )
 
 from .forms import BestiaryMobSaveForm, MobAbilityForm, MobAbilityLibraryForm, UserWeaponForm, UserWeaponLibraryForm, UserImplantForm, UserImplantLibraryForm, TableMobResourceForm, TableMobTokenIdForm, TableConditionForm, TableWeaponRollForm, TableUniversalRollForm, EncounterCreateForm, EncounterMobAddForm, TableEncounterSaveForm, TableEncounterLoadForm, UserFolderForm, FolderMoveForm, MobFieldOverrideForm, MobImplantForm, MobRoleForm, MobWeaponForm, MonsterBuilderForm
@@ -210,10 +212,8 @@ def monster_builder_weapon(request):
         return redirect("monster_builder")
 
     data = saved[index]
-    refs = data.get("weapons")
-    if refs is None:
-        refs = [{"source": "catalogue", "id": item_id} for item_id in data.get("weapon_ids", [])]
-    refs = list(refs)
+    slots = weapon_slots_from_draft(data)
+    refs = [ref for slot in slots for ref in slot["weapons"]]
     action = form.cleaned_data["action"]
     weapon_index = form.cleaned_data.get("weapon_index")
     weapon_id = form.cleaned_data.get("weapon_id")
@@ -225,15 +225,28 @@ def monster_builder_weapon(request):
 
     ref = {"source": "catalogue", "id": weapon_id}
     if action == "add":
-        refs.append(ref)
-    elif action == "replace":
+        slots.append({"akimbo": False, "weapons": [ref]})
+    elif action in ("replace", "remove"):
         if weapon_index is None or not 0 <= weapon_index < len(refs):
             return _builder_redirect_editing(request, index)
-        refs[weapon_index] = ref
-    elif action == "remove":
-        if weapon_index is None or not 0 <= weapon_index < len(refs) or len(refs) <= 1:
-            return _builder_redirect_editing(request, index)
-        refs.pop(weapon_index)
+        offset = 0
+        for position, slot in enumerate(slots):
+            if weapon_index < offset + len(slot["weapons"]):
+                if action == "replace":
+                    if slot["akimbo"]:
+                        replacement = list(slot["weapons"])
+                        replacement[weapon_index - offset] = ref
+                        slots[position:position + 1] = [
+                            {"akimbo": False, "weapons": [item]} for item in replacement
+                        ]
+                    else:
+                        slot["weapons"][0] = ref
+                elif len(refs) > len(slot["weapons"]):
+                    slots.pop(position)
+                else:
+                    return _builder_redirect_editing(request, index)
+                break
+            offset += len(slot["weapons"])
 
     if action == "akimbo":
         try:
@@ -251,12 +264,13 @@ def monster_builder_weapon(request):
             ])
         except (StopIteration, ValueError):
             return _builder_redirect_editing(request, index)
-        refs = [{"source": "catalogue", "id": first_id}, {"source": "catalogue", "id": second_id}]
-        data["akimbo"] = True
-    elif action in ("add", "replace", "remove"):
-        data["akimbo"] = False
+        slots.append({"akimbo": True, "weapons": [
+            {"source": "catalogue", "id": first_id}, {"source": "catalogue", "id": second_id}
+        ]})
 
-    data["weapons"] = refs
+    data["weapon_slots"] = slots
+    data["akimbo"] = any(slot["akimbo"] for slot in slots)
+    data["weapons"] = [item for slot in slots for item in slot["weapons"]]
     data.pop("weapon_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
@@ -437,6 +451,19 @@ def _table_payload(mob):
         "draft": serialize_mob(mob),
         "akimbo": bool(mob.get("akimbo", False)),
         "akimbo_identical": bool(mob.get("akimbo_identical", False)),
+        "weapon_slots": [
+            {"akimbo": slot["akimbo"], "weapons": [
+                {"name": card.weapon.name, "power": card.effective_power,
+                 "aim": card.effective_aim, "damage": card.neutral_damage,
+                 "contact_damage": card.contact_damage, "distance_damage": card.distance_damage,
+                 "roll_index": offset + i}
+                for i, card in enumerate(mob["weapon_cards"][offset:offset + len(slot["weapons"])])
+            ]}
+            for offset, slot in (
+                (sum(len(s["weapons"]) for s in mob["weapon_slots"][:i]), slot)
+                for i, slot in enumerate(mob.get("weapon_slots", []))
+            )
+        ],
     }
 
 
@@ -553,6 +580,8 @@ def table_mob_edit(request, mob_id):
             if not queryset.filter(id=ref["id"]).exists():
                 return JsonResponse({"ok": False, "errors": {kind: ["Équipement introuvable."]}}, status=400)
         draft[kind] = refs
+        if kind == "weapons" and "weapon_slots" not in request.POST:
+            draft.pop("weapon_slots", None)
         draft.pop("weapon_ids" if kind == "weapons" else "implant_ids", None)
 
     if requested["abilities"] is not None:
@@ -560,6 +589,18 @@ def table_mob_edit(request, mob_id):
         if any(not isinstance(a, dict) or not isinstance(a.get("name"), str) or not a["name"].strip() or len(a["name"]) > 120 for a in abilities):
             return JsonResponse({"ok": False, "errors": {"abilities": ["Capacité invalide."]}}, status=400)
         draft["abilities"] = abilities
+
+    if "weapon_slots" in request.POST:
+        try:
+            slots = json.loads(request.POST["weapon_slots"])
+            catalogue = {w.id: w for w in MobWeapon.objects.all()}
+            personal = {w.id: w for w in UserWeapon.objects.filter(owner=request.user)}
+            validate_weapon_slots(slots, catalogue, personal)
+        except (ValueError, TypeError, KeyError) as exc:
+            return JsonResponse({"ok": False, "errors": {"weapon_slots": [str(exc)]}}, status=400)
+        draft["weapon_slots"] = slots
+        draft["weapons"] = [ref for slot in slots for ref in slot["weapons"]]
+        draft["akimbo"] = any(slot["akimbo"] for slot in slots)
 
     values = form.cleaned_data
     old_payload = dict(mob.payload)
@@ -569,7 +610,7 @@ def table_mob_edit(request, mob_id):
     previous_stats = old_payload.get("stats", {})
     stats_changed = any(values[key] != previous_stats.get(key) for key in stat_keys)
     level_changed = values["level"] != mob.level
-    akimbo = request.POST.get("akimbo", "1" if draft.get("akimbo") else "0") == "1"
+    akimbo = any(slot["akimbo"] for slot in weapon_slots_from_draft(draft))
     if akimbo:
         weapon_refs = draft.get("weapons", [])
         if len(weapon_refs) != 2:
@@ -593,7 +634,7 @@ def table_mob_edit(request, mob_id):
         except ValueError as exc:
             return JsonResponse({"ok": False, "errors": {"akimbo": [str(exc)]}}, status=400)
     draft["akimbo"] = akimbo
-    equipment_changed = any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
+    equipment_changed = "weapon_slots" in request.POST or any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
     explicit_max = values["max_hp"] != old_max
     explicit_hp = values["current_hp"] != old_hp
 
@@ -811,8 +852,10 @@ def monster_builder_user_weapon_create(request):
     )
     data = saved[index]
     refs = list(data.get("weapons", []))
-    refs.append({"source": "user", "id": weapon.id})
-    data["weapons"] = refs
+    slots = weapon_slots_from_draft(data)
+    slots.append({"akimbo": False, "weapons": [{"source": "user", "id": weapon.id}]})
+    data["weapon_slots"] = slots
+    data["weapons"] = [ref for slot in slots for ref in slot["weapons"]]
     data.pop("weapon_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved
@@ -838,8 +881,10 @@ def monster_builder_user_weapon_add(request):
         return _builder_redirect_editing(request, index)
     data = saved[index]
     refs = list(data.get("weapons", []))
-    refs.append({"source": "user", "id": weapon.id})
-    data["weapons"] = refs
+    slots = weapon_slots_from_draft(data)
+    slots.append({"akimbo": False, "weapons": [{"source": "user", "id": weapon.id}]})
+    data["weapon_slots"] = slots
+    data["weapons"] = [ref for slot in slots for ref in slot["weapons"]]
     data.pop("weapon_ids", None)
     saved[index] = data
     request.session["monster_builder_mobs"] = saved

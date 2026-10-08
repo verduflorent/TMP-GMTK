@@ -215,20 +215,26 @@
                     <button type="submit">+</button>
                 </form>
             </div>
-            {% for weapon in mob.payload.weapons %}
-            {% if not mob.payload.akimbo_identical or not forloop.counter == 2 %}
-                <div class="weapon-row{% if mob.payload.akimbo and forloop.counter <= 2 %} akimbo-linked{% endif %}{% if mob.payload.akimbo and forloop.first %} akimbo-first{% endif %}{% if mob.payload.akimbo and forloop.counter == 2 %} akimbo-second{% endif %}">
-                    <span aria-hidden="true">⌖</span><p><strong>{{ weapon.name }}{% if mob.payload.akimbo_identical and forloop.first %} ×2{% endif %}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
-                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}" style="display:flex;gap:.25rem;">
-                        {% csrf_token %}
-                        <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
-                        {% if weapon.contact_damage != None and weapon.distance_damage != None %}
-                        <button type="submit" name="mode" value="distance">🎲 Distance</button><button type="submit" name="mode" value="contact">🎲 Contact</button>
-                        {% endif %}
+            {% for slot in mob.payload.weapon_slots %}
+            <div class="{% if slot.akimbo %}akimbo-linked akimbo-first{% endif %}">
+                {% for weapon in slot.weapons %}
+                {% if not slot.akimbo or not forloop.counter == 2 or slot.weapons.0.name != weapon.name %}
+                <div class="weapon-row">
+                    <span aria-hidden="true">{% if slot.akimbo %}⚔{% else %}⌖{% endif %}</span>
+                    <p><strong>{{ weapon.name }}{% if slot.akimbo and slot.weapons.0.name == slot.weapons.1.name %} ×2{% endif %}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }} · {{ weapon.damage }} Dégâts</p>
+                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id weapon.roll_index %}">
+                        {% csrf_token %}<label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
                         <button type="submit" class="weapon-die" aria-label="Lancer l’attaque">⬡</button>
                     </form>
                 </div>
-            {% endif %}
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% empty %}
+            {% for weapon in mob.payload.weapons %}
+            <div class="weapon-row"><span>⌖</span><p>{{ weapon.name }} · P{{ weapon.power }} · {{ weapon.damage }} Dégâts</p>
+            <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}">{% csrf_token %}<button type="submit" class="weapon-die">⬡</button></form></div>
+            {% endfor %}
             {% endfor %}
             <div class="mob-last-roll table-screen-only" data-last-roll hidden aria-live="polite"></div>
             <div class="print-gear">{% for implant in mob.payload.implants %}
