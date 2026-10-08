@@ -595,28 +595,8 @@ def table_mob_edit(request, mob_id):
     stats_changed = any(values[key] != previous_stats.get(key) for key in stat_keys)
     level_changed = values["level"] != mob.level
     akimbo = any(slot["akimbo"] for slot in weapon_slots_from_draft(draft))
-    if akimbo:
-        weapon_refs = draft.get("weapons", [])
-        if len(weapon_refs) != 2:
-            return JsonResponse({"ok": False, "errors": {"akimbo": ["Deux armes à une main sont requises."]}}, status=400)
-        pair_objects = []
-        for ref in weapon_refs:
-            if not isinstance(ref, dict):
-                return JsonResponse({"ok": False, "errors": {"akimbo": ["Référence d'arme invalide."]}}, status=400)
-            source, item_id = ref.get("source"), ref.get("id")
-            if source == "catalogue":
-                weapon = MobWeapon.objects.filter(id=item_id).first()
-            elif source == "user":
-                weapon = UserWeapon.objects.filter(owner=request.user, id=item_id).first()
-            else:
-                weapon = None
-            if weapon is None:
-                return JsonResponse({"ok": False, "errors": {"akimbo": ["Arme introuvable."]}}, status=400)
-            pair_objects.append(weapon)
-        try:
-            validate_akimbo_weapons(pair_objects)
-        except ValueError as exc:
-            return JsonResponse({"ok": False, "errors": {"akimbo": [str(exc)]}}, status=400)
+    # Per-slot compatibility was already checked by validate_weapon_slots.
+    # The former global guard rejected any Akimbo accompanied by a simple slot.
     draft["akimbo"] = akimbo
     equipment_changed = "weapon_slots" in request.POST or any(requested[key] is not None for key in ("weapons", "implants", "abilities"))
     explicit_max = values["max_hp"] != old_max
