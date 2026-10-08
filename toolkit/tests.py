@@ -51,6 +51,60 @@ class PrivateAccessTests(TestCase):
         self.assertNotEqual(GameTable.objects.get(owner=alice).pk, GameTable.objects.get(owner=bob).pk)
 
 
+class EquipmentLibraryTests(TestCase):
+    def setUp(self):
+        self.alice = User.objects.create_user(username="equip_alice", password="secret")
+        self.bob = User.objects.create_user(username="equip_bob", password="secret")
+        self.client.force_login(self.alice)
+
+    def test_library_requires_login(self):
+        self.client.logout()
+        self.assertRedirects(self.client.get(reverse("equipment_home")),
+                             reverse("login") + "?next=" + reverse("equipment_home"))
+
+    def test_create_weapon_and_isolation(self):
+        response = self.client.post(reverse("equipment_create", args=["weapon"]), {
+            "name": "Éclaireur", "hands": 2, "optimal_range": "LONG",
+            "power": 15, "aim": 3, "property_name": "Silencieux", "property_text": "Discret",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(UserWeapon.objects.filter(owner=self.alice, name="Éclaireur").count(), 1)
+        self.client.force_login(self.bob)
+        self.assertNotContains(self.client.get(reverse("equipment_home")), "Éclaireur")
+
+    def test_create_and_edit_scaled_ability(self):
+        response = self.client.post(reverse("equipment_create", args=["ability"]), {
+            "name": "Tireur", "description": "Bonus",
+            "effect_type": "damage_distance", "scaling": "level", "value": 5,
+        })
+        self.assertEqual(response.status_code, 302)
+        ability = UserAbility.objects.get(owner=self.alice, name="Tireur")
+        self.assertEqual(ability.as_draft()["effect"],
+                         {"type": "damage_distance", "scaling": "level", "value": 5})
+        response = self.client.post(reverse("equipment_edit", args=["ability", ability.pk]), {
+            "name": "Tireur", "description": "Bonus",
+            "effect_type": "damage_distance", "scaling": "fixed", "value": 10,
+        })
+        self.assertEqual(response.status_code, 302)
+        ability.refresh_from_db()
+        self.assertEqual(ability.as_draft()["effect"]["value"], 10)
+
+    def test_cannot_delete_or_edit_other_users_equipment(self):
+        weapon = UserWeapon.objects.create(owner=self.bob, name="Privé")
+        self.assertEqual(self.client.post(reverse("equipment_delete", args=["weapon", weapon.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("equipment_edit", args=["weapon", weapon.pk]), {
+            "name": "Volé", "hands": 1, "optimal_range": "SHORT", "power": 1, "aim": 1,
+        }).status_code, 404)
+        self.assertTrue(UserWeapon.objects.filter(pk=weapon.pk, name="Privé").exists())
+
+    def test_create_implant(self):
+        response = self.client.post(reverse("equipment_create", args=["implant"]), {
+            "name": "Mon implant", "property_name": "Protection", "property_text": "Armure +5",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(UserImplant.objects.filter(owner=self.alice, name="Mon implant").exists())
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
