@@ -73,9 +73,16 @@
 @media(max-width:430px){.live-editor-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.live-editor-fields label:nth-child(-n+2){grid-column:span 2}.live-editor-fields label:nth-child(n+3):nth-child(-n+8){grid-column:span 1}.live-editor-fields label:nth-child(n+9){grid-column:span 1}}
 .akimbo-switch{display:flex;align-items:center;gap:.5rem;font-weight:700;color:#a7192a;margin:.4rem 0 .8rem}
 .akimbo-switch input{accent-color:#b3192d}
-.weapon-row.akimbo-linked{position:relative;padding-left:20px;border-left:2px solid #b3192d;margin-left:8px}
-.weapon-row.akimbo-first:before{content:"⚔";position:absolute;left:-12px;top:0;background:#faf8f0;color:#b3192d;font-size:17px}
-.weapon-row.akimbo-second{border-top:0}
+/* Akimbo belongs to the equipment slot, not to an individual weapon row. */
+.weapon-slot{position:relative}
+.weapon-slot.akimbo-linked{margin:.4rem 0 .65rem 8px;padding-left:15px;border-left:2px solid #b3192d}
+.weapon-slot.akimbo-linked::before{content:"⚔";position:absolute;left:-12px;top:8px;background:#faf8f0;color:#b3192d;font-size:16px;line-height:1}
+.weapon-slot.akimbo-linked .weapon-row{padding-left:2px}
+.weapon-slot.akimbo-linked .weapon-row + .weapon-row{border-top:0}
+.weapon-slot.akimbo-linked .weapon-row > span:first-child{visibility:hidden}
+.weapon-slot.akimbo-linked .weapon-row + .weapon-row > span:first-child{visibility:hidden}
+.weapon-slot.akimbo-linked .weapon-row + .weapon-row{margin-top:-.25rem}
+.weapon-slot.akimbo-linked .weapon-row + .weapon-row p{padding-top:.1rem}
 </style>
 
 <div class="table-heading">
@@ -216,7 +223,7 @@
                 </form>
             </div>
             {% for slot in mob.payload.weapon_slots %}
-              <div class="{% if slot.akimbo %}akimbo-linked akimbo-first{% endif %}">
+              <div class="weapon-slot{% if slot.akimbo %} akimbo-linked{% endif %}"{% if slot.akimbo %} aria-label="Slot Akimbo"{% endif %}>
               {% for weapon in slot.weapons %}
               {% if not slot.akimbo or not forloop.counter == 2 or slot.weapons.0.name != weapon.name %}
                 <div class="weapon-row">
