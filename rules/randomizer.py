@@ -338,6 +338,56 @@ def _assemble_mob(*, level, profile, primary, secondary, akimbo, implants):
     }
 
 
+def weapon_slots_from_draft(data):
+    """Canonical slots with backwards compatibility for flat legacy drafts."""
+    if "weapon_slots" in data:
+        return data["weapon_slots"]
+    refs = data.get("weapons")
+    if refs is None:
+        ids = data.get("weapon_ids")
+        if ids is None:
+            ids = [data["primary_id"]] if data.get("primary_id") is not None else []
+            if data.get("secondary_id") is not None:
+                ids.append(data["secondary_id"])
+        refs = [{"source": "user", "id": int(i[2:])} if isinstance(i, str) and i.startswith("u:") else {"source": "catalogue", "id": i} for i in ids]
+    if data.get("akimbo") and len(refs) == 2:
+        return [{"akimbo": True, "weapons": refs}]
+    return [{"akimbo": False, "weapons": [ref]} for ref in refs]
+
+
+def validate_weapon_slots(slots, catalogue, personal):
+    if not isinstance(slots, list) or not slots:
+        raise ValueError("Au moins un slot d'arme est nécessaire.")
+    resolved = []
+    for slot in slots:
+        if not isinstance(slot, dict) or type(slot.get("akimbo")) is not bool or not isinstance(slot.get("weapons"), list):
+            raise ValueError("Slot d'arme invalide.")
+        refs = slot["weapons"]
+        if len(refs) != (2 if slot["akimbo"] else 1):
+            raise ValueError("Nombre d'armes incorrect dans le slot.")
+        pair = []
+        for ref in refs:
+            if not isinstance(ref, dict) or type(ref.get("id")) is not int:
+                raise ValueError("Référence d'arme invalide.")
+            pool = catalogue if ref.get("source") == "catalogue" else personal if ref.get("source") == "user" else {}
+            weapon = pool.get(ref["id"])
+            if weapon is None:
+                raise ValueError("Arme inconnue ou inaccessible.")
+            pair.append(weapon)
+        if slot["akimbo"]:
+            validate_akimbo_weapons(pair)
+        resolved.extend(pair)
+    return resolved
+
+
+def set_weapon_slots(data, slots):
+    """Keep the old flat refs for consumers while slots own the grouping."""
+    data["weapon_slots"] = slots
+    data["weapons"] = [ref for slot in slots for ref in slot["weapons"]]
+    data["akimbo"] = any(slot["akimbo"] for slot in slots)
+    data.pop("weapon_ids", None)
+
+
 def validate_akimbo_weapons(weapons):
     """Validate the equipment invariant for an Akimbo pair."""
     if len(weapons) != 2 or any(getattr(weapon, "hands", None) != 1 for weapon in weapons):
@@ -476,18 +526,23 @@ def _apply_draft_overrides(mob):
                 card.property_lines, card.contact_damage, card.distance_damage,
             )
         cards.append(card)
-    # Identical Akimbo follows the established generator rule: combined power
-    # applies to the first card only; the second remains an individual weapon.
-    if mob.get("akimbo_identical") and len(cards) == 2:
-        from rules.engine import base_damage
-        first, second = cards
-        combined_power = first.effective_power + second.effective_power
-        neutral = round_to_5(base_damage(mob["level"]) + combined_power * 2)
-        cards[0] = ResolvedWeapon(
-            first.weapon, combined_power, neutral, first.effective_aim,
-            first.resolved_property, first.property_lines,
-            first.contact_damage, first.distance_damage,
-        )
+    # Identical pairs use the existing combined-power rule independently.
+    slots = mob.get("weapon_slots")
+    if slots is None:
+        slots = [{"akimbo": True, "weapons": mob["weapons"]}] if mob.get("akimbo_identical") else []
+    offset = 0
+    for slot in slots:
+        if slot["akimbo"] and len(slot["weapons"]) == 2:
+            first, second = cards[offset:offset + 2]
+            if _weapon_ref(first.weapon) == _weapon_ref(second.weapon):
+                from rules.engine import base_damage
+                power = first.effective_power + second.effective_power
+                cards[offset] = ResolvedWeapon(
+                    first.weapon, power, round_to_5(base_damage(mob["level"]) + power * 2),
+                    first.effective_aim, first.resolved_property, first.property_lines,
+                    first.contact_damage, first.distance_damage,
+                )
+        offset += len(slot["weapons"])
     mob["weapon_cards"] = cards
 
     mob["implant_cards"] = [
@@ -525,6 +580,13 @@ def serialize_mob(mob):
         "abilities": list(mob.get("abilities", [])),
         "overrides": dict(mob.get("overrides", {})),
         "akimbo": bool(mob.get("akimbo", False)),
+        "weapon_slots": [
+            {"akimbo": slot["akimbo"], "weapons": [
+                ref if isinstance(ref, dict) else _weapon_ref(ref) for ref in slot["weapons"]
+            ]} for slot in mob.get("weapon_slots", weapon_slots_from_draft({
+                "weapons": [_weapon_ref(w) for w in weapons], "akimbo": mob.get("akimbo", False)
+            }))
+        ],
     }
 
 
@@ -549,18 +611,10 @@ def rebuild_mob(weapons, implants, data, user_weapons=None, user_implants=None):
             else:
                 refs.append({"source": "catalogue", "id": item_id})
 
-    selected_weapons = []
-    for ref in refs:
-        source, item_id = ref.get("source"), ref.get("id")
-        if source == "user" and item_id in user_weapon_by_id:
-            selected_weapons.append(user_weapon_by_id[item_id])
-        elif source == "catalogue" and item_id in weapon_by_id:
-            selected_weapons.append(weapon_by_id[item_id])
-
-    if data.get("akimbo"):
-        validate_akimbo_weapons(selected_weapons)
+    slots = weapon_slots_from_draft(data)
+    selected_weapons = validate_weapon_slots(slots, weapon_by_id, user_weapon_by_id)
     mob = assemble_draft_mob(
-        level=data["level"], profile=data["profile"], weapons=selected_weapons, akimbo=bool(data.get("akimbo", False)),
+        level=data["level"], profile=data["profile"], weapons=selected_weapons, akimbo=False,
         implants=[
             (user_implant_by_id[ref["id"]] if ref.get("source") == "user" else implant_by_id[ref["id"]])
             for ref in (
@@ -575,6 +629,10 @@ def rebuild_mob(weapons, implants, data, user_weapons=None, user_implants=None):
         abilities=data.get("abilities", []), overrides=data.get("overrides", {}),
     )
     mob["name"] = data.get("name", "")
+    mob["weapon_slots"] = slots
+    mob["akimbo"] = any(slot["akimbo"] for slot in slots)
+    mob["akimbo_identical"] = len(slots) == 1 and slots[0]["akimbo"] and slots[0]["weapons"][0] == slots[0]["weapons"][1]
+    _apply_draft_overrides(mob)
     return mob
 
 def generate_mob(weapons, implants, *, level: int, profile: str | None = None, rng=None):

@@ -1529,6 +1529,61 @@ class AkimboCompactDisplayTests(TestCase):
         self.assertContains(response, reverse("table_mob_roll_weapon", args=[mob.id, 1]))
 
 
+class WeaponSlotContractTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="weapon-slots", password="pwd")
+        self.client.login(username="weapon-slots", password="pwd")
+
+    def test_mixed_slots_roundtrip_to_table_and_preserve_identity(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        pistol = MobWeapon.objects.get(name="Pistolet")
+        self.client.post(reverse("monster_builder_weapon"), {
+            "index": 0, "action": "akimbo", "slot_action": "add",
+            "first_weapon_id": pistol.id, "second_weapon_id": pistol.id,
+        })
+        draft = self.client.session["monster_builder_mobs"][0]
+        self.assertGreaterEqual(len(draft["weapon_slots"]), 2)
+        self.assertFalse(draft["weapon_slots"][0]["akimbo"])
+        self.assertTrue(draft["weapon_slots"][-1]["akimbo"])
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        self.assertEqual(len(mob.payload["weapon_slots"]), len(draft["weapon_slots"]))
+        self.assertEqual(mob.payload["weapon_slots"][-1]["weapons"][0]["power"], 20)
+        self.assertEqual(mob.payload["weapon_slots"][-1]["weapons"][1]["power"], 10)
+
+    def test_reject_invalid_akimbo_slot_without_mutating_table(self):
+        from catalogue.models import MobWeapon
+        from .models import TableMob
+        import json
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 1, "level": 5})
+        self.client.post(reverse("monster_builder_validate"), {"action": "all"})
+        mob = TableMob.objects.get(game_table__owner=self.user)
+        before = dict(mob.payload)
+        stats = before["stats"]
+        rifle = MobWeapon.objects.filter(hands=2).first()
+        pistol = MobWeapon.objects.get(name="Pistolet")
+        fields = {
+            "name": mob.name, "level": mob.level,
+            **{key: before[key] for key in ("current_hp", "max_hp", "shield", "armor", "reactions", "vigilance")},
+            **{key: stats[key] for key in stats},
+            "weapon_slots": json.dumps([{"akimbo": True, "weapons": [
+                {"source": "catalogue", "id": pistol.id},
+                {"source": "catalogue", "id": rifle.id},
+            ]}]),
+        }
+        response = self.client.post(reverse("table_mob_edit", args=[mob.id]), fields)
+        self.assertEqual(response.status_code, 400)
+        mob.refresh_from_db()
+        self.assertEqual(mob.payload, before)
+
+
 class WeaponRollModalContractTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="rollmodal", password="pwd")

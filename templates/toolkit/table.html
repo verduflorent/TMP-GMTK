@@ -215,20 +215,28 @@
                     <button type="submit">+</button>
                 </form>
             </div>
-            {% for weapon in mob.payload.weapons %}
-            {% if not mob.payload.akimbo_identical or not forloop.counter == 2 %}
-                <div class="weapon-row{% if mob.payload.akimbo and forloop.counter <= 2 %} akimbo-linked{% endif %}{% if mob.payload.akimbo and forloop.first %} akimbo-first{% endif %}{% if mob.payload.akimbo and forloop.counter == 2 %} akimbo-second{% endif %}">
-                    <span aria-hidden="true">⌖</span><p><strong>{{ weapon.name }}{% if mob.payload.akimbo_identical and forloop.first %} ×2{% endif %}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
-                    <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}" style="display:flex;gap:.25rem;">
-                        {% csrf_token %}
-                        <label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
-                        {% if weapon.contact_damage != None and weapon.distance_damage != None %}
-                        <button type="submit" name="mode" value="distance">🎲 Distance</button><button type="submit" name="mode" value="contact">🎲 Contact</button>
-                        {% endif %}
-                        <button type="submit" class="weapon-die" aria-label="Lancer l’attaque">⬡</button>
-                    </form>
+            {% for slot in mob.payload.weapon_slots %}
+              <div class="{% if slot.akimbo %}akimbo-linked akimbo-first{% endif %}">
+              {% for weapon in slot.weapons %}
+              {% if not slot.akimbo or not forloop.counter == 2 or slot.weapons.0.name != weapon.name %}
+                <div class="weapon-row">
+                  <span aria-hidden="true">{% if slot.akimbo %}⚔{% else %}⌖{% endif %}</span>
+                  <p><strong>{{ weapon.name }}{% if slot.akimbo and slot.weapons.0.name == slot.weapons.1.name %} ×2{% endif %}</strong> · P{{ weapon.power }} · Visée {{ weapon.aim }}{% if weapon.contact_damage != None %} · Contact {{ weapon.contact_damage }} · Distance {{ weapon.distance_damage }}{% else %} · {{ weapon.damage }} Dégâts{% endif %}</p>
+                  <form method="post" action="{% url 'table_mob_roll_weapon' mob.id weapon.roll_index %}">
+                    {% csrf_token %}<label>Mod. <input type="number" name="modifier" value="0" style="width:3.5rem;"></label>
+                    {% if weapon.contact_damage != None and weapon.distance_damage != None %}<button type="submit" name="mode" value="distance">🎲 Distance</button><button type="submit" name="mode" value="contact">🎲 Contact</button>{% endif %}
+                    <button type="submit" class="weapon-die" aria-label="Lancer l’attaque">⬡</button>
+                  </form>
                 </div>
-            {% endif %}
+              {% endif %}
+              {% endfor %}
+              </div>
+            {% empty %}
+            {% for weapon in mob.payload.weapons %}
+              <div class="weapon-row"><p>{{ weapon.name }} · P{{ weapon.power }} · {{ weapon.damage }} Dégâts</p>
+                <form method="post" action="{% url 'table_mob_roll_weapon' mob.id forloop.counter0 %}">{% csrf_token %}<button type="submit" class="weapon-die">⬡</button></form>
+              </div>
+            {% endfor %}
             {% endfor %}
             <div class="mob-last-roll table-screen-only" data-last-roll hidden aria-live="polite"></div>
             <div class="print-gear">{% for implant in mob.payload.implants %}
@@ -276,7 +284,7 @@
       <label>VOL<input name="willpower" type="number" min="0" max="99" required></label>
     </div>
     <div class="live-editor-equipment">
-  <section><h3>ARMES</h3><label class="akimbo-switch"><input type="checkbox" id="live-akimbo"> Akimbo — deux armes à une main</label><div data-gear-list="weapons"></div><div class="gear-picker"><select data-gear-picker="weapons" aria-label="Choisir une arme"></select><button type="button" data-gear-add="weapons">+ Arme</button></div></section>
+  <section><h3>ARMES</h3><p>Chaque slot est indépendant.</p><div data-gear-list="weapons"></div><div class="gear-picker"><select data-gear-picker="weapons" aria-label="Choisir une arme"></select><button type="button" data-gear-add="weapons">+ Slot</button><button type="button" data-add-akimbo>⚔ + Slot Akimbo</button></div></section>
   <section><h3>IMPLANTS</h3><div data-gear-list="implants"></div><div class="gear-picker"><select data-gear-picker="implants" aria-label="Choisir un implant"></select><button type="button" data-gear-add="implants">+ Implant</button></div></section>
   <section><h3>CAPACITÉS</h3><div data-gear-list="abilities"></div><div class="gear-picker"><select data-gear-picker="abilities" aria-label="Choisir une capacité enregistrée"></select><button type="button" data-gear-add="abilities">+ Capacité</button></div><div class="gear-picker"><input data-new-ability-name maxlength="120" placeholder="Nouvelle capacité"><button type="button" data-create-ability>Créer</button></div></section>
 </div>
@@ -423,9 +431,10 @@ document.addEventListener("submit", async function(event) {
  function prepareBody(preview=false){
    const body=new FormData(editor);
    for(const kind of Object.keys(gear)){
-     body.set(kind,JSON.stringify(kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
+     body.set(kind,JSON.stringify(kind==="weapons"?weaponSlots.flatMap(slot=>slot.weapons.map(({source,id})=>({source,id}))):kind==="abilities"?gear[kind]:gear[kind].map(({source,id})=>({source,id}))));
    }
-   body.set("akimbo",akimboToggle.checked?"1":"0");
+   body.set("weapon_slots",JSON.stringify(weaponSlots.map(slot=>({akimbo:slot.akimbo,weapons:slot.weapons.map(({source,id})=>({source,id}))}))));
+   body.set("akimbo",weaponSlots.some(slot=>slot.akimbo)?"1":"0");
    if(preview)body.set("preview","1");
    return body;
  }
@@ -463,24 +472,60 @@ document.addEventListener("submit", async function(event) {
    }
    if(previewFields.includes(event.target.name))schedulePreview();
  });
- const akimboToggle=dialog.querySelector("#live-akimbo");
- akimboToggle.addEventListener("change",()=>{
-   if(akimboToggle.checked){
-     gear.weapons=gear.weapons.filter(item=>item.hands===1).slice(0,2);
-   }
-   renderGear();schedulePreview();
- });
+ let weaponSlots=[];
  let gear={weapons:[],implants:[],abilities:[]};
  let catalogue={weapons:[],implants:[],abilities:[]};
+ function weaponInfo(ref){
+   const item=catalogue.weapons.find(w=>w.source===ref.source&&w.id===ref.id);
+   return {...ref,name:item?.name||"Arme",hands:item?.hands};
+ }
  function renderGear(){
-   const weaponPicker=dialog.querySelector('[data-gear-picker="weapons"]');
-   for(const option of weaponPicker.options){
-     const item=catalogue.weapons[Number(option.value)];
-     option.hidden=akimboToggle.checked&&item?.hands!==1;
-     option.disabled=option.hidden;
+   const list=dialog.querySelector('[data-gear-list="weapons"]');
+   list.replaceChildren();
+   weaponSlots.forEach((slot,index)=>{
+     const row=document.createElement("div");row.className="gear-entry";
+     const heading=document.createElement("strong");heading.textContent="Slot "+(index+1)+(slot.akimbo?" ⚔ Akimbo":"");
+     row.append(heading);
+     slot.weapons.forEach((weapon,hand)=>{
+       const select=document.createElement("select");
+       select.setAttribute("aria-label","Slot "+(index+1)+" arme "+(hand+1));
+       catalogue.weapons.filter(w=>!slot.akimbo||w.hands===1).forEach(item=>{
+         const option=document.createElement("option");
+         option.value=item.source+":"+item.id;option.textContent=item.name;
+         option.selected=item.source===weapon.source&&item.id===weapon.id;
+         select.append(option);
+       });
+       select.addEventListener("change",()=>{
+         const selected=catalogue.weapons.find(w=>w.source+":"+w.id===select.value);
+         if(selected){slot.weapons[hand]=weaponInfo(selected);schedulePreview();}
+       });
+       row.append(select);
+     });
+     const remove=document.createElement("button");remove.type="button";remove.textContent="✕";
+     remove.addEventListener("click",()=>{
+       if(weaponSlots.length===1)return;
+       weaponSlots.splice(index,1);renderGear();schedulePreview();
+     });
+     row.append(remove);list.append(row);
+   });
+   for(const kind of ["implants","abilities"]){
+     const target=dialog.querySelector('[data-gear-list="'+kind+'"]');target.replaceChildren();
+     gear[kind].forEach((item,index)=>{
+       const row=document.createElement("div");row.className="gear-entry";
+       const label=document.createElement("span");label.textContent=item.name||"Sans nom";
+       const remove=document.createElement("button");remove.type="button";remove.textContent="✕";
+       remove.addEventListener("click",()=>{gear[kind].splice(index,1);renderGear();schedulePreview();});
+       row.append(label,remove);target.append(row);
+     });
    }
-   if(weaponPicker.selectedOptions[0]?.disabled)weaponPicker.selectedIndex=Array.from(weaponPicker.options).findIndex(option=>!option.disabled);
-   for(const kind of Object.keys(gear)){
+ }
+ dialog.querySelector('[data-add-akimbo]').addEventListener("click",()=>{
+   const first=catalogue.weapons.find(w=>w.hands===1);
+   if(!first)return;
+   weaponSlots.push({akimbo:true,weapons:[weaponInfo(first),weaponInfo(first)]});
+   renderGear();schedulePreview();
+ });
+ for(const kind of Object.keys(gear)){
      const list=dialog.querySelector('[data-gear-list="'+kind+'"]');
      list.replaceChildren();
      gear[kind].forEach((item,index)=>{
@@ -497,8 +542,8 @@ document.addEventListener("submit", async function(event) {
      const select=dialog.querySelector('[data-gear-picker="'+kind+'"]');
      const item=catalogue[kind][Number(select.value)];
      if(!item)return;
-     if(kind==="weapons"&&akimboToggle.checked&&(item.hands!==1||gear.weapons.length>=2))return;
-     gear[kind].push(kind==="abilities"?structuredClone(item.draft):{source:item.source,id:item.id,name:item.name,hands:item.hands});
+     if(kind==="weapons")weaponSlots.push({akimbo:false,weapons:[weaponInfo(item)]});
+     else gear[kind].push(kind==="abilities"?structuredClone(item.draft):{source:item.source,id:item.id,name:item.name,hands:item.hands});
      renderGear();schedulePreview();
    });
  }
@@ -530,8 +575,9 @@ document.addEventListener("submit", async function(event) {
        const option=document.createElement("option");option.value=String(index);option.textContent=item.name;picker.append(option);
      });
    }
-   akimboToggle.checked=Boolean(draft.akimbo??mob.payload.akimbo);
-   gear.weapons=(draft.weapons||[]).map(ref=>({...ref,name:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Arme",hands:catalogue.weapons.find(item=>item.source===ref.source&&item.id===ref.id)?.hands}));
+   const slots=draft.weapon_slots||(draft.akimbo&&draft.weapons?.length===2?[{akimbo:true,weapons:draft.weapons}]:(draft.weapons||[]).map(ref=>({akimbo:false,weapons:[ref]})));
+   weaponSlots=slots.map(slot=>({akimbo:slot.akimbo,weapons:slot.weapons.map(weaponInfo)}));
+   gear.weapons=weaponSlots.flatMap(slot=>slot.weapons);
    gear.implants=(draft.implants||[]).map(ref=>({...ref,name:catalogue.implants.find(item=>item.source===ref.source&&item.id===ref.id)?.name||"Implant"}));
    gear.abilities=structuredClone(draft.abilities||mob.payload.abilities||[]);
    renderGear();
