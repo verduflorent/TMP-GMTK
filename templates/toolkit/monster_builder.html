@@ -361,6 +361,12 @@
 {% endif %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    // Native dialog elements cannot reliably be opened as nested modal
+    // descendants across browsers. Portal the pickers to the document root.
+    document.querySelectorAll(".mob-edit-dialog .catalogue-dialog, .mob-edit-dialog .resource-dialog, .mob-edit-dialog .confirm-dialog").forEach(picker => {
+        document.body.appendChild(picker);
+    });
+
     document.querySelectorAll(".catalogue-dialog").forEach(dialog => {
         const search = dialog.querySelector(".catalogue-search");
         const empty = dialog.querySelector(".catalogue-empty");
