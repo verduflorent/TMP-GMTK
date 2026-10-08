@@ -259,7 +259,7 @@
   <section class="catalogue-group"><h4>{{ group_name }}</h4><div class="catalogue-list">
     {% for weapon in weapons %}
     <form class="catalogue-item" method="post" action="{% url 'monster_builder_weapon' %}">
-      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}">
+      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}">
       <strong>T{{ weapon.tier }} — {{ weapon.name }}</strong><button type="submit" title="Ajouter {{ weapon.name }}" aria-label="Ajouter {{ weapon.name }}">+</button>
     </form>
     {% endfor %}
@@ -298,7 +298,7 @@
   <section class="catalogue-group"><h4>{{ group_name }}</h4><div class="catalogue-list">
     {% for implant in implants %}
     <form class="catalogue-item" method="post" action="{% url 'monster_builder_implant' %}">
-      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="implant_id" value="{{ implant.id }}">
+      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="implant_id" value="{{ implant.id }}">
       <strong>{{ implant.name }}</strong><button type="submit" title="Ajouter {{ implant.name }}" aria-label="Ajouter {{ implant.name }}">+</button>
     </form>
     {% endfor %}
