@@ -34,6 +34,22 @@
 .akimbo-pair{position:relative;margin-left:.55rem;padding-left:.8rem;border-left:2px solid #b3192d}
 .akimbo-pair::before{content:"⚔";position:absolute;left:-.78rem;top:.15rem;background:#faf8f0;color:#b3192d;font-size:.95rem;line-height:1}
 .akimbo-pair .weapon-entry{margin-left:0}
+
+/* Compact searchable equipment catalogue inside a real modal. */
+.mob-edit-dialog .resource-dialog.catalogue-dialog{width:min(760px,92vw);max-width:92vw;max-height:78vh;overflow:auto;padding:1.1rem;background:#faf8f2;color:#14253d;border:1px solid #aeb6be;border-radius:10px;box-shadow:0 20px 65px #091a3459}
+.mob-edit-dialog .resource-dialog.catalogue-dialog::backdrop{background:#0c1829a6}
+.catalogue-dialog .catalogue-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-bottom:2px solid #b3192d;padding-bottom:.5rem;margin-bottom:.75rem}
+.catalogue-dialog .catalogue-header h3{margin:0;border:0;padding:0;font:400 1.4rem Anton,Impact,sans-serif}
+.catalogue-dialog .catalogue-search{width:100%;box-sizing:border-box;padding:.65rem;margin-bottom:.6rem;border:1px solid #b8c0c8;border-radius:5px}
+.catalogue-dialog .catalogue-group{margin:.6rem 0}
+.catalogue-dialog .catalogue-group h4{font:400 1rem Anton,Impact,sans-serif;margin:.7rem 0 .35rem;color:#243b55}
+.catalogue-dialog .catalogue-list{display:grid;grid-template-columns:1fr;gap:0}
+.catalogue-dialog .catalogue-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.35rem .25rem;border-bottom:1px solid #d5d7da;background:transparent;min-width:0;margin:0}
+.catalogue-dialog .catalogue-item strong{font-size:.95rem;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.catalogue-dialog .catalogue-item button{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;min-width:30px;padding:0;border:1px solid #b3192d;background:#b3192d;color:white;border-radius:4px;font-size:1.2rem;font-weight:700;cursor:pointer}
+.catalogue-dialog .catalogue-item button:hover{background:#841323}
+.catalogue-dialog .catalogue-close{font-size:1.2rem;line-height:1;padding:.3rem .55rem}
+.catalogue-dialog .catalogue-empty{display:none;color:#6b7280;margin:.8rem 0}
 </style>
 <h1>Monster Builder</h1>
 <p>Génère un groupe de Mobs à partir du référentiel MONSTER.</p>
@@ -236,12 +252,31 @@
   <button type="button" onclick="this.closest('dialog').close()">Annuler</button>
 </dialog>
 
-<dialog class="confirm-dialog resource-dialog" id="weapon-picker-{{ forloop.counter0 }}"><h3>Ajouter une arme</h3>
-{% for group_name, weapons in weapon_groups %}<h4>{{ group_name }}</h4><div class="resource-picker">{% for weapon in weapons %}
-<form class="panel resource-choice" method="post" action="{% url 'monster_builder_weapon' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}"><strong>T{{ weapon.tier }} — {{ weapon.name }}</strong><button type="submit">Ajouter</button></form>
-{% endfor %}</div>{% endfor %}
-{% if user_weapons %}<h4>Mes armes</h4>{% for weapon in user_weapons %}<form class="panel resource-choice" method="post" action="{% url 'monster_builder_user_weapon_add' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.counter0 }}"><input type="hidden" name="weapon_id" value="{{ weapon.id }}"><strong>{{ weapon.name }}</strong><button type="submit">Ajouter</button></form>{% endfor %}{% endif %}
-<button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
+<dialog class="resource-dialog catalogue-dialog" id="weapon-picker-{{ forloop.counter0 }}" aria-label="Choisir une arme">
+  <div class="catalogue-header"><h3>Choisir une arme</h3><button type="button" class="catalogue-close" aria-label="Fermer" onclick="this.closest('dialog').close()">×</button></div>
+  <input type="search" class="catalogue-search" placeholder="Rechercher une arme…" aria-label="Rechercher une arme">
+  {% for group_name, weapons in weapon_groups %}
+  <section class="catalogue-group"><h4>{{ group_name }}</h4><div class="catalogue-list">
+    {% for weapon in weapons %}
+    <form class="catalogue-item" method="post" action="{% url 'monster_builder_weapon' %}">
+      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="weapon_id" value="{{ weapon.id }}">
+      <strong>T{{ weapon.tier }} — {{ weapon.name }}</strong><button type="submit" title="Ajouter {{ weapon.name }}" aria-label="Ajouter {{ weapon.name }}">+</button>
+    </form>
+    {% endfor %}
+  </div></section>
+  {% endfor %}
+  {% if user_weapons %}
+  <section class="catalogue-group"><h4>Mes armes</h4><div class="catalogue-list">
+    {% for weapon in user_weapons %}
+    <form class="catalogue-item" method="post" action="{% url 'monster_builder_user_weapon_add' %}">
+      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="weapon_id" value="{{ weapon.id }}">
+      <strong>{{ weapon.name }}</strong><button type="submit" title="Ajouter {{ weapon.name }}" aria-label="Ajouter {{ weapon.name }}">+</button>
+    </form>
+    {% endfor %}
+  </div></section>
+  {% endif %}
+  <p class="catalogue-empty">Aucune arme trouvée.</p>
+</dialog>
                     </section>
                     <section class="edit-section">
                         <h3>Implant(s)</h3>
@@ -256,11 +291,21 @@
                         </div>
                         {% empty %}<p>Aucun implant.</p>{% endfor %}
                         <button type="button" onclick="document.getElementById('implant-picker-{{ forloop.counter0 }}').showModal()">+ Implant</button>
-<dialog class="confirm-dialog resource-dialog" id="implant-picker-{{ forloop.counter0 }}"><h3>Ajouter un implant</h3>
-{% for group_name, implants in implant_groups %}<h4>{{ group_name }}</h4><div class="resource-picker">{% for implant in implants %}
-<form class="panel resource-choice" method="post" action="{% url 'monster_builder_implant' %}">{% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="implant_id" value="{{ implant.id }}"><strong>{{ implant.name }}</strong><button type="submit">Ajouter</button></form>
-{% endfor %}</div>{% endfor %}
-<button type="button" onclick="this.closest('dialog').close()">Fermer</button></dialog>
+<dialog class="resource-dialog catalogue-dialog" id="implant-picker-{{ forloop.counter0 }}" aria-label="Choisir un implant">
+  <div class="catalogue-header"><h3>Choisir un implant</h3><button type="button" class="catalogue-close" aria-label="Fermer" onclick="this.closest('dialog').close()">×</button></div>
+  <input type="search" class="catalogue-search" placeholder="Rechercher un implant…" aria-label="Rechercher un implant">
+  {% for group_name, implants in implant_groups %}
+  <section class="catalogue-group"><h4>{{ group_name }}</h4><div class="catalogue-list">
+    {% for implant in implants %}
+    <form class="catalogue-item" method="post" action="{% url 'monster_builder_implant' %}">
+      {% csrf_token %}<input type="hidden" name="index" value="{{ forloop.parentloop.parentloop.parentloop.counter0 }}"><input type="hidden" name="action" value="add"><input type="hidden" name="implant_id" value="{{ implant.id }}">
+      <strong>{{ implant.name }}</strong><button type="submit" title="Ajouter {{ implant.name }}" aria-label="Ajouter {{ implant.name }}">+</button>
+    </form>
+    {% endfor %}
+  </div></section>
+  {% endfor %}
+  <p class="catalogue-empty">Aucun implant trouvé.</p>
+</dialog>
                     </section>
                     <section class="edit-section">
                         <h3>Capacité(s)</h3>
@@ -316,6 +361,30 @@
 {% endif %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".catalogue-dialog").forEach(dialog => {
+        const search = dialog.querySelector(".catalogue-search");
+        const empty = dialog.querySelector(".catalogue-empty");
+        search?.addEventListener("input", () => {
+            const query = search.value.trim().toLocaleLowerCase("fr");
+            let visible = 0;
+            dialog.querySelectorAll(".catalogue-group").forEach(group => {
+                let count = 0;
+                group.querySelectorAll(".catalogue-item").forEach(item => {
+                    const matches = item.textContent.toLocaleLowerCase("fr").includes(query);
+                    item.hidden = !matches;
+                    if (matches) { count++; visible++; }
+                });
+                group.hidden = count === 0;
+            });
+            if (empty) empty.style.display = visible ? "none" : "block";
+        });
+        dialog.addEventListener("close", () => {
+            if (search) search.value = "";
+            dialog.querySelectorAll(".catalogue-group,.catalogue-item").forEach(item => item.hidden = false);
+            if (empty) empty.style.display = "none";
+        });
+    });
+
     {% if editing_index != None %}
     const dialog = document.getElementById("mob-edit-{{ editing_index }}");
     if (dialog && !dialog.open) dialog.showModal();
