@@ -486,7 +486,26 @@ document.addEventListener("submit", async function(event) {
      label.textContent=(slot.akimbo?"⚔ ":"")+(slot.akimbo&&slot.weapons[0].name===slot.weapons[1].name?slot.weapons[0].name+" ×2":slot.weapons.map(w=>w.name).join(" + "));
      const remove=document.createElement("button");remove.type="button";remove.textContent="✕";
      remove.addEventListener("click",()=>{if(weaponSlots.length<=1)return;weaponSlots.splice(index,1);renderGear();schedulePreview();});
-     row.append(label,remove);weapons.append(row);
+     row.append(label);
+     if(slot.akimbo){
+       for(let hand=0;hand<2;hand++){
+         const select=document.createElement("select");
+         select.setAttribute("aria-label","Arme "+(hand+1)+" du slot "+(index+1));
+         for(const item of catalogue.weapons.filter(w=>w.hands===1)){
+           const option=document.createElement("option");
+           option.value=item.source+":"+item.id;option.textContent=item.name;
+           option.selected=item.source===slot.weapons[hand].source&&item.id===slot.weapons[hand].id;
+           select.append(option);
+         }
+         select.addEventListener("change",()=>{
+           const selected=catalogue.weapons.find(w=>w.source+":"+w.id===select.value);
+           if(!selected)return;
+           slot.weapons[hand]=weaponInfo(selected);renderGear();schedulePreview();
+         });
+         row.append(select);
+       }
+     }
+     row.append(remove);weapons.append(row);
    });
    for(const kind of ["implants","abilities"]){
      const list=dialog.querySelector('[data-gear-list="'+kind+'"]');list.replaceChildren();
