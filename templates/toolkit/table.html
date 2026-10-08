@@ -527,18 +527,6 @@ document.addEventListener("submit", async function(event) {
    renderGear();schedulePreview();
  });
  for(const kind of Object.keys(gear)){
-     const list=dialog.querySelector('[data-gear-list="'+kind+'"]');
-     list.replaceChildren();
-     gear[kind].forEach((item,index)=>{
-       const row=document.createElement("div");row.className="gear-entry";
-       const label=document.createElement("span");label.textContent=item.name||"Sans nom";
-       const remove=document.createElement("button");remove.type="button";remove.textContent="✕";remove.setAttribute("aria-label","Retirer "+label.textContent);
-       remove.addEventListener("click",()=>{gear[kind].splice(index,1);renderGear();schedulePreview();});
-       row.append(label,remove);list.append(row);
-     });
-   }
- }
- for(const kind of Object.keys(gear)){
    dialog.querySelector('[data-gear-add="'+kind+'"]').addEventListener("click",()=>{
      const select=dialog.querySelector('[data-gear-picker="'+kind+'"]');
      const item=catalogue[kind][Number(select.value)];
