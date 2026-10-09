@@ -310,7 +310,8 @@ class OfficialEquipmentCatalogueTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "GridLock")
         self.assertContains(response, "AEGIS")
-        self.assertContains(response, "Catalogue officiel TMP")
+        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Implants officiels (16)")
 
     def test_official_catalogue_is_collapsible_and_shows_reference_properties(self):
         response = self.client.get(reverse("equipment_home"))
