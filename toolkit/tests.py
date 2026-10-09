@@ -259,6 +259,45 @@ class PersonalEquipmentEffectTests(TestCase):
         self.assertEqual((implant.effect_type, implant.scaling, implant.value), ("aim", "fixed", 3))
 
 
+class EncounterExpansionAndTransferTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        self.user = User.objects.create_user(username="encounter_transfer", password="secret")
+        self.client.force_login(self.user)
+        call_command("seed_monster_catalogue", verbosity=0)
+        self.client.post(reverse("monster_builder"), {"action": "generate", "quantity": 2, "level": 5})
+        drafts = self.client.session["monster_builder_mobs"]
+        from .models import EncounterDraftMob
+        self.encounter = Encounter.objects.create(owner=self.user, name="Deux groupes")
+        self.first = EncounterDraftMob.objects.create(
+            encounter=self.encounter, name="Groupe A", quantity=2, payload=drafts[0], rank=0,
+        )
+        self.second = EncounterDraftMob.objects.create(
+            encounter=self.encounter, name="Groupe B", quantity=3, payload=drafts[1], rank=1,
+        )
+
+    def test_remove_mob_keeps_its_encounter_open(self):
+        response = self.client.post(reverse("encounter_remove_mob", args=[self.encounter.pk, self.first.pk]))
+        self.assertRedirects(response, reverse("encounters") + "?open=" + str(self.encounter.pk))
+        page = self.client.get(response.url)
+        self.assertContains(page, 'data-encounter-id="' + str(self.encounter.pk) + '"')
+        self.assertContains(page, "Groupe B")
+        self.assertFalse(self.encounter.draft_mobs.filter(pk=self.first.pk).exists())
+
+    def test_loading_all_entries_respects_quantities(self):
+        from .models import TableMob
+        response = self.client.post(reverse("encounter_load_table", args=[self.encounter.pk]))
+        self.assertRedirects(response, reverse("table"))
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user, name="Groupe A").count(), 2)
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user, name="Groupe B").count(), 3)
+
+    def test_loading_from_table_menu_also_respects_quantities(self):
+        from .models import TableMob
+        response = self.client.post(reverse("table_load_encounter"), {"encounter_id": self.encounter.pk})
+        self.assertRedirects(response, reverse("table"))
+        self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 5)
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
