@@ -315,8 +315,18 @@ class OfficialEquipmentCatalogueTests(TestCase):
     def test_official_catalogue_is_collapsible_and_shows_reference_properties(self):
         response = self.client.get(reverse("equipment_home"))
         self.assertContains(response, 'class="equip-catalogue-root"')
-        self.assertContains(response, 'class="equip-catalogue-group"')
+        self.assertContains(response, 'class="equip-reference-list"')
         self.assertNotContains(response, 'id="equip-preview-level"')
+        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Implants officiels (16)")
+
+    def test_official_reference_visible_without_database_seed(self):
+        from catalogue.models import MobWeapon, MobImplant
+        MobWeapon.objects.all().delete()
+        MobImplant.objects.all().delete()
+        response = self.client.get(reverse("equipment_home"))
+        self.assertContains(response, "GridLock")
+        self.assertContains(response, "AEGIS")
         self.assertContains(response, "Armes officielles (28)")
         self.assertContains(response, "Implants officiels (16)")
 
