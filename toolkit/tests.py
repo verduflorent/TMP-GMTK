@@ -298,6 +298,29 @@ class EncounterExpansionAndTransferTests(TestCase):
         self.assertEqual(TableMob.objects.filter(game_table__owner=self.user).count(), 5)
 
 
+class OfficialEquipmentCatalogueTests(TestCase):
+    def setUp(self):
+        from django.core.management import call_command
+        self.user = User.objects.create_user(username="official_catalogue", password="secret")
+        self.client.force_login(self.user)
+        call_command("seed_monster_catalogue", verbosity=0)
+
+    def test_official_weapons_and_implants_are_visible(self):
+        response = self.client.get(reverse("equipment_home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "GridLock")
+        self.assertContains(response, "AEGIS")
+        self.assertContains(response, "Catalogue officiel TMP")
+
+    def test_level_preview_resolves_implant_property(self):
+        response = self.client.get(reverse("equipment_home") + "?level=10")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "+50 Armure.")
+
+    def test_invalid_preview_level_is_safe(self):
+        self.assertEqual(self.client.get(reverse("equipment_home") + "?level=oops").status_code, 200)
+
+
 class DomainIntegrityTests(TestCase):
     def setUp(self):
         self.alice = User.objects.create_user(username="alice", password="pwd")
