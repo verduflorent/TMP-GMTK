@@ -23,6 +23,8 @@
 .equip-catalogue details{border-bottom:1px solid #c8c8c8}
 .equip-catalogue .equip-catalogue-detail{padding:.4rem .7rem .8rem}
 .equip-catalogue .equip-catalogue-detail p{margin:.35rem 0}
+.equip-catalogue-root{margin-top:1.2rem;border-top:2px solid #a7191c;padding-top:.5rem}
+.equip-reference-list{max-height:65vh;overflow-y:auto}
 .equip-catalogue-root>summary{font:400 1.25rem Anton,Impact,sans-serif;color:#172538}
 .equip-catalogue-group{margin:.65rem 0}
 .equip-catalogue-group>summary{font-weight:700;background:#e9e8e2;padding:.7rem}
@@ -47,9 +49,9 @@
 <h3>{{ item.name }}</h3>
 {% if section.kind == "weapon" %}
 <p>{{ item.hands }} main(s) · P{{ item.power }} · Visée {{ item.aim }} · {{ item.optimal_range }}</p>
-<p>{{ item.property_name }} {{ item.property_text }}</p>
+<p>{{ item.property_name }} {{ item.property_text }}</p><p>{% if item.effect_type %}Effet : {{ item.effect_type }} · {{ item.value }} {% if item.scaling == "level" %}× niveau{% else %}fixe{% endif %}{% else %}Aucun effet mécanique{% endif %}</p>
 {% elif section.kind == "implant" %}
-<p>{{ item.property_name }} — {{ item.property_text }}</p>
+<p>{{ item.property_name }} — {{ item.property_text }}</p><p>{% if item.effect_type %}Effet : {{ item.effect_type }} · {{ item.value }} {% if item.scaling == "level" %}× niveau{% else %}fixe{% endif %}{% else %}Aucun effet mécanique{% endif %}</p>
 {% else %}
 <p>{{ item.description }}</p><p>{{ item.effect_type|default:"Sans effet" }} · {{ item.value }} {% if item.scaling == "level" %}× niveau{% else %}fixe{% endif %}</p>
 {% endif %}
@@ -86,40 +88,41 @@
 <footer><button type="button" data-close-dialog>Annuler</button><button type="submit">Créer</button></footer>
 </form>
 </dialog>
-</section>
-{% endfor %}
-<section class="equip-catalogue" aria-label="Catalogue officiel TMP">
+{% if section.kind == "weapon" %}
 <details class="equip-catalogue-root">
-<summary>Catalogue officiel TMP — Armes et Implants</summary>
-<p>Référentiel en lecture seule. Les propriétés ci-dessous sont celles du catalogue, sans simulation d'un Mob particulier.</p>
-<details class="equip-catalogue-group">
 <summary>Armes officielles ({{ official_weapons|length }})</summary>
+<div class="equip-reference-list">
 {% for weapon in official_weapons %}
 <details class="equip-catalogue-item">
 <summary>T{{ weapon.tier }} — {{ weapon.name }}</summary>
 <div class="equip-catalogue-detail">
-<p>{{ weapon.get_hands_display }} · Portée {{ weapon.get_optimal_range_display }} · P{{ weapon.power }} · Visée {{ weapon.aim }}</p>
+<p>{% if weapon.hands == 1 %}1 main{% else %}2 mains{% endif %} · Portée {{ weapon.range }} · P{{ weapon.power }} · Visée {{ weapon.aim }}</p>
 {% if weapon.property_name %}<p><strong>{{ weapon.property_name }}</strong></p>{% endif %}
-{% if weapon.property_text %}<p>{{ weapon.property_text }}</p>{% else %}<p>Aucune description de propriété enregistrée.</p>{% endif %}
+<p>{{ weapon.property_text|default:"Aucun effet supplémentaire." }}</p>
 </div>
 </details>
 {% endfor %}
+</div>
 </details>
-<details class="equip-catalogue-group">
+{% elif section.kind == "implant" %}
+<details class="equip-catalogue-root">
 <summary>Implants officiels ({{ official_implants|length }})</summary>
+<div class="equip-reference-list">
 {% for implant in official_implants %}
 <details class="equip-catalogue-item">
 <summary>{{ implant.name }}</summary>
 <div class="equip-catalogue-detail">
-<p>Profils : {{ implant.allowed_profiles }}</p>
+<p>Profils : {{ implant.profiles }}</p>
 {% if implant.property_name %}<p><strong>{{ implant.property_name }}</strong></p>{% endif %}
-{% if implant.property_text %}<p>{{ implant.property_text }}</p>{% else %}<p>Aucune description de propriété enregistrée.</p>{% endif %}
+<p>{{ implant.property_text|default:"Aucun effet supplémentaire." }}</p>
 </div>
 </details>
 {% endfor %}
+</div>
 </details>
-</details>
+{% endif %}
 </section>
+{% endfor %}
 <script>
 document.querySelectorAll("[data-equip-tab]").forEach(button=>button.addEventListener("click",()=>{
  document.querySelectorAll("[data-equip-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
