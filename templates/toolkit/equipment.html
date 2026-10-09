@@ -18,6 +18,13 @@
 .equip-form input,.equip-form select,.equip-form textarea{width:100%;box-sizing:border-box}
 .equip-danger{background:#a7191c;color:#fff;border-color:#a7191c}
 .equip-danger:hover{background:#821519;color:#fff}
+.equip-catalogue{margin-top:1.5rem;border-top:2px solid #a7191c;padding-top:1rem}
+.equip-catalogue summary{cursor:pointer;font-weight:700;padding:.55rem .2rem}
+.equip-catalogue details{border-bottom:1px solid #c8c8c8}
+.equip-catalogue .equip-catalogue-detail{padding:.4rem .7rem .8rem}
+.equip-catalogue .equip-catalogue-detail p{margin:.35rem 0}
+.equip-catalogue-level{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.equip-catalogue-level input{width:5rem}
 .equip-form footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem}
 </style>
 <h1>Éditeur d'équipements</h1>
@@ -78,6 +85,33 @@
 </dialog>
 </section>
 {% endfor %}
+<section class="equip-catalogue" aria-label="Catalogue officiel TMP">
+<h2>Catalogue officiel TMP</h2>
+<p>Référentiel en lecture seule. Les propriétés sont calculées par le moteur de règles au niveau sélectionné.</p>
+<form method="get" class="equip-catalogue-level">
+<label for="equip-preview-level">Niveau de prévisualisation</label>
+<input id="equip-preview-level" name="level" type="number" min="1" max="99" value="{{ preview_level }}">
+<button type="submit">Actualiser</button>
+</form>
+<h3>Armes officielles ({{ official_weapons|length }})</h3>
+{% for row in official_weapons %}
+<details><summary>T{{ row.item.tier }} — {{ row.item.name }} · P{{ row.card.effective_power }} · Visée {{ row.card.effective_aim }}</summary>
+<div class="equip-catalogue-detail">
+<p>{{ row.item.get_hands_display }} · Portée {{ row.item.get_optimal_range_display }}</p>
+<p>Dégâts : {{ row.card.neutral_damage }}{% if row.card.contact_damage != None %} · Contact : {{ row.card.contact_damage }} · Distance : {{ row.card.distance_damage }}{% endif %}</p>
+{% if row.item.property_name %}<p><strong>{{ row.item.property_name }}</strong></p>{% endif %}
+{% for line in row.card.property_lines %}<p>{{ line }}</p>{% empty %}{% if row.item.property_text %}<p>{{ row.item.property_text }}</p>{% endif %}{% endfor %}
+</div></details>
+{% endfor %}
+<h3>Implants officiels ({{ official_implants|length }})</h3>
+{% for row in official_implants %}
+<details><summary>{{ row.item.name }}{% if row.item.property_name %} — {{ row.item.property_name }}{% endif %}</summary>
+<div class="equip-catalogue-detail">
+<p>Profils : {{ row.item.allowed_profiles }}</p>
+{% for line in row.card.property_lines %}<p>{{ line }}</p>{% empty %}<p>{{ row.item.property_text }}</p>{% endfor %}
+</div></details>
+{% endfor %}
+</section>
 <script>
 document.querySelectorAll("[data-equip-tab]").forEach(button=>button.addEventListener("click",()=>{
  document.querySelectorAll("[data-equip-tab]").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
