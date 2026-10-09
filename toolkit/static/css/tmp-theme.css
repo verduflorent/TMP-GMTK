@@ -23,3 +23,15 @@ body .mob-edit-dialog .edit-actions{background:var(--tmp-panel)}body .mob-edit-d
 .combat-meta .compact{display:flex;align-items:center;gap:3px}
 .combat-meta .compact .resource-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;font-size:23px}
 .combat-secondary{align-items:center}
+
+/* Combat cards zoom: changes card sizing and grid reflow, not browser zoom. */
+@media screen {
+.table-combat{--combat-zoom:1}
+.table-combat .mob-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(340px * var(--combat-zoom))),1fr));gap:calc(18px * var(--combat-zoom))}
+.table-combat .mob-card{font-size:calc(1rem * var(--combat-zoom));padding:calc(18px * var(--combat-zoom)) calc(20px * var(--combat-zoom));gap:calc(12px * var(--combat-zoom))}
+.table-combat .mob-card-header strong{font-size:calc(24px * var(--combat-zoom))}
+.table-combat .mob-card-header small{font-size:calc(14px * var(--combat-zoom))}
+.table-zoom-controls{display:flex;align-items:center;gap:.3rem;margin-right:.7rem}
+.table-zoom-controls button{min-width:34px;min-height:32px;padding:.25rem .5rem}
+.table-zoom-controls output{display:inline-block;min-width:3.7rem;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+}
