@@ -21,9 +21,12 @@
 .encounter-compact[open] summary::after{content:"−"}
 .encounter-compact[open] summary{border-bottom:1px solid var(--tmp-line,#c6c6c6)}
 .encounter-content{padding:1rem}
+.encounter-mob-row{display:flex;align-items:center;gap:.65rem;margin:.4rem 0}
+.encounter-mob-row form{display:inline-flex;margin:0}
+.encounter-mob-row button{padding:.2rem .5rem;min-width:30px;min-height:30px}
 </style>
 {% for encounter in encounters %}
-<details class="encounter-compact">
+<details class="encounter-compact" data-encounter-id="{{ encounter.id }}" {% if request.GET.open == encounter.id|stringformat:"s" %}open{% endif %}>
     <summary><h2>{{ encounter.name }}</h2></summary>
     <div class="encounter-content">
     <button type="button" onclick="document.getElementById('move-enc-{{ encounter.id }}').showModal()">Déplacer</button>
@@ -32,11 +35,12 @@
 <button name="folder_id" value="" type="submit">Non classé</button>{% for folder in folders %}<button name="folder_id" value="{{ folder.id }}" type="submit">{{ folder.name }}</button>{% endfor %}
 </form><button type="button" onclick="this.closest('dialog').close()">Annuler</button></dialog>
     {% for entry in encounter.draft_mobs.all %}
-    <p><strong>{{ entry.quantity }}× {{ entry.name }}</strong>
-        <form method="post" action="{% url 'encounter_remove_mob' encounter.id entry.id %}" style="display:inline;">
-            {% csrf_token %}<button type="submit">×</button>
+    <div class="encounter-mob-row">
+        <strong>{{ entry.quantity }}× {{ entry.name }}</strong>
+        <form method="post" action="{% url 'encounter_remove_mob' encounter.id entry.id %}">
+            {% csrf_token %}<button type="submit" aria-label="Retirer {{ entry.name }} de la rencontre" title="Retirer ce Mob">×</button>
         </form>
-    </p>
+    </div>
     {% empty %}<p>Aucun Mob.</p>{% endfor %}
     {% if bestiary_mobs %}
     <button type="button" onclick="document.getElementById('encounter-mob-dialog-{{ encounter.id }}').showModal()">+ Ajouter un Mob</button>
