@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .equipment_forms import EQUIPMENT_FORMS
 from catalogue.models import MobWeapon, MobImplant
+from catalogue.management.commands.seed_monster_catalogue import WEAPONS, IMPLANTS
 
 
 def _sections(user):
@@ -18,10 +19,24 @@ def _sections(user):
 
 @login_required
 def equipment_home(request):
+    # The official catalogue is defined in the versioned MONSTER reference.
+    # Do not depend on whether the deployment has run the seed command.
+    official_weapons = [
+        {"name": name, "tier": tier, "profiles": profiles, "hands": hands,
+         "range": range_code, "power": power, "aim": aim,
+         "property_name": property_name, "property_text": property_text}
+        for name, tier, profiles, hands, range_code, power, aim,
+            property_name, property_text, _is_control in WEAPONS
+    ]
+    official_implants = [
+        {"name": name, "profiles": profiles,
+         "property_name": property_name, "property_text": property_text}
+        for name, profiles, property_name, property_text in IMPLANTS
+    ]
     return render(request, "toolkit/equipment.html", {
         "sections": _sections(request.user),
-        "official_weapons": MobWeapon.objects.all().order_by("tier", "name"),
-        "official_implants": MobImplant.objects.all().order_by("name"),
+        "official_weapons": sorted(official_weapons, key=lambda item: (item["tier"], item["name"])),
+        "official_implants": sorted(official_implants, key=lambda item: item["name"]),
     })
 
 @login_required
