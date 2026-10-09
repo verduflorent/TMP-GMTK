@@ -188,7 +188,15 @@
 
 
 <section class="table-combat">
-    <div class="table-view-controls table-screen-only"><h2 class="sr-only">Mobs</h2><button type="button" id="compact-view" aria-pressed="false">Vue compacte</button></div>
+    <div class="table-view-controls table-screen-only"><h2 class="sr-only">Mobs</h2>
+      <div class="table-zoom-controls" role="group" aria-label="Taille des cartes">
+        <button type="button" id="table-zoom-out" aria-label="Réduire les cartes" title="Dézoomer">−</button>
+        <output id="table-zoom-value" aria-live="polite">100 %</output>
+        <button type="button" id="table-zoom-in" aria-label="Agrandir les cartes" title="Zoomer">+</button>
+        <button type="button" id="table-zoom-reset" title="Taille d'origine">100 %</button>
+      </div>
+      <button type="button" id="compact-view" aria-pressed="false">Vue compacte</button>
+    </div>
     <div class="mob-grid">
     {% for mob in builder_mobs %}
         <article class="panel mob-card" data-mob-id="{{ mob.id }}" data-max-hp="{{ mob.payload.max_hp }}">
