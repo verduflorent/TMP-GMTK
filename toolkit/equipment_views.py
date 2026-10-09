@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .equipment_forms import EQUIPMENT_FORMS
 from catalogue.models import MobWeapon, MobImplant
-from rules.engine import resolve_weapon, resolve_implant, max_hp
 
 
 def _sections(user):
@@ -19,26 +18,11 @@ def _sections(user):
 
 @login_required
 def equipment_home(request):
-    level = 1
-    try:
-        level = max(1, min(99, int(request.GET.get("level", "1"))))
-    except (TypeError, ValueError):
-        pass
-    official_weapons = [
-        {"item": weapon, "card": resolve_weapon(weapon, level)}
-        for weapon in MobWeapon.objects.all().order_by("tier", "name")
-    ]
-    official_implants = [
-        {"item": implant, "card": resolve_implant(implant, level, max_hp(level, 10))}
-        for implant in MobImplant.objects.all().order_by("name")
-    ]
     return render(request, "toolkit/equipment.html", {
         "sections": _sections(request.user),
-        "official_weapons": official_weapons,
-        "official_implants": official_implants,
-        "preview_level": level,
+        "official_weapons": MobWeapon.objects.all().order_by("tier", "name"),
+        "official_implants": MobImplant.objects.all().order_by("name"),
     })
-
 
 @login_required
 def equipment_save(request, kind, item_id=None):
