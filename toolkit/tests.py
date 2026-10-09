@@ -312,12 +312,15 @@ class OfficialEquipmentCatalogueTests(TestCase):
         self.assertContains(response, "AEGIS")
         self.assertContains(response, "Catalogue officiel TMP")
 
-    def test_level_preview_resolves_implant_property(self):
-        response = self.client.get(reverse("equipment_home") + "?level=10")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "+50 Armure.")
+    def test_official_catalogue_is_collapsible_and_shows_reference_properties(self):
+        response = self.client.get(reverse("equipment_home"))
+        self.assertContains(response, 'class="equip-catalogue-root"')
+        self.assertContains(response, 'class="equip-catalogue-group"')
+        self.assertNotContains(response, 'id="equip-preview-level"')
+        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Implants officiels (16)")
 
-    def test_invalid_preview_level_is_safe(self):
+    def test_legacy_preview_parameter_does_not_break_catalogue(self):
         self.assertEqual(self.client.get(reverse("equipment_home") + "?level=oops").status_code, 200)
 
 
