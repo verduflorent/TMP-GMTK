@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.db import transaction
 import random
 
 from catalogue.models import MobImplant, MobWeapon
@@ -1163,6 +1165,7 @@ def encounter_remove_mob(request, encounter_id, entry_id):
         EncounterDraftMob.objects.filter(
             id=entry_id, encounter_id=encounter_id, encounter__owner=request.user
         ).delete()
+        return redirect(f"{reverse('encounters')}?open={encounter_id}")
     return redirect("encounters")
 
 
@@ -1201,14 +1204,15 @@ def encounter_load_table(request, encounter_id):
     implants = list(MobImplant.objects.all())
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     user_implants = list(UserImplant.objects.filter(owner=request.user))
-    for entry in encounter.draft_mobs.all():
-        for _ in range(entry.quantity):
-            mob = rebuild_mob(weapons, implants, entry.payload, user_weapons, user_implants)
-            TableMob.objects.create(
-                game_table=table, name=entry.name, profile=str(mob["profile"]),
-                level=mob["level"], payload=_table_payload(mob),
-                rank=table.builder_mobs.count(),
-            )
+    with transaction.atomic():
+        for entry in encounter.draft_mobs.all():
+            for _ in range(entry.quantity):
+                mob = rebuild_mob(weapons, implants, entry.payload, user_weapons, user_implants)
+                TableMob.objects.create(
+                    game_table=table, name=entry.name, profile=str(mob["profile"]),
+                    level=mob["level"], payload=_table_payload(mob),
+                    rank=table.builder_mobs.count(),
+                )
     return redirect("table")
 
 
@@ -1251,16 +1255,17 @@ def table_load_encounter(request):
     implants = list(MobImplant.objects.all())
     user_weapons = list(UserWeapon.objects.filter(owner=request.user))
     user_implants = list(UserImplant.objects.filter(owner=request.user))
-    for entry in encounter.draft_mobs.all():
-        for _ in range(entry.quantity):
-            mob = rebuild_mob(
-                weapons, implants, entry.payload, user_weapons, user_implants
-            )
-            TableMob.objects.create(
-                game_table=table, name=entry.name, profile=str(mob["profile"]),
-                level=mob["level"], payload=_table_payload(mob),
-                rank=table.builder_mobs.count(),
-            )
+    with transaction.atomic():
+        for entry in encounter.draft_mobs.all():
+            for _ in range(entry.quantity):
+                mob = rebuild_mob(
+                    weapons, implants, entry.payload, user_weapons, user_implants
+                )
+                TableMob.objects.create(
+                    game_table=table, name=entry.name, profile=str(mob["profile"]),
+                    level=mob["level"], payload=_table_payload(mob),
+                    rank=table.builder_mobs.count(),
+                )
     return redirect("table")
 
 
