@@ -90,7 +90,7 @@ function encounterUrl(entry){
  try{url=new URL(raw);}catch{return null;}
  if(!["http:","https:"].includes(url.protocol)||!url.hostname||url.username||url.password)return null;
  // Base URL only: never execute arbitrary paths or query parameters from the editor.
- return url.origin+url.pathname.replace(/\\/$/,"").replace(/\\/encounters$/,"")+"/encounters/?folder=all&open="+encodeURIComponent(id);
+ return url.origin+url.pathname.replace(/\/$/,"").replace(/\/encounters$/,"")+"/encounters/?folder=all&open="+encodeURIComponent(id);
 }
 function encounterEditor(entry,detail){
  const label=el("label",{text:"Adresse de GMTK (origine et chemin de base)"}),base=el("input",{type:"url",placeholder:"http://127.0.0.1:8000/"});base.value=entry.gmtk_url||"";
