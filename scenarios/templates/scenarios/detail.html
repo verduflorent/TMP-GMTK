@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ scenario.title }} — TMP-GMTK{% endblock %}
+{% block content %}
+<section style="padding:clamp(20px,4vw,48px);max-width:1100px;margin:auto">
+  <a href="{% url 'scenarios:library' %}">← Mes Scénarios</a>
+  <p style="color:#e05a61;letter-spacing:.12em;margin-top:30px">SCÉNARIO / ESPACE PERSONNEL</p>
+  <h1>{{ scenario.title }}</h1>
+  {% if scenario.summary %}<p>{{ scenario.summary|linebreaksbr }}</p>{% endif %}
+  <h2>Scènes</h2>
+  {% for scene in scenes %}<p>{{ forloop.counter|stringformat:"02d" }} — {{ scene.title }}</p>
+  {% empty %}<p>Aucune scène pour le moment. L'éditeur interactif sera intégré lors des prochains lots.</p>{% endfor %}
+</section>
+{% endblock %}
