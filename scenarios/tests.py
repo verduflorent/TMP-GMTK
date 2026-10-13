@@ -56,3 +56,48 @@ class ScenarioLibraryTests(TestCase):
         self.client.force_login(self.alice)
         self.client.get(reverse("scenarios:library"))
         self.assertEqual(Scenario.objects.count(), 1)
+
+    def test_document_roundtrip_and_revision_conflict(self):
+        import json
+        import uuid
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Épisode 0")
+        a, b = str(uuid.uuid4()), str(uuid.uuid4())
+        payload = {
+            "content_revision": 0, "layout_revision": 0,
+            "scenes": [
+                {"id": a, "title": "Entrée", "position": {"x": 10, "y": 20}, "blocks": [
+                    {"kind": "narration", "text": "Bienvenue", "target": None},
+                    {"kind": "transition", "text": "Continuer", "target": b},
+                ]},
+                {"id": b, "title": "Bureau", "position": {"x": 80, "y": 100}, "blocks": []},
+            ],
+        }
+        url = reverse("scenarios:document", args=[scenario.pk])
+        response = self.client.post(url, data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(Scene.objects.filter(scenario=scenario).count(), 2)
+        self.assertEqual(SceneBlock.objects.filter(scene__scenario=scenario).count(), 2)
+        response = self.client.get(url)
+        self.assertEqual(response.json()["scenes"][0]["blocks"][1]["target"], b)
+        self.assertEqual(self.client.post(url, data=json.dumps(payload), content_type="application/json").status_code, 409)
+        self.assertEqual(Scene.objects.filter(scenario=scenario).count(), 2)
+
+    def test_document_rejects_other_owner_and_invalid_target(self):
+        import json
+        import uuid
+        from .models import Scene
+        self.client.force_login(self.alice)
+        foreign = reverse("scenarios:document", args=[self.bob_scenario.pk])
+        self.assertEqual(self.client.get(foreign).status_code, 404)
+        self.assertEqual(self.client.post(foreign, data="{}", content_type="application/json").status_code, 404)
+        own = Scenario.objects.create(owner=self.alice, title="Épisode 0")
+        url = reverse("scenarios:document", args=[own.pk])
+        payload = {"content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(uuid.uuid4()), "title": "Départ", "position": {"x": 0, "y": 0},
+             "blocks": [{"kind": "transition", "text": "Vers ailleurs", "target": str(uuid.uuid4())}]}
+        ]}
+        response = self.client.post(url, data=json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Scene.objects.filter(scenario=own).exists())
