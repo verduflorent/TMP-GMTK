@@ -12,5 +12,8 @@ class ScenarioForm(forms.ModelForm):
 
     def __init__(self, *args, owner, **kwargs):
         super().__init__(*args, **kwargs)
+        # ModelForm validates model.clean() during is_valid(), before form.save().
+        # Set owner early so folder ownership is checked against the real user.
+        self.instance.owner = owner
         self.fields["folder"].queryset = UserFolder.objects.filter(owner=owner)
         self.fields["folder"].required = False
