@@ -2,23 +2,83 @@
 {% block title %}Mes Scénarios — TMP-GMTK{% endblock %}
 {% block content %}
 <section class="scenario-page">
-  <header class="scenario-page-heading"><p>THE MOIRA PROTOCOL / NARRATION</p><h1>Mes Scénarios</h1><p>Bibliothèque privée de scénarios.</p></header>
-  <div class="scenario-columns">
-    <section class="scenario-panel"><h2>Créer un scénario</h2>
-      <form method="post">{% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}<div class="scenario-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
-        <button type="submit">+ Créer le scénario</button>
-      </form>
-    </section>
-    <section class="scenario-panel"><h2>Bibliothèque</h2>
+  <header class="scenario-heading">
+    <div><p class="scenario-eyebrow">THE MOIRA PROTOCOL / NARRATION</p><h1>Mes Scénarios</h1><p>Construisez vos aventures, scène après scène.</p></div>
+    <button type="button" id="scenario-new-toggle" aria-expanded="{% if form.errors %}true{% else %}false{% endif %}" aria-controls="scenario-create-form">+ Nouveau scénario</button>
+  </header>
+  <section id="scenario-create-form" class="scenario-create panel" {% if not form.errors %}hidden{% endif %}>
+    <div class="scenario-section-heading"><h2>Créer un scénario</h2><button type="button" id="scenario-new-close" aria-label="Fermer le formulaire">✕</button></div>
+    <form method="post">{% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="scenario-form-grid">
+        {% for field in form %}
+        <div class="scenario-field{% if field.name == 'summary' %} scenario-field-wide{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="scenario-submit" type="submit">Créer le scénario →</button>
+    </form>
+  </section>
+  <section class="scenario-library">
+    <div class="scenario-section-heading"><h2>Bibliothèque</h2><span class="scenario-count">{{ scenarios|length }} scénario{{ scenarios|length|pluralize }}</span></div>
+    {% if scenarios %}
+      <div class="scenario-grid">
       {% for scenario in scenarios %}
-        <a class="scenario-entry" href="{% url 'scenarios:detail' scenario.pk %}"><strong>{{ scenario.title }}</strong><span>{{ scenario.folder.name|default:"Sans dossier" }} · {{ scenario.updated_at|date:"d/m/Y" }}</span></a>
-      {% empty %}<p>Aucun scénario pour le moment.</p>{% endfor %}
-    </section>
-  </div>
+        <a class="scenario-card" href="{% url 'scenarios:detail' scenario.pk %}">
+          <span class="scenario-card-top"><span>SCÉNARIO / {{ forloop.counter|stringformat:"02d" }}</span><span aria-hidden="true">↗</span></span>
+          <strong>{{ scenario.title }}</strong>
+          {% if scenario.summary %}<span class="scenario-summary">{{ scenario.summary|truncatechars:140 }}</span>{% endif %}
+          <span class="scenario-card-meta">{{ scenario.folder.name|default:"Sans dossier" }} <span aria-hidden="true">·</span> {{ scenario.updated_at|date:"d/m/Y" }}</span>
+        </a>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="scenario-empty">
+        <span class="scenario-empty-icon" aria-hidden="true">▤</span>
+        <h3>Votre bibliothèque est vide</h3>
+        <p>Créez votre premier scénario pour commencer à organiser vos scènes et embranchements.</p>
+        <button type="button" id="scenario-empty-new">+ Créer mon premier scénario</button>
+      </div>
+    {% endif %}
+  </section>
 </section>
 <style>
-.scenario-page{padding:clamp(16px,3vw,38px);max-width:1250px;margin:auto}.scenario-page-heading{margin-bottom:26px}.scenario-page-heading>p:first-child{color:#d95358;letter-spacing:.16em}.scenario-page-heading h1{font-size:clamp(28px,4vw,48px);margin:4px 0}.scenario-columns{display:grid;grid-template-columns:minmax(260px,1fr) minmax(280px,1.4fr);gap:20px}.scenario-panel{background:#1c2836;border:1px solid #536072;border-top:3px solid #bd3038;padding:22px}.scenario-panel h2{margin-top:0}.scenario-field{margin-bottom:16px}.scenario-field label{display:block;margin-bottom:6px}.scenario-field input,.scenario-field select,.scenario-field textarea{display:block;width:100%;padding:10px;background:#0e1722;color:#fff;border:1px solid #6c7888}.scenario-panel button{background:#b82b34;border:0;color:#fff;padding:11px 18px;cursor:pointer}.scenario-entry{display:flex;flex-direction:column;gap:5px;padding:15px;margin:9px 0;border:1px solid #647083;color:inherit;text-decoration:none}.scenario-entry:hover,.scenario-entry:focus-visible{border-color:#e64a52;background:#263648}.scenario-entry span{font-size:.9em;opacity:.8}@media(max-width:760px){.scenario-columns{grid-template-columns:1fr}}
+.scenario-page{max-width:1400px;margin:0 auto;padding:clamp(12px,2vw,28px);color:var(--tmp-ink)}
+.scenario-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin:0 0 32px}
+.scenario-heading h1{margin:0 0 10px}.scenario-heading p{margin:0}
+.scenario-eyebrow{font-size:12px;letter-spacing:.16em;color:var(--tmp-red);font-weight:700;margin-bottom:10px!important}
+.scenario-heading>button,.scenario-submit,.scenario-empty button{background:var(--tmp-red);color:#fff;border:1px solid var(--tmp-red);padding:12px 18px}
+.scenario-heading>button:hover,.scenario-submit:hover,.scenario-empty button:hover{background:#851619;color:#fff}
+.scenario-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--tmp-red);padding-bottom:12px;margin-bottom:18px}
+.scenario-section-heading h2{margin:0}.scenario-section-heading>button{padding:4px 10px}
+.scenario-count{font-weight:700;color:#625d56}
+.scenario-create{margin-bottom:30px;background:var(--tmp-panel);padding:22px}
+.scenario-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.scenario-field-wide{grid-column:1/-1}
+.scenario-field label{display:block;font-weight:700;margin-bottom:6px}
+.scenario-field input,.scenario-field select,.scenario-field textarea{width:100%;display:block;background:#fffdf8;color:var(--tmp-ink);border:1px solid var(--tmp-line);padding:10px}
+.scenario-field textarea{min-height:90px}
+.scenario-submit{margin-top:18px}
+.scenario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px}
+.scenario-card{background:var(--tmp-panel);border:1px solid var(--tmp-line);border-top:3px solid var(--tmp-red);padding:19px;display:flex;flex-direction:column;gap:13px;min-height:195px;transition:border-color .15s,box-shadow .15s}
+.scenario-card:hover,.scenario-card:focus-visible{border-color:var(--tmp-red);box-shadow:0 5px 16px #00000012;color:var(--tmp-ink)}
+.scenario-card-top{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;font-weight:700;color:#7b272b}
+.scenario-card-top span:last-child{font-size:21px}
+.scenario-card strong{font:25px/1.2 Anton,Impact,sans-serif;text-transform:uppercase}
+.scenario-summary{font-size:15px}
+.scenario-card-meta{margin-top:auto;border-top:1px solid var(--tmp-line);padding-top:10px;color:#625d56;font-size:13px}
+.scenario-empty{background:var(--tmp-panel);border:1px dashed var(--tmp-line);padding:42px 24px;text-align:center}
+.scenario-empty-icon{display:block;font-size:42px;color:var(--tmp-red)}.scenario-empty h3{margin:6px 0}.scenario-empty p{max-width:520px;margin:8px auto 22px}
+@media(max-width:700px){.scenario-form-grid{grid-template-columns:1fr}.scenario-heading{align-items:start}.scenario-card{min-height:165px}}
 </style>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const panel=document.getElementById("scenario-create-form"),toggle=document.getElementById("scenario-new-toggle");
+ function show(open){panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));if(open)panel.querySelector("input")?.focus();}
+ toggle.addEventListener("click",()=>show(panel.hidden));
+ document.getElementById("scenario-new-close").addEventListener("click",()=>show(false));
+ document.getElementById("scenario-empty-new")?.addEventListener("click",()=>show(true));
+});
+</script>
 {% endblock %}
