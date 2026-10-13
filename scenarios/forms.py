@@ -6,6 +6,7 @@ from .models import Scenario
 class ScenarioForm(forms.ModelForm):
     class Meta:
         model = Scenario
+        labels = {"title": "Titre", "summary": "Description", "folder": "Dossier"}
         fields = ("title", "summary", "folder")
         widgets = {"summary": forms.Textarea(attrs={"rows": 3})}
 
