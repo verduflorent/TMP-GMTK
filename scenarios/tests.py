@@ -12,6 +12,7 @@ class ScenarioLibraryTests(TestCase):
         User = get_user_model()
         cls.alice = User.objects.create_user(username="alice_scenario", password="test-password-123")
         cls.bob = User.objects.create_user(username="bob_scenario", password="test-password-123")
+        cls.alice_folder = UserFolder.objects.create(owner=cls.alice, name="E1")
         cls.bob_folder = UserFolder.objects.create(owner=cls.bob, name="Privé")
         cls.bob_scenario = Scenario.objects.create(owner=cls.bob, title="Secret")
 
@@ -33,6 +34,17 @@ class ScenarioLibraryTests(TestCase):
         scenario = Scenario.objects.get(title="Épisode 3")
         self.assertEqual(scenario.owner, self.alice)
         self.assertEqual(response.url, reverse("scenarios:detail", args=[scenario.pk]))
+
+    def test_create_scenario_in_own_folder(self):
+        self.client.force_login(self.alice)
+        response = self.client.post(
+            reverse("scenarios:library"),
+            {"title": "Épisode 0", "summary": "", "folder": str(self.alice_folder.pk)},
+        )
+        self.assertEqual(response.status_code, 302)
+        scenario = Scenario.objects.get(title="Épisode 0")
+        self.assertEqual(scenario.owner, self.alice)
+        self.assertEqual(scenario.folder, self.alice_folder)
 
     def test_cannot_attach_another_users_folder(self):
         self.client.force_login(self.alice)
