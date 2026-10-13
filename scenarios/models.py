@@ -75,7 +75,7 @@ class SceneBlock(models.Model):
         indexes = [models.Index(fields=["scene", "rank"])]
         constraints = [
             models.CheckConstraint(
-                condition=(Q(kind="transition", target_scene__isnull=False) | ~Q(kind="transition", target_scene__isnull=False)),
+                condition=(Q(kind="transition", target_scene__isnull=False) | (~Q(kind="transition") & Q(target_scene__isnull=True))),
                 name="scene_block_transition_target",
             )
         ]
