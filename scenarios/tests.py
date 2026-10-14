@@ -101,3 +101,49 @@ class ScenarioLibraryTests(TestCase):
         response = self.client.post(url, data=json.dumps(payload), content_type="application/json")
         self.assertEqual(response.status_code, 400)
         self.assertFalse(Scene.objects.filter(scenario=own).exists())
+
+    def test_repeated_save_preserves_scene_and_block_ids(self):
+        import json
+        import uuid
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Stable")
+        scene_id = str(uuid.uuid4())
+        block_id = str(uuid.uuid4())
+        url = reverse("scenarios:document", args=[scenario.pk])
+        payload = {
+            "content_revision": 0, "layout_revision": 0,
+            "scenes": [{
+                "id": scene_id, "title": "Début", "position": {"x": 5, "y": 8},
+                "blocks": [{"id": block_id, "kind": "narration", "text": "Version 1", "target": None}],
+            }],
+        }
+        first = self.client.post(url, json.dumps(payload), content_type="application/json")
+        self.assertEqual(first.status_code, 200, first.content)
+        payload["content_revision"] = 1
+        payload["layout_revision"] = 1
+        payload["scenes"][0]["blocks"][0]["text"] = "Version 2"
+        second = self.client.post(url, json.dumps(payload), content_type="application/json")
+        self.assertEqual(second.status_code, 200, second.content)
+        self.assertEqual(Scene.objects.filter(scenario=scenario).count(), 1)
+        self.assertEqual(SceneBlock.objects.filter(scene__scenario=scenario).count(), 1)
+        self.assertEqual(str(SceneBlock.objects.get(scene__scenario=scenario).pk), block_id)
+        self.assertEqual(SceneBlock.objects.get(pk=block_id).text, "Version 2")
+        self.assertEqual(self.client.get(url).json()["scenes"][0]["blocks"][0]["id"], block_id)
+
+    def test_invalid_update_does_not_erase_existing_scene(self):
+        import json
+        import uuid
+        from .models import Scene
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Stable")
+        scene = Scene.objects.create(scenario=scenario, title="À préserver")
+        url = reverse("scenarios:document", args=[scenario.pk])
+        payload = {"content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(scene.pk), "title": "Erreur", "position": {"x": 0, "y": 0},
+             "blocks": [{"kind": "transition", "target": str(uuid.uuid4())}]}
+        ]}
+        result = self.client.post(url, json.dumps(payload), content_type="application/json")
+        self.assertEqual(result.status_code, 400)
+        scene.refresh_from_db()
+        self.assertEqual(scene.title, "À préserver")
