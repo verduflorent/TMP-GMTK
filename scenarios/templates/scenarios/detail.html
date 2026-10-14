@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ scenario.title }} — TMP-GMTK{% endblock %}
 {% block content %}
-<section class="story-workspace" data-url="{% url 'scenarios:document' scenario.pk %}">
+<section class="story-workspace" data-url="{% url 'scenarios:document' scenario.pk %}" data-layout-url="{% url 'scenarios:layout' scenario.pk %}">
   <div class="story-top"><div><a href="{% url 'scenarios:library' %}">← Mes Scénarios</a><h1>{{ scenario.title }}</h1><p>{{ scenario.summary|default:"Éditeur narratif" }}</p></div><div class="story-actions"><button id="add-scene">+ Scène</button><button id="save-story">Enregistrer</button><span id="save-status" role="status">Chargement…</span></div></div>
   <div class="story-layout"><div class="story-board-shell"><div class="story-board-toolbar"><button id="board-zoom-in" title="Zoom avant">＋</button><button id="board-zoom-out" title="Zoom arrière">－</button><button id="board-fit">Tout afficher</button><button id="board-focus">Voir la scène</button><button id="board-link">Relier deux scènes</button><button id="board-open">Ouvrir la scène</button><button id="board-cancel" hidden>Annuler</button><span id="board-help">Molette : défilement · Ctrl + molette : zoom</span></div><div id="story-board" aria-label="Tableau narratif"></div></div></div><div id="scene-overlay" class="scene-overlay" hidden><section class="scene-dialog" role="dialog" aria-modal="true" aria-labelledby="scene-dialog-title" tabindex="-1"><div class="scene-dialog-header"><div><span class="scene-eyebrow">THE MOIRA PROTOCOL / SCÈNE</span><h2 id="scene-dialog-title">Scène</h2></div><div class="scene-dialog-actions"><button id="scene-read-mode">Lecture MJ</button><button id="scene-close">✕ Fermer</button></div></div><div id="scene-read-view" hidden></div><aside class="story-editor"><h2>Édition de la scène</h2><label for="scene-select">Sélectionner</label><select id="scene-select"></select><label for="scene-title">Titre</label><input id="scene-title" maxlength="120"><label for="scene-text">Narration</label><textarea id="scene-text" rows="12"></textarea><h3>Rubriques contextuelles</h3><div id="story-contexts"></div><div class="story-context-actions"><button data-kind="interpretation">+ Interprétation</button><button data-kind="splash">+ Splash</button><button data-kind="gm_note">+ Note MJ</button><button data-kind="encounter">+ Rencontre</button></div><h3>Transitions</h3><div id="story-links"></div><label for="target-scene">Vers la scène</label><select id="target-scene"></select><button id="add-transition">+ Relier</button><button id="delete-scene">Supprimer la scène</button></aside></section></div>
 </section>
@@ -12,7 +12,7 @@
 <script>
 document.addEventListener("DOMContentLoaded",async()=>{
 const root=document.querySelector(".story-workspace"),endpoint=root.dataset.url,$=id=>document.getElementById(id);
-let scenes=[],contentRevision=0,layoutRevision=0,selected=null,dirty=false,linkSource=null,readerMode=false,activeContext=null,previousFocus=null;
+let scenes=[],contentRevision=0,layoutRevision=0,selected=null,dirty=false,layoutDirty=false,linkSource=null,readerMode=false,activeContext=null,previousFocus=null;
 const uuid=()=>crypto.randomUUID();
 const csrf=()=>document.cookie.split("; ").find(c=>c.startsWith("csrftoken="))?.split("=")[1]||"";
 const cy=cytoscape({container:$("story-board"),elements:[],layout:{name:"preset"},style:[
@@ -21,6 +21,7 @@ const cy=cytoscape({container:$("story-board"),elements:[],layout:{name:"preset"
 {selector:"edge",style:{"curve-style":"bezier","width":3,"line-color":"#c5353b","target-arrow-shape":"triangle","target-arrow-color":"#c5353b","label":"data(label)","font-size":11,"color":"#fff","text-background-color":"#263345","text-background-opacity":1,"text-background-padding":4}}
 ],minZoom:.3,maxZoom:2.0,userZoomingEnabled:false});
 function mark(){dirty=true;$("save-status").textContent="Modifications non enregistrées";$("save-status").classList.add("dirty")}
+function markLayout(){layoutDirty=true;$("save-status").textContent="Positions non enregistrées";$("save-status").classList.add("dirty");}
 function blocks(scene,kind){return scene.blocks.filter(b=>b.kind===kind)}
 function chosen(){return scenes.find(s=>s.id===selected)}
 function redraw(fit=false){const zoom=cy.zoom(),pan=cy.pan();cy.elements().remove();cy.add([...scenes.map(s=>({data:{id:s.id,label:(s.narrative_order+1)+" · "+s.title+"\n"+s.blocks.filter(b=>b.kind!=="narration"&&b.kind!=="transition").map(b=>({interpretation:"◉",splash:"▧",gm_note:"✎",encounter:"⚔"})[b.kind]||"•").join(" ")},position:s.position})),...scenes.flatMap(s=>blocks(s,"transition").map(b=>({data:{id:b.id,source:s.id,target:b.target,label:b.text||"Continuer"}})))]);cy.layout({name:"preset",fit:false}).run();if(fit)cy.fit(undefined,40);else{cy.zoom(zoom);cy.pan(pan);}if(selected)cy.getElementById(selected).select();}
@@ -59,9 +60,28 @@ document.querySelectorAll(".story-context-actions button").forEach(btn=>btn.oncl
 $("add-transition").onclick=()=>{const s=chosen(),target=$("target-scene").value;if(!s||!target)return;s.blocks.push({id:uuid(),kind:"transition",text:"Continuer",rank:s.blocks.length,target});mark();refresh();redraw();};
 cy.on("tap","node",e=>{if(linkSource){createLink(linkSource,e.target.id());return;}select(e.target.id());});
 cy.on("dbltap","node",e=>{if(!linkSource)openScene(e.target.id());});
-cy.on("dragfree","node",e=>{const s=scenes.find(x=>x.id===e.target.id());if(s){s.position={x:e.target.position("x"),y:e.target.position("y")};mark();}});
-$("save-story").onclick=async()=>{const button=$("save-story");button.disabled=true;$("save-status").textContent="Enregistrement…";try{const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({scenes,content_revision:contentRevision,layout_revision:layoutRevision})});const result=await response.json();if(!response.ok)throw Error(result.error||"Échec de la sauvegarde");contentRevision=result.content_revision;layoutRevision=result.layout_revision;dirty=false;$("save-status").textContent="Enregistré ✓";$("save-status").classList.remove("dirty");}catch(err){$("save-status").textContent=err.message;$("save-status").classList.add("dirty");}finally{button.disabled=false;}};
-window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});
+cy.on("dragfree","node",e=>{const s=scenes.find(x=>x.id===e.target.id());if(s){s.position={x:e.target.position("x"),y:e.target.position("y")};markLayout();}});
+$("save-story").onclick=async()=>{
+const button=$("save-story");button.disabled=true;
+$("save-status").textContent="Enregistrement…";
+try{
+ if(dirty){
+  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({scenes,content_revision:contentRevision,layout_revision:layoutRevision})});
+  const result=await response.json();
+  if(!response.ok)throw Error(result.error||"Échec de la sauvegarde");
+  contentRevision=result.content_revision;layoutRevision=result.layout_revision;
+  dirty=false;layoutDirty=false;
+ }else if(layoutDirty){
+  const response=await fetch(root.dataset.layoutUrl,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({layout_revision:layoutRevision,positions:scenes.map(s=>({id:s.id,x:s.position.x,y:s.position.y}))})});
+  const result=await response.json();
+  if(!response.ok)throw Error(result.error||"Échec de la sauvegarde des positions");
+  layoutRevision=result.layout_revision;layoutDirty=false;
+ }
+ $("save-status").textContent="Enregistré ✓";$("save-status").classList.remove("dirty");
+}catch(err){$("save-status").textContent=err.message;$("save-status").classList.add("dirty");}
+finally{button.disabled=false;}
+};
+window.addEventListener("beforeunload",e=>{if(dirty||layoutDirty){e.preventDefault();e.returnValue="";}});
 try{const response=await fetch(endpoint);if(!response.ok)throw Error("Chargement impossible");const data=await response.json();scenes=data.scenes;contentRevision=data.content_revision;layoutRevision=data.layout_revision;selected=scenes[0]?.id||null;refresh();redraw(true);$("save-status").textContent="Prêt";}catch(err){$("save-status").textContent=err.message;}
 });
 </script>
