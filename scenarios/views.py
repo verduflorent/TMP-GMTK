@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from .forms import ScenarioForm
+from toolkit.models import Encounter
 from .models import Scenario
 
 
@@ -32,4 +33,5 @@ def library(request):
 def detail(request, pk):
     scenario = get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
     scenes = scenario.scenes.all()
-    return render(request, "scenarios/detail.html", {"scenario": scenario, "scenes": scenes})
+    encounters = list(Encounter.objects.filter(owner=request.user).order_by("name").values("id", "name"))
+    return render(request, "scenarios/detail.html", {"scenario": scenario, "scenes": scenes, "encounter_options": encounters})
