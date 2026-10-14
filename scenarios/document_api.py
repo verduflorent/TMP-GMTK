@@ -147,3 +147,41 @@ def document(request, pk):
         locked.save(update_fields=["content_revision", "layout_revision", "updated_at"])
     return JsonResponse({"ok": True, "content_revision": expected_content + 1,
                          "layout_revision": expected_layout + 1})
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_layout(request, pk):
+    """Update positions only; a concurrent narration edit is not a layout conflict."""
+    get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
+    try:
+        data = json.loads(request.body)
+        revision = data["layout_revision"]
+        positions = data["positions"]
+        if type(revision) is not int or revision < 0 or not isinstance(positions, list) or len(positions) > 500:
+            raise ValueError("Révision ou positions invalides.")
+        parsed = {}
+        for item in positions:
+            scene_id = uuid.UUID(str(item["id"]))
+            x, y = float(item["x"]), float(item["y"])
+            if not math.isfinite(x) or not math.isfinite(y) or max(abs(x), abs(y)) > 100000:
+                raise ValueError("Coordonnées invalides.")
+            if scene_id in parsed:
+                raise ValueError("Scène dupliquée.")
+            parsed[scene_id] = (x, y)
+    except (ValueError, KeyError, TypeError, OverflowError, AttributeError) as exc:
+        return error(str(exc))
+    with transaction.atomic():
+        scenario = Scenario.objects.select_for_update().get(pk=pk, owner=request.user)
+        if scenario.layout_revision != revision:
+            return error("Les positions ont changé dans un autre onglet.", 409,
+                         layout_revision=scenario.layout_revision)
+        found = list(Scene.objects.filter(scenario=scenario, pk__in=parsed))
+        if len(found) != len(parsed):
+            return error("Une scène est absente de ce scénario.")
+        for scene in found:
+            scene.x, scene.y = parsed[scene.pk]
+        Scene.objects.bulk_update(found, ["x", "y"])
+        scenario.layout_revision = F("layout_revision") + 1
+        scenario.save(update_fields=["layout_revision", "updated_at"])
+    return JsonResponse({"ok": True, "layout_revision": revision + 1})
