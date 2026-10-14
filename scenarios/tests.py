@@ -226,3 +226,38 @@ class ScenarioLibraryTests(TestCase):
         ]}
         self.assertEqual(self.client.post(doc_url, json.dumps(content), content_type="application/json").status_code, 409)
         self.assertEqual(Scene.objects.filter(scenario=scenario).count(), 1)
+
+    def test_encounter_reference_roundtrip_and_foreign_rejection(self):
+        import json
+        from .models import SceneBlock
+        from toolkit.models import Encounter
+        self.client.force_login(self.alice)
+        own = Scenario.objects.create(owner=self.alice, title="Scénario lié")
+        scene = own.scenes.create(title="Combat")
+        encounter = Encounter.objects.create(owner=self.alice, name="Escarmouche")
+        foreign = Encounter.objects.create(owner=self.bob, name="Secret combat")
+        url = reverse("scenarios:document", args=[own.pk])
+        base = {"mode": "content", "content_revision": 0, "layout_revision": 0,
+                "scenes": [{"id": str(scene.pk), "title": "Combat",
+                            "position": {"x": 0, "y": 0}, "blocks": [
+                                {"kind": "encounter", "text": "Déclencheur",
+                                 "payload": {"encounter_id": encounter.pk}}]}]}
+        response = self.client.post(url, json.dumps(base), content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.client.get(url).json()["scenes"][0]["blocks"][0]["payload"],
+                         {"encounter_id": encounter.pk})
+        base["content_revision"] = 1
+        base["scenes"][0]["blocks"][0]["payload"] = {"encounter_id": foreign.pk}
+        denied = self.client.post(url, json.dumps(base), content_type="application/json")
+        self.assertEqual(denied.status_code, 400)
+        self.assertEqual(SceneBlock.objects.get(scene=scene).payload["encounter_id"], encounter.pk)
+
+    def test_encounter_options_are_private(self):
+        from toolkit.models import Encounter
+        Encounter.objects.create(owner=self.alice, name="Escarmouche")
+        Encounter.objects.create(owner=self.bob, name="Secret combat")
+        own = Scenario.objects.create(owner=self.alice, title="Mes combats")
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("scenarios:detail", args=[own.pk]))
+        self.assertContains(response, "Escarmouche")
+        self.assertNotContains(response, "Secret combat")
