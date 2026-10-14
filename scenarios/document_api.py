@@ -1,5 +1,6 @@
 import json
 import math
+import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -57,10 +58,10 @@ def document(request, pk):
         ids = [str(s["id"]) for s in items]
         if len(set(ids)) != len(ids):
             raise ValueError("Identifiants de scènes dupliqués.")
-        import uuid
         ids = [str(uuid.UUID(v)) for v in ids]
         parsed = []
         total_blocks = 0
+        block_ids = set()
         for rank, raw in enumerate(items):
             title = str(raw["title"]).strip()
             if not title or len(title) > 120:
@@ -75,6 +76,10 @@ def document(request, pk):
             total_blocks += len(blocks)
             parsed_blocks = []
             for i, b in enumerate(blocks):
+                block_id = str(uuid.UUID(str(b.get("id") or uuid.uuid4())))
+                if block_id in block_ids:
+                    raise ValueError("Identifiants de rubriques dupliqués.")
+                block_ids.add(block_id)
                 kind = b["kind"]
                 if kind not in SceneBlock.Kind.values:
                     raise ValueError("Type de rubrique inconnu.")
@@ -87,7 +92,7 @@ def document(request, pk):
                         raise ValueError("Transition vers une scène absente.")
                 elif target is not None:
                     raise ValueError("Cible interdite pour cette rubrique.")
-                parsed_blocks.append((kind, text, target, i))
+                parsed_blocks.append((block_id, kind, text, target, i))
             parsed.append((ids[rank], title, x, y, parsed_blocks))
         if total_blocks > 5000:
             raise ValueError("Limite de rubriques dépassée.")
@@ -98,20 +103,45 @@ def document(request, pk):
         if (locked.content_revision, locked.layout_revision) != (expected_content, expected_layout):
             return error("Le scénario a été modifié ailleurs. Recharge la page avant de sauvegarder.", 409,
                          content_revision=locked.content_revision, layout_revision=locked.layout_revision)
-        # Replacement is atomic: no partial graph if validation fails.
-        locked.scenes.all().delete()
+        # Preserve existing scene and block primary keys. Remove only deleted
+        # objects, then update/create changed records inside the same transaction.
         from uuid import UUID
-        Scene.objects.bulk_create([
-            Scene(id=UUID(sid), scenario=locked, title=title, narrative_rank=i, x=x, y=y)
-            for i, (sid, title, x, y, blocks) in enumerate(parsed)
-        ])
-        from uuid import uuid4
-        SceneBlock.objects.bulk_create([
-            SceneBlock(id=uuid4(), scene_id=UUID(sid), kind=kind, text=text, rank=rank,
-                       target_scene_id=UUID(target) if target else None)
-            for sid, title, x, y, blocks in parsed
-            for kind, text, target, rank in blocks
-        ])
+        existing_scenes = {str(obj.pk): obj for obj in locked.scenes.all()}
+        wanted_scene_ids = set(ids)
+        # Delete removed scenes before inserting new transitions.
+        for sid, obj in existing_scenes.items():
+            if sid not in wanted_scene_ids:
+                obj.delete()
+        for rank, (sid, title, x, y, blocks) in enumerate(parsed):
+            obj = existing_scenes.get(sid)
+            if obj is None:
+                Scene.objects.create(id=UUID(sid), scenario=locked, title=title,
+                                     narrative_rank=rank, x=x, y=y)
+            else:
+                obj.title = title
+                obj.narrative_rank = rank
+                obj.x, obj.y = x, y
+                obj.save(update_fields=["title", "narrative_rank", "x", "y", "updated_at"])
+        existing_blocks = {
+            str(obj.pk): obj for obj in SceneBlock.objects.filter(scene__scenario=locked)
+        }
+        wanted_blocks = {bid for sid, title, x, y, blocks in parsed
+                         for bid, kind, text, target, rank in blocks}
+        for bid, obj in existing_blocks.items():
+            if bid not in wanted_blocks:
+                obj.delete()
+        # All scenes now exist, so forward transitions can be inserted safely.
+        for sid, title, x, y, blocks in parsed:
+            for bid, kind, text, target, rank in blocks:
+                obj = existing_blocks.get(bid)
+                values = dict(scene_id=UUID(sid), kind=kind, text=text,
+                              rank=rank, target_scene_id=UUID(target) if target else None)
+                if obj is None:
+                    SceneBlock.objects.create(id=UUID(bid), **values)
+                else:
+                    for field, value in values.items():
+                        setattr(obj, field, value)
+                    obj.save(update_fields=list(values))
         locked.content_revision = F("content_revision") + 1
         locked.layout_revision = F("layout_revision") + 1
         locked.save(update_fields=["content_revision", "layout_revision", "updated_at"])
