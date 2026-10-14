@@ -29,7 +29,7 @@ function refresh(){const opts=scenes.map(s=>new Option((s.narrative_order+1)+" �
 function openScene(id,read=false){if(!scenes.some(s=>s.id===id))return;previousFocus=document.activeElement;selected=id;readerMode=read;activeContext=null;refresh();redraw();$("scene-overlay").hidden=false;renderSceneModal();document.querySelector(".scene-dialog").focus();}
 function closeScene(){if($("scene-overlay").hidden)return;$("scene-overlay").hidden=true;readerMode=false;activeContext=null;if(previousFocus?.isConnected)previousFocus.focus();else $("board-open").focus();}
 // Tiny, deliberately non-HTML TMP markup. All narrative content is rendered as text nodes.
-const TMP_PATTERN=/\\|(T1|T2|TXT)\\|([\\s\\S]*?)\\|\\/\\1\\|/g;
+const TMP_PATTERN = new RegExp(String.raw`\\|(T1|T2|TXT)\\|([\\s\\S]*?)\\|/\\1\\|`, "g");
 function renderNarrative(container,source){
  container.replaceChildren();let cursor=0,match;
  TMP_PATTERN.lastIndex=0;
@@ -42,12 +42,12 @@ function applyNarrativeFormat(kind){
  const start=input.selectionStart,end=input.selectionEnd,value=input.value;
  let left=start,right=end;
  // If cursor is inside an existing TMP tag, convert the whole tagged passage.
- const regex=/\\|(T1|T2|TXT)\\|([\\s\\S]*?)\\|\\/\\1\\|/g;let match;
+ const regex=new RegExp(TMP_PATTERN.source,"g");let match;
  while((match=regex.exec(value))!==null){
   if(start>=match.index&&end<=regex.lastIndex){left=match.index;right=regex.lastIndex;break;}
  }
  const selection=value.slice(left,right);
- const existing=selection.match(/^\\|(T1|T2|TXT)\\|([\\s\\S]*?)\\|\\/\\1\\|$/);
+ const existing=selection.match(new RegExp("^"+TMP_PATTERN.source+"$"));
  const inner=existing?existing[2]:selection;
  if(!inner.trim()){input.focus();return;}
  const replacement="|"+kind+"|"+inner+"|/"+kind+"|";
@@ -58,7 +58,7 @@ function applyNarrativeFormat(kind){
 document.querySelectorAll("[data-format]").forEach(button=>button.addEventListener("click",()=>applyNarrativeFormat(button.dataset.format)));
 function renderSceneModal(){const s=chosen();if(!s){closeScene();return;}$("scene-dialog-title").textContent=s.title;$("scene-read-mode").textContent=readerMode?"Modifier la scène":"Lecture MJ";$("scene-read-view").hidden=!readerMode;document.querySelector(".story-editor").hidden=readerMode;if(!readerMode)return;
 const body=$("scene-read-view");body.replaceChildren();
-const narrative=document.createElement("div");narrative.className="scene-read-narration";narrative.textContent=blocks(s,"narration").map(b=>b.text).join("\n\n")||"Aucune narration rédigée.";body.append(narrative);
+const narrative=document.createElement("div");narrative.className="scene-read-narration";renderNarrative(narrative,blocks(s,"narration").map(b=>b.text).join("\n\n"));body.append(narrative);
 const contexts=s.blocks.filter(b=>!["narration","transition"].includes(b.kind));const bar=document.createElement("div");bar.className="scene-read-contexts";
 for(const b of contexts){const button=document.createElement("button");button.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;button.setAttribute("aria-pressed",String(activeContext===b.id));button.onclick=()=>{activeContext=activeContext===b.id?null:b.id;renderSceneModal();};bar.append(button);}body.append(bar);
 const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^https:\/\//i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";body.append(panel);}
