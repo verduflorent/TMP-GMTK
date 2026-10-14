@@ -76,12 +76,26 @@
 .story-board-toolbar #board-help{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;padding:0;border:0}
 @media(max-width:600px){.story-board-toolbar{top:10px;left:10px;max-width:calc(100% - 20px);gap:5px}.story-board-toolbar .story-tool-group button{width:34px;height:36px;min-height:36px;font-size:21px}}
 </style>
+{{ encounter_options|json_script:"scenario-encounters" }}
 <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded",async()=>{
 const root=document.querySelector(".story-workspace"),endpoint=root.dataset.url,$=id=>document.getElementById(id);
 let scenes=[],contentRevision=0,layoutRevision=0,selected=null,dirty=false,layoutDirty=false,linkSource=null,readerMode=false,activeContext=null,previousFocus=null;
 const uuid=()=>crypto.randomUUID();
+const encounterOptions=JSON.parse(document.getElementById("scenario-encounters").textContent);
+const encounterLoadUrl=id=>"/encounters/"+encodeURIComponent(id)+"/load/";
+function encounterChoice(block,container){
+ const label=document.createElement("label");label.textContent="Rencontre préparée";
+ const select=document.createElement("select");
+ select.append(new Option("— Aucune Rencontre —",""));
+ for(const item of encounterOptions)select.append(new Option(item.name,String(item.id)));
+ const current=block.payload?.encounter_id;
+ if(current&&!encounterOptions.some(e=>e.id===current))select.append(new Option("Rencontre supprimée ou inaccessible",String(current)));
+ select.value=current?String(current):"";
+ select.onchange=()=>{block.payload=select.value?{encounter_id:Number(select.value)}:{};mark();};
+ container.append(label,select);
+}
 const csrf=()=>document.cookie.split("; ").find(c=>c.startsWith("csrftoken="))?.split("=")[1]||"";
 const cy=cytoscape({container:$("story-board"),elements:[],layout:{name:"preset"},style:[
 {selector:"node",style:{"shape":"round-rectangle","width":238,"height":108,"background-color":"#f5f1e7","border-width":2,"border-color":"#c4beb2","label":"data(label)","color":"#242526","font-family":"Rajdhani, sans-serif","font-size":18,"font-weight":"bold","text-wrap":"wrap","text-max-width":214,"text-valign":"center","text-halign":"center","overlay-opacity":0,"shadow-blur":9,"shadow-color":"#000000","shadow-opacity":0.28,"shadow-offset-x":2,"shadow-offset-y":5}},
@@ -107,7 +121,7 @@ function markLayout(){layoutDirty=true;$("save-status").textContent="Positions n
 function blocks(scene,kind){return scene.blocks.filter(b=>b.kind===kind)}
 function chosen(){return scenes.find(s=>s.id===selected)}
 function redraw(fit=false){const zoom=cy.zoom(),pan=cy.pan();cy.elements().remove();cy.add([...scenes.map(s=>({data:{id:s.id,label:(s.narrative_order+1)+" · "+s.title+"\n"+s.blocks.filter(b=>b.kind!=="narration"&&b.kind!=="transition").map(b=>({interpretation:"◉",splash:"▧",gm_note:"✎",encounter:"⚔"})[b.kind]||"•").join(" ")},position:s.position})),...scenes.flatMap(s=>blocks(s,"transition").map(b=>({data:{id:b.id,source:s.id,target:b.target,label:b.text||"Continuer"}})))]);cy.layout({name:"preset",fit:false}).run();if(fit)cy.fit(undefined,40);else{cy.zoom(zoom);cy.pan(pan);}if(selected)cy.getElementById(selected).select();}
-function refresh(){const opts=scenes.map(s=>new Option((s.narrative_order+1)+" · "+s.title,s.id));$("scene-select").replaceChildren(...opts);$("target-scene").replaceChildren(...scenes.map(s=>new Option(s.title,s.id)));const s=chosen();$("scene-title").disabled=!s;$("scene-text").disabled=!s;$("delete-scene").disabled=!s;if(!s){$("scene-title").value="";$("scene-text").value="";$("story-contexts").replaceChildren();$("story-links").replaceChildren();return;}$("scene-select").value=s.id;$("scene-title").value=s.title;$("scene-text").value=blocks(s,"narration")[0]?.text||"";const context=$("story-contexts");context.replaceChildren();for(const b of s.blocks.filter(b=>!["narration","transition"].includes(b.kind))){const details=document.createElement("details");details.className="story-context";const summary=document.createElement("summary");summary.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;const input=document.createElement("textarea");input.value=b.text;input.rows=4;input.oninput=()=>{b.text=input.value;mark()};const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};details.append(summary,input,del);context.append(details);}const links=$("story-links");links.replaceChildren();for(const b of blocks(s,"transition")){const line=document.createElement("div");line.className="story-link";const label=document.createElement("span");label.textContent=(b.text||"Continuer")+" → "+(scenes.find(x=>x.id===b.target)?.title||"?");const del=document.createElement("button");del.textContent="×";del.setAttribute("aria-label","Supprimer la transition");del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};line.append(label,del);links.append(line);}}
+function refresh(){const opts=scenes.map(s=>new Option((s.narrative_order+1)+" · "+s.title,s.id));$("scene-select").replaceChildren(...opts);$("target-scene").replaceChildren(...scenes.map(s=>new Option(s.title,s.id)));const s=chosen();$("scene-title").disabled=!s;$("scene-text").disabled=!s;$("delete-scene").disabled=!s;if(!s){$("scene-title").value="";$("scene-text").value="";$("story-contexts").replaceChildren();$("story-links").replaceChildren();return;}$("scene-select").value=s.id;$("scene-title").value=s.title;$("scene-text").value=blocks(s,"narration")[0]?.text||"";const context=$("story-contexts");context.replaceChildren();for(const b of s.blocks.filter(b=>!["narration","transition"].includes(b.kind))){const details=document.createElement("details");details.className="story-context";const summary=document.createElement("summary");summary.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;const input=document.createElement("textarea");input.value=b.text;input.rows=4;input.oninput=()=>{b.text=input.value;mark()};const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};details.append(summary);if(b.kind==="encounter")encounterChoice(b,details);details.append(input,del);context.append(details);}const links=$("story-links");links.replaceChildren();for(const b of blocks(s,"transition")){const line=document.createElement("div");line.className="story-link";const label=document.createElement("span");label.textContent=(b.text||"Continuer")+" → "+(scenes.find(x=>x.id===b.target)?.title||"?");const del=document.createElement("button");del.textContent="×";del.setAttribute("aria-label","Supprimer la transition");del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};line.append(label,del);links.append(line);}}
 const READER_STYLE_KEY="tmp-scenarios-reader-style-v1";
 const stylePresets={
  tmp:{preset:"tmp",font:"rajdhani",t1:32,t2:24,txt:18,leading:1.8},
@@ -180,7 +194,21 @@ const body=$("scene-read-view");body.replaceChildren();
 const narrative=document.createElement("div");narrative.className="scene-read-narration";renderNarrative(narrative,blocks(s,"narration").map(b=>b.text).join("\n\n"));body.append(narrative);
 const contexts=s.blocks.filter(b=>!["narration","transition"].includes(b.kind));const bar=document.createElement("div");bar.className="scene-read-contexts";
 for(const b of contexts){const button=document.createElement("button");button.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;button.setAttribute("aria-pressed",String(activeContext===b.id));button.onclick=()=>{activeContext=activeContext===b.id?null:b.id;renderSceneModal();};bar.append(button);}body.append(bar);
-const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^https:\/\//i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";body.append(panel);}
+const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^https:\/\//i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";
+ if(active.kind==="encounter"&&active.payload?.encounter_id){
+  const encounter=encounterOptions.find(e=>e.id===active.payload.encounter_id);
+  const info=document.createElement("p");info.textContent=encounter?"Rencontre liée : "+encounter.name:"Rencontre indisponible";
+  panel.append(info);
+  if(encounter){
+   const form=document.createElement("form");form.method="post";form.action=encounterLoadUrl(encounter.id);
+   form.target="_self";
+   const token=document.createElement("input");token.type="hidden";token.name="csrfmiddlewaretoken";token.value=csrf();
+   const button=document.createElement("button");button.type="submit";button.textContent="Charger sur la Table de jeu";
+   button.onclick=e=>{if(!confirm("Charger cette Rencontre sur la Table de jeu ?"))e.preventDefault();};
+   form.append(token,button);panel.append(form);
+  }
+ }
+ body.append(panel);}
 const links=blocks(s,"transition");if(links.length){const heading=document.createElement("h3");heading.textContent="Transitions";body.append(heading);const list=document.createElement("div");list.className="scene-read-links";for(const b of links){const target=scenes.find(x=>x.id===b.target);if(!target)continue;const button=document.createElement("button");button.textContent=(b.text||"Continuer")+" → "+target.title;button.onclick=()=>{selected=target.id;activeContext=null;refresh();redraw();renderSceneModal();};list.append(button);}body.append(list);}}
 $("board-open").onclick=()=>{if(selected)openScene(selected);};
 $("scene-close").onclick=closeScene;
