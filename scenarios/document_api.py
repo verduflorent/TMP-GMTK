@@ -160,7 +160,7 @@ def document(request, pk):
                 obj.delete()
         # All scenes now exist, so forward transitions can be inserted safely.
         for sid, title, x, y, blocks in parsed:
-            for bid, kind, text, target, rank in blocks:
+            for bid, kind, text, target, rank, payload in blocks:
                 obj = existing_blocks.get(bid)
                 values = dict(scene_id=UUID(sid), kind=kind, text=text, payload=payload,
                               rank=rank, target_scene_id=UUID(target) if target else None)
