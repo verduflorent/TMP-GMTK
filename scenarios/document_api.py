@@ -44,6 +44,7 @@ def document(request, pk):
         return error("JSON invalide.")
     if not isinstance(data, dict) or not isinstance(data.get("scenes"), list):
         return error("Format de scénario invalide.")
+    content_only = data.get("mode") == "content"
     items = data["scenes"]
     if len(items) > 500:
         return error("Limite de 500 scènes dépassée.")
@@ -100,7 +101,10 @@ def document(request, pk):
         return error(str(exc))
     with transaction.atomic():
         locked = Scenario.objects.select_for_update().get(pk=scenario.pk, owner=request.user)
-        if (locked.content_revision, locked.layout_revision) != (expected_content, expected_layout):
+        existing_ids = set(str(pk) for pk in locked.scenes.values_list("pk", flat=True))
+        structural = existing_ids != set(ids)
+        conflict = locked.content_revision != expected_content or (structural and locked.layout_revision != expected_layout) or (not content_only and locked.layout_revision != expected_layout)
+        if conflict:
             return error("Le scénario a été modifié ailleurs. Recharge la page avant de sauvegarder.", 409,
                          content_revision=locked.content_revision, layout_revision=locked.layout_revision)
         # Preserve existing scene and block primary keys. Remove only deleted
@@ -120,8 +124,11 @@ def document(request, pk):
             else:
                 obj.title = title
                 obj.narrative_rank = rank
-                obj.x, obj.y = x, y
-                obj.save(update_fields=["title", "narrative_rank", "x", "y", "updated_at"])
+                if not content_only:
+                    obj.x, obj.y = x, y
+                    obj.save(update_fields=["title", "narrative_rank", "x", "y", "updated_at"])
+                else:
+                    obj.save(update_fields=["title", "narrative_rank", "updated_at"])
         existing_blocks = {
             str(obj.pk): obj for obj in SceneBlock.objects.filter(scene__scenario=locked)
         }
@@ -143,10 +150,14 @@ def document(request, pk):
                         setattr(obj, field, value)
                     obj.save(update_fields=list(values))
         locked.content_revision = F("content_revision") + 1
-        locked.layout_revision = F("layout_revision") + 1
-        locked.save(update_fields=["content_revision", "layout_revision", "updated_at"])
+        if structural or not content_only:
+            locked.layout_revision = F("layout_revision") + 1
+            locked.save(update_fields=["content_revision", "layout_revision", "updated_at"])
+        else:
+            locked.save(update_fields=["content_revision", "updated_at"])
+        resulting_layout = locked.layout_revision if isinstance(locked.layout_revision, int) else expected_layout + 1
     return JsonResponse({"ok": True, "content_revision": expected_content + 1,
-                         "layout_revision": expected_layout + 1})
+                         "layout_revision": resulting_layout})
 
 
 @login_required
