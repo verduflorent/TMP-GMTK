@@ -39,6 +39,17 @@
 .scene-read-contexts button{border-color:#bdb4a8}
 .scene-read-links button{background:#fdfbf6;border-left:3px solid #a7191c}
 @media(max-width:800px){.story-board-toolbar #board-help{display:none}.story-top{align-items:start}#story-board{height:65vh;min-height:410px}}
+
+/* TMP narrative board — paper workspace, visual pass 02.
+   Deliberately presentation-only: no graph, zoom or persistence changes. */
+.story-layout{border:1px solid #8d8981;border-top:3px solid var(--tmp-ink);border-radius:3px;box-shadow:0 4px 16px #20222312;background:var(--tmp-paper)}
+.story-board-shell{background:var(--tmp-paper);box-shadow:inset 0 0 0 8px #eeeae1}
+#story-board{background-color:var(--tmp-paper);background-image:radial-gradient(#d7d1c5 0.8px,transparent 0.8px);background-size:26px 26px}
+.story-board-toolbar{top:18px;left:18px;right:18px;gap:6px}
+.story-board-toolbar button{background:#fbf9f3;border:1px solid #bcb6ab;box-shadow:0 1px 3px #20222316;color:var(--tmp-ink)}
+.story-board-toolbar button:hover{background:#fffdf8;border-color:var(--tmp-red)}
+.story-board-toolbar #board-link{border-color:#bd9998}
+.story-board-toolbar #board-help{background:#eeeae1;color:#605a52;border:1px solid #d3cbbf;box-shadow:none}
 </style>
 <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 <script>
