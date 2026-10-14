@@ -147,3 +147,40 @@ class ScenarioLibraryTests(TestCase):
         self.assertEqual(result.status_code, 400)
         scene.refresh_from_db()
         self.assertEqual(scene.title, "À préserver")
+
+    def test_layout_save_preserves_narration_and_content_revision(self):
+        import json
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Disposition")
+        scene = Scene.objects.create(scenario=scenario, title="Début")
+        block = SceneBlock.objects.create(scene=scene, kind="narration", text="Texte précieux")
+        url = reverse("scenarios:layout", args=[scenario.pk])
+        payload = {"layout_revision": 0, "positions": [{"id": str(scene.pk), "x": 45, "y": -20}]}
+        result = self.client.post(url, json.dumps(payload), content_type="application/json")
+        self.assertEqual(result.status_code, 200, result.content)
+        scenario.refresh_from_db()
+        scene.refresh_from_db()
+        block.refresh_from_db()
+        self.assertEqual(scenario.content_revision, 0)
+        self.assertEqual(scenario.layout_revision, 1)
+        self.assertEqual((scene.x, scene.y), (45, -20))
+        self.assertEqual(block.text, "Texte précieux")
+        self.assertEqual(self.client.post(url, json.dumps(payload), content_type="application/json").status_code, 409)
+
+    def test_layout_rejects_foreign_scene_without_partial_update(self):
+        import json
+        from .models import Scene
+        self.client.force_login(self.alice)
+        own = Scenario.objects.create(owner=self.alice, title="Disposition")
+        own_scene = Scene.objects.create(scenario=own, title="Propre")
+        foreign_scene = Scene.objects.create(scenario=self.bob_scenario, title="Privée")
+        payload = {"layout_revision": 0, "positions": [
+            {"id": str(own_scene.pk), "x": 80, "y": 90},
+            {"id": str(foreign_scene.pk), "x": 10, "y": 20},
+        ]}
+        result = self.client.post(reverse("scenarios:layout", args=[own.pk]),
+                                  json.dumps(payload), content_type="application/json")
+        self.assertEqual(result.status_code, 400)
+        own_scene.refresh_from_db()
+        self.assertEqual((own_scene.x, own_scene.y), (0, 0))
