@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from .models import Scenario, Scene, SceneBlock
+from toolkit.models import Encounter
 
 
 def serialize(scenario):
@@ -21,7 +22,8 @@ def serialize(scenario):
             {"id": str(s.id), "title": s.title, "narrative_order": s.narrative_rank,
              "position": {"x": s.x, "y": s.y},
              "blocks": [{"id": str(b.id), "kind": b.kind, "text": b.text, "rank": b.rank,
-                         "target": str(b.target_scene_id) if b.target_scene_id else None}
+                         "target": str(b.target_scene_id) if b.target_scene_id else None,
+                         "payload": b.payload}
                         for b in s.blocks.all()]}
             for s in scenes
         ],
@@ -63,6 +65,7 @@ def document(request, pk):
         parsed = []
         total_blocks = 0
         block_ids = set()
+        encounter_ids = set()
         for rank, raw in enumerate(items):
             title = str(raw["title"]).strip()
             if not title or len(title) > 120:
@@ -93,8 +96,26 @@ def document(request, pk):
                         raise ValueError("Transition vers une scène absente.")
                 elif target is not None:
                     raise ValueError("Cible interdite pour cette rubrique.")
-                parsed_blocks.append((block_id, kind, text, target, i))
+                payload = b.get("payload") or {}
+                if not isinstance(payload, dict):
+                    raise ValueError("Données de rubrique invalides.")
+                if kind == "encounter":
+                    raw_encounter = payload.get("encounter_id")
+                    if raw_encounter not in (None, ""):
+                        if type(raw_encounter) is not int or raw_encounter <= 0:
+                            raise ValueError("Identifiant de Rencontre invalide.")
+                        encounter_ids.add(raw_encounter)
+                        payload = {"encounter_id": raw_encounter}
+                    else:
+                        payload = {}
+                else:
+                    payload = {}
+                parsed_blocks.append((block_id, kind, text, target, i, payload))
             parsed.append((ids[rank], title, x, y, parsed_blocks))
+        if encounter_ids != set(Encounter.objects.filter(
+            owner=request.user, pk__in=encounter_ids
+        ).values_list("pk", flat=True)):
+            raise ValueError("Rencontre introuvable ou inaccessible.")
         if total_blocks > 5000:
             raise ValueError("Limite de rubriques dépassée.")
     except (KeyError, TypeError, ValueError, OverflowError) as exc:
@@ -133,7 +154,7 @@ def document(request, pk):
             str(obj.pk): obj for obj in SceneBlock.objects.filter(scene__scenario=locked)
         }
         wanted_blocks = {bid for sid, title, x, y, blocks in parsed
-                         for bid, kind, text, target, rank in blocks}
+                         for bid, kind, text, target, rank, payload in blocks}
         for bid, obj in existing_blocks.items():
             if bid not in wanted_blocks:
                 obj.delete()
@@ -141,7 +162,7 @@ def document(request, pk):
         for sid, title, x, y, blocks in parsed:
             for bid, kind, text, target, rank in blocks:
                 obj = existing_blocks.get(bid)
-                values = dict(scene_id=UUID(sid), kind=kind, text=text,
+                values = dict(scene_id=UUID(sid), kind=kind, text=text, payload=payload,
                               rank=rank, target_scene_id=UUID(target) if target else None)
                 if obj is None:
                     SceneBlock.objects.create(id=UUID(bid), **values)
