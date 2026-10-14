@@ -66,11 +66,21 @@ const button=$("save-story");button.disabled=true;
 $("save-status").textContent="Enregistrement…";
 try{
  if(dirty){
-  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({scenes,content_revision:contentRevision,layout_revision:layoutRevision})});
+  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({mode:"content",scenes,content_revision:contentRevision,layout_revision:layoutRevision})});
   const result=await response.json();
   if(!response.ok)throw Error(result.error||"Échec de la sauvegarde");
-  contentRevision=result.content_revision;layoutRevision=result.layout_revision;
-  dirty=false;layoutDirty=false;
+  contentRevision=result.content_revision;
+  dirty=false;
+  if(result.layout_revision!==layoutRevision){
+   // Structural edits advance both revisions. Pure text edits never reset pending positions.
+   layoutRevision=result.layout_revision;
+  }
+  if(layoutDirty){
+   const positionsResponse=await fetch(root.dataset.layoutUrl,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({layout_revision:layoutRevision,positions:scenes.map(s=>({id:s.id,x:s.position.x,y:s.position.y}))})});
+   const positionsResult=await positionsResponse.json();
+   if(!positionsResponse.ok)throw Error(positionsResult.error||"Échec de sauvegarde des positions");
+   layoutRevision=positionsResult.layout_revision;layoutDirty=false;
+  }
  }else if(layoutDirty){
   const response=await fetch(root.dataset.layoutUrl,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrf()},body:JSON.stringify({layout_revision:layoutRevision,positions:scenes.map(s=>({id:s.id,x:s.position.x,y:s.position.y}))})});
   const result=await response.json();
