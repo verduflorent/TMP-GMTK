@@ -184,3 +184,45 @@ class ScenarioLibraryTests(TestCase):
         self.assertEqual(result.status_code, 400)
         own_scene.refresh_from_db()
         self.assertEqual((own_scene.x, own_scene.y), (0, 0))
+
+    def test_content_only_does_not_revert_concurrent_layout(self):
+        import json
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Séparation")
+        scene = Scene.objects.create(scenario=scenario, title="Début")
+        block = SceneBlock.objects.create(scene=scene, kind="narration", text="Ancien")
+        layout_url = reverse("scenarios:layout", args=[scenario.pk])
+        doc_url = reverse("scenarios:document", args=[scenario.pk])
+        move = {"layout_revision": 0, "positions": [{"id": str(scene.pk), "x": 300, "y": 400}]}
+        self.assertEqual(self.client.post(layout_url, json.dumps(move), content_type="application/json").status_code, 200)
+        content = {"mode": "content", "content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(scene.pk), "title": "Début modifié", "position": {"x": 0, "y": 0},
+             "blocks": [{"id": str(block.pk), "kind": "narration", "text": "Nouveau", "target": None}]}
+        ]}
+        response = self.client.post(doc_url, json.dumps(content), content_type="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        scenario.refresh_from_db()
+        scene.refresh_from_db()
+        block.refresh_from_db()
+        self.assertEqual((scenario.content_revision, scenario.layout_revision), (1, 1))
+        self.assertEqual((scene.x, scene.y), (300, 400))
+        self.assertEqual(block.text, "Nouveau")
+
+    def test_content_only_structural_change_checks_layout_revision(self):
+        import json
+        import uuid
+        from .models import Scene
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Structure")
+        scene = Scene.objects.create(scenario=scenario, title="Début")
+        layout_url = reverse("scenarios:layout", args=[scenario.pk])
+        self.client.post(layout_url, json.dumps({"layout_revision": 0, "positions": [
+            {"id": str(scene.pk), "x": 2, "y": 3}]}), content_type="application/json")
+        doc_url = reverse("scenarios:document", args=[scenario.pk])
+        content = {"mode": "content", "content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(scene.pk), "title": "Début", "position": {"x": 0, "y": 0}, "blocks": []},
+            {"id": str(uuid.uuid4()), "title": "Ajout", "position": {"x": 4, "y": 5}, "blocks": []}
+        ]}
+        self.assertEqual(self.client.post(doc_url, json.dumps(content), content_type="application/json").status_code, 409)
+        self.assertEqual(Scene.objects.filter(scenario=scenario).count(), 1)
