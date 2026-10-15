@@ -135,7 +135,7 @@ Clavier : alternative complète à glisser-déposer, connexion par sélection so
 Petits écrans : liste navigable et lecteur en priorité ; pas d'obligation de déplacer une carte au doigt.
 Zoom/viewport sont des préférences d'interface ; hors contenu portable V1.
 
-## 8. Contrat portable .tmpcamp
+## 8. Contrat portable .tmps
 
 ZIP non chiffré contenant exactement manifest.json et scenario.json en V1. Pas de fichiers graphiques embarqués, pas d'HTML autonome.
 Compression autorisée : Store ou Deflate. Version format indépendante de version Django, version applicative et migrations.
