@@ -8,7 +8,7 @@
   </header>
   <section id="scenario-create-form" class="scenario-create panel" {% if not form.errors %}hidden{% endif %}>
     <div class="scenario-section-heading"><h2>Créer un scénario</h2><button type="button" id="scenario-new-close" aria-label="Fermer le formulaire">✕</button></div>
-    <form method="post">{% csrf_token %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="creation_key" value="{{ creation_key }}">
       {{ form.non_field_errors }}
       <div class="scenario-form-grid">
         {% for field in form %}
