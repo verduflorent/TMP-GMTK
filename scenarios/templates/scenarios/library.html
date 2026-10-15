@@ -31,6 +31,7 @@
           {% if scenario.summary %}<span class="scenario-summary">{{ scenario.summary|truncatechars:140 }}</span>{% endif %}
           <span class="scenario-card-meta">{{ scenario.folder.name|default:"Sans dossier" }} <span aria-hidden="true">·</span> {{ scenario.updated_at|date:"d/m/Y" }}</span>
         </a>
+        <a class="scenario-export" href="{% url 'scenarios:export' scenario.pk %}" aria-label="Exporter {{ scenario.title }} au format TMPS">↓ Exporter .tmps</a>
       {% endfor %}
       </div>
     {% else %}
@@ -71,6 +72,7 @@
 .scenario-empty{background:var(--tmp-panel);border:1px dashed var(--tmp-line);padding:42px 24px;text-align:center}
 .scenario-empty-icon{display:block;font-size:42px;color:var(--tmp-red)}.scenario-empty h3{margin:6px 0}.scenario-empty p{max-width:520px;margin:8px auto 22px}
 @media(max-width:700px){.scenario-form-grid{grid-template-columns:1fr}.scenario-heading{align-items:start}.scenario-card{min-height:165px}}
+.scenario-export{display:inline-block;margin-top:-10px;margin-bottom:8px;padding:8px 12px;border:1px solid var(--tmp-line);background:var(--tmp-panel);font-weight:700;color:var(--tmp-ink);text-decoration:none}.scenario-export:hover,.scenario-export:focus-visible{border-color:var(--tmp-red);color:var(--tmp-red)}
 </style>
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
