@@ -378,3 +378,31 @@ class ScenarioLibraryTests(TestCase):
         Scenario.objects.get(owner=self.alice, title="Temporaire").delete()
         self.assertEqual(self.client.post(url, data).status_code, 409)
         self.assertFalse(Scenario.objects.filter(owner=self.alice, title="Temporaire").exists())
+
+    def test_export_private_scenario_roundtrip_without_encounter_pk(self):
+        from .archive.codec import decode_archive
+        from .models import Scene, SceneBlock
+        from toolkit.models import Encounter
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Épisode Export")
+        first = Scene.objects.create(scenario=scenario, title="Arrivée")
+        second = Scene.objects.create(scenario=scenario, title="Sortie")
+        SceneBlock.objects.create(scene=first, kind="narration", text="|T1| ARRIVÉE |/T1|")
+        SceneBlock.objects.create(scene=first, kind="transition", text="Continuer", target_scene=second)
+        encounter = Encounter.objects.create(owner=self.alice, name="Patrouille")
+        SceneBlock.objects.create(scene=second, kind="encounter", text="Combat", payload={"encounter_id": encounter.pk})
+        response = self.client.get(reverse("scenarios:export", args=[scenario.pk]))
+        self.assertEqual(response.status_code, 200, response.content[:500])
+        self.assertIn(".tmps", response["Content-Disposition"])
+        manifest, doc = decode_archive(response.content)
+        self.assertEqual(manifest["document_id"], str(scenario.document_id))
+        self.assertEqual(len(doc["scenes"]), 2)
+        self.assertEqual(len(doc["blocks"]), 3)
+        self.assertEqual(doc["resources"]["encounters"][0]["name"], "Patrouille")
+        self.assertNotIn("encounter_id", str(doc))
+        self.assertEqual(Scenario.objects.get(pk=scenario.pk).content_revision, 0)
+
+    def test_export_other_users_scenario_returns_404(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("scenarios:export", args=[self.bob_scenario.pk]))
+        self.assertEqual(response.status_code, 404)
