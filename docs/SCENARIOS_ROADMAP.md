@@ -1,7 +1,7 @@
 # Mes Scénarios — Roadmap officielle
 
 Version 1.0 — 9 octobre 2026. Branche exclusive : feature/scenario-editor.
-Statut : plan de référence à valider ; tous les lots sont NON COMMENCÉS. Aucune implémentation autorisée avant validation des documents.
+Statut : plan historique de référence ; état de réalisation réévalué le 15 octobre 2026. Des implémentations exploratoires existent sur la branche, sans que les critères d'acceptation de tous les lots soient satisfaits.
 
 Références : [architecture](SCENARIOS_ARCHITECTURE.md), [décisions](SCENARIOS_DECISIONS.md), [phase 0](SCENARIOS_PHASE0.md).
 Les sept phases validées sont conservées. Toute extension de périmètre doit être consignée ; aucune modification du moteur de règles.
@@ -28,11 +28,30 @@ Référence historique 195 tests ; vérification locale du 9 octobre 2026 : 195 
 | 5 — Illustrations et intégrations TMP | 4 | Six rubriques utilisables ; médias HTTPS réutilisables et références privées ; round-trip des dépendances explicitement non autonomes. |
 | 6 — Stabilisation et livraison | 4 | Recette complète, sécurité/accessibilité/non-régression et PostgreSQL validés ; livraison prête, déploiement non implicite. |
 
-Total : 32 lots. Premier lot : **P0-01 — Jeu de données et protocole commun**.
+Total : 32 lots. **Aucun lot marqué ACCEPTÉ par défaut** : les états ci-dessous distinguent implémentation observable et critères de sortie encore à prouver. Prochaine priorité : P1-04 (sécurité et révisions), puis P1-02/P4 (archive portable).
 
 Fin phase 2 : éditeur/lecteur interne utilisable. Fin phase 3 : essai MJ représentatif du tableau. **MVP livrable à la fin de phase 6**, avec six rubriques, tableau, archives narratives et retrait explicite. Le déploiement de production nécessite une autorisation distincte.
 
 Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les relations actives sont finalisées en phase 5. Il n'est donc pas nécessaire d'attendre la phase 5 pour valider les archives, et cette phase répète le round-trip complet.
+
+## Audit d'avancement — 15 octobre 2026
+
+Cet état reflète les fichiers présents sur `feature/scenario-editor` et les retours de tests/essais MJ de la conversation ; ce n'est **pas** une validation exhaustive de chaque critère de lot. Les mentions historiques « aucune implémentation » dans les objectifs/hors périmètre sont conservées comme cahier des charges initial, pas comme description de l'état actuel.
+
+| Statut | Nombre de lots |
+|---|---:|
+| ACCEPTÉ | 0 |
+| À VALIDER | 8 |
+| EN COURS | 9 |
+| NON COMMENCÉ | 15 |
+
+**Réalisé et observé :** prototype Cytoscape, application `scenarios`, migration initiale, bibliothèque privée, éditeur/lecteur, transitions, sauvegardes avec révisions, positions séparées, balises narratives TMP, options de lecture, liaison des Rencontres existantes et chargement explicite vers la Table. Le MJ a confirmé les parcours principaux et le retour des tests au vert après le correctif du tuple `payload`.
+
+**Non démontré / incomplet :** protocole comparatif P0 et accessibilité clavier, contrat .tmpcamp 1.0, idempotence, concurrence PostgreSQL, granularité des écritures, gestion des conflits avec récupération, duplication, ordre narratif explicite, renommage/suppression bibliothèque, tests de charge, médiathèque, références manquantes et tests de livraison.
+
+**Risque bloquant avant rédaction intensive :** la sauvegarde du document reste une synchronisation complète des rubriques. Le code de validation/écriture doit être audité pour les transitions et références étrangères, les suppressions concurrentes et les sauvegardes partiellement interrompues. Ne pas assimiler une suite de tests verte à une garantie d'absence de perte de données.
+
+**Ordre de reprise :** P1-04 sécurisation + tests PostgreSQL/CSRF, P1-02 contrat d'archive, P4-01 à P4-05 export/import, P2-05 duplication, puis écarts ergonomiques et P6. Aucune modification de PR2 ni déploiement implicite.
 
 ## Phase 0 — Prototype graphique isolé
 
@@ -40,7 +59,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P0-01 — Jeu de données et protocole commun
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Préparer une comparaison reproductible sans application Django.
 - **Comportements :** Fixtures déterministes 50/100, 200/400, 500/1000 scènes/connexions ; contrats de carte et gestes ; référence de machine et versions.
 - **Fichiers/modules envisagés :** Futur répertoire isolé de prototypes hors runtime applicatif ; docs/SCENARIOS_PHASE0.md ; rapport de référence.
@@ -53,7 +72,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P0-02 — Prototype Cytoscape.js
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Mesurer l'expérience Cytoscape représentative.
 - **Comportements :** Cartes compactes, icônes, ouverture, déplacement, flèches via edgehandles, modification/suppression, zoom/pan ; commandes clavier équivalentes ; sauvegarde/rechargement local fictif.
 - **Fichiers/modules envisagés :** Prototype isolé Cytoscape et adaptateur du jeu commun ; fiche de mesures.
@@ -66,7 +85,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P0-03 — Prototype React Flow
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Mesurer l'expérience React Flow à périmètre égal.
 - **Comportements :** Même cartes/icônes/actions et mêmes connexions ; panneau fictif ; clavier ; sérialisation du contrat commun ; build local reproductible.
 - **Fichiers/modules envisagés :** Prototype isolé React Flow ; composants de cartes et adaptateur ; fiche de mesures.
@@ -79,7 +98,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P0-04 — Décision graphique argumentée
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Choisir un moteur sur preuves.
 - **Comportements :** Essais avec MJ, mesures, scores pondérés et critères éliminatoires ; consigner version et stratégie d'intégration.
 - **Fichiers/modules envisagés :** docs/SCENARIOS_PHASE0.md ; SCENARIOS_DECISIONS.md ; rapport comparatif.
@@ -96,7 +115,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P1-01 — Contrat de données avant migrations
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Figer les invariants relationnels et d'écriture.
 - **Comportements :** Identités locales/portables, transitions canoniques, ordre, cycles/boucles, cascades, propriété, conflits, idempotence et suppression des dépendances.
 - **Fichiers/modules envisagés :** docs/SCENARIOS_ARCHITECTURE.md ; SCENARIOS_DECISIONS.md ; tableau des commandes/revisions.
@@ -122,7 +141,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P1-03 — Application et modèles relationnels
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Installer le socle isolé.
 - **Comportements :** Scenario/Scene/SceneBlock, namespace, migrations additives, index et contraintes simples ; owner via utilisateur existant ; dossier partagé.
 - **Fichiers/modules envisagés :** scenarios/{apps,models,urls}.py ; config/settings.py et urls.py ; migrations scenarios ; tests/models/.
@@ -135,7 +154,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P1-04 — Services de permissions et revisions
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Sécuriser toute future mutation.
 - **Comportements :** Résolution owner, validation transversale, transactions/verrou Scenario, revisions, réponses 409, idempotence des créations ; CSRF et méthodes.
 - **Fichiers/modules envisagés :** scenarios/services/{mutations,revisions}.py ; formulaires/schémas de commandes ; tests/services/.
@@ -148,7 +167,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P1-05 — Bibliothèque privée et dossiers
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Livrer création et organisation privées.
 - **Comportements :** Liste paginée, créer/renommer/résumé, affecter/retirer dossier ; suppression ordinaire explicite ; retour sûr ; lien navigation.
 - **Fichiers/modules envisagés :** scenarios/views/library.py, forms.py ; templates/scenarios/library.html ; base.html ; actions dossiers uniquement si correction ciblée requise.
@@ -165,7 +184,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P2-01 — Scènes : création, ordre, suppression
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Gérer des scènes sans dépendre du graphe.
 - **Comportements :** Créer/renommer, permutation narrative, supprimer avec aperçu liens affectés ; coordonnées initiales indépendantes et UUID stables.
 - **Fichiers/modules envisagés :** scenarios/services/mutations.py ; views/editor.py ; templates/scenarios/editor.html ; tests/scenes/.
@@ -178,7 +197,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P2-02 — Rubriques textuelles modulaires
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Éditer Narration, Interprétation et Note MJ.
 - **Comportements :** Ajouter, modifier, supprimer, réordonner ; plusieurs rubriques identiques ; texte brut/payload typé ; erreurs conservant la saisie.
 - **Fichiers/modules envisagés :** scenarios/forms.py ; services/mutations.py ; fragments de rubriques ; tests/blocks/.
@@ -191,7 +210,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P2-03 — Transitions canoniques
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Relier les scènes depuis les rubriques.
 - **Comportements :** Créer/modifier libellé et destination/supprimer ; connexions multiples, cycles et boucles selon contrat ; picker privé.
 - **Fichiers/modules envisagés :** SceneBlock.target_scene ; services/mutations.py ; formulaires transition ; tests/transitions/.
@@ -204,7 +223,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P2-04 — Lecteur MJ distinct
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Jouer la narration sans commandes d'édition.
 - **Comportements :** Scène lisible, dialogues, rubriques secondaires à la demande, transitions, retour liste/tableau quand disponible, focus.
 - **Fichiers/modules envisagés :** scenarios/views/reader.py ; templates/scenarios/reader.html ; CSS/JS lecteur.
@@ -234,7 +253,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P3-01 — Adaptateur et lecture du tableau
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Afficher les données réelles dans le moteur retenu.
 - **Comportements :** Endpoint résumé privé, cartes compactes, ordre/icônes, sélection et ouverture rapide ; pagination bibliothèque ; chargement scène ciblé.
 - **Fichiers/modules envisagés :** views/board.py ; static/scenarios/js/graph_adapter.js ; template board ; build local si React retenu.
@@ -247,7 +266,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P3-02 — Déplacement et sauvegarde groupée
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Persister les positions sans perdre les gestes.
 - **Comportements :** Drag/pan/zoom, commandes clavier, batch drag-end, file une requête en vol, état enregistré/échec/conflit et reprise.
 - **Fichiers/modules envisagés :** services/revisions.py ; endpoints disposition ; board.js/save_queue.js ; tests/layout/.
@@ -260,7 +279,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P3-03 — Flèches interactives et synchronisation
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Créer/modifier les transitions depuis le tableau.
 - **Comportements :** Geste connexion, libellé, cible, suppression ; création rubrique canonique ; synchronisation panneau/lecteur et rollback visuel.
 - **Fichiers/modules envisagés :** Adaptateur moteur ; commandes transitions existantes ; board.js ; tests navigateur graph/.
@@ -385,7 +404,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P5-02 — Splash dans éditeur et lecteur
 
-- **État :** NON COMMENCÉ.
+- **État :** EN COURS.
 - **Objectif :** Afficher les illustrations avec dégradation sûre.
 - **Comportements :** Picker médiathèque, rubrique Splash, grand format, lazy loading, no-referrer, alt/fallback ; icône carte.
 - **Fichiers/modules envisagés :** Fragments Splash ; lecteur/éditeur ; résumés board ; tests navigateur media/.
@@ -398,7 +417,7 @@ Les schémas de médias/références sont anticipés en phase 1/4 ; l'UI et les 
 
 ### P5-03 — Références de Rencontres privées
 
-- **État :** NON COMMENCÉ.
+- **État :** À VALIDER.
 - **Objectif :** Référencer TMP sans modifier les règles ni la Table.
 - **Comportements :** Picker owner-scoped, rubrique Rencontre, consultation ; association explicite d'un descripteur importé ; fallback suppression.
 - **Fichiers/modules envisagés :** SceneBlock.encounter, migration si nécessaire ; vues/formulaires ; toolkit.Encounter en lecture ; tests/integrations/.
