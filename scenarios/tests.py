@@ -29,7 +29,7 @@ class ScenarioLibraryTests(TestCase):
 
     def test_create_scenario_for_authenticated_user(self):
         self.client.force_login(self.alice)
-        response = self.client.post(reverse("scenarios:library"), {"title": "Épisode 3", "summary": "Essai", "folder": ""})
+        response = self.client.post(reverse("scenarios:library"), {"title": "Épisode 3", "summary": "Essai", "folder": "", "creation_key": "00000000-0000-4000-8000-000000000001"})
         self.assertEqual(response.status_code, 302)
         scenario = Scenario.objects.get(title="Épisode 3")
         self.assertEqual(scenario.owner, self.alice)
@@ -39,7 +39,7 @@ class ScenarioLibraryTests(TestCase):
         self.client.force_login(self.alice)
         response = self.client.post(
             reverse("scenarios:library"),
-            {"title": "Épisode 0", "summary": "", "folder": str(self.alice_folder.pk)},
+            {"title": "Épisode 0", "summary": "", "folder": str(self.alice_folder.pk), "creation_key": "00000000-0000-4000-8000-000000000002"},
         )
         self.assertEqual(response.status_code, 302)
         scenario = Scenario.objects.get(title="Épisode 0")
@@ -48,7 +48,7 @@ class ScenarioLibraryTests(TestCase):
 
     def test_cannot_attach_another_users_folder(self):
         self.client.force_login(self.alice)
-        response = self.client.post(reverse("scenarios:library"), {"title": "Intrusion", "folder": str(self.bob_folder.pk)})
+        response = self.client.post(reverse("scenarios:library"), {"title": "Intrusion", "folder": str(self.bob_folder.pk), "creation_key": "00000000-0000-4000-8000-000000000003"})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Scenario.objects.filter(title="Intrusion").exists())
 
@@ -349,3 +349,32 @@ class ScenarioLibraryTests(TestCase):
         layout_url = reverse("scenarios:layout", args=[scenario.pk])
         self.assertEqual(self.client.post(document_url, "{}", content_type="text/plain").status_code, 415)
         self.assertEqual(self.client.post(layout_url, "{}", content_type="text/plain").status_code, 415)
+
+    def test_scenario_creation_idempotent_replay_and_conflict(self):
+        import uuid
+        from .models import ScenarioCreateReceipt
+        self.client.force_login(self.alice)
+        key = str(uuid.uuid4())
+        data = {"title": "Rejoué", "summary": "", "folder": "", "creation_key": key}
+        url = reverse("scenarios:library")
+        first = self.client.post(url, data)
+        second = self.client.post(url, data)
+        self.assertEqual(first.status_code, 302, first.content)
+        self.assertEqual(second.status_code, 302, second.content)
+        self.assertEqual(first.url, second.url)
+        self.assertEqual(Scenario.objects.filter(owner=self.alice, title="Rejoué").count(), 1)
+        self.assertEqual(ScenarioCreateReceipt.objects.filter(owner=self.alice, key=key).count(), 1)
+        changed = dict(data, title="Autre contenu")
+        self.assertEqual(self.client.post(url, changed).status_code, 409)
+        self.assertFalse(Scenario.objects.filter(owner=self.alice, title="Autre contenu").exists())
+
+    def test_creation_receipt_survives_deleted_scenario(self):
+        import uuid
+        self.client.force_login(self.alice)
+        key = str(uuid.uuid4())
+        data = {"title": "Temporaire", "summary": "", "folder": "", "creation_key": key}
+        url = reverse("scenarios:library")
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        Scenario.objects.get(owner=self.alice, title="Temporaire").delete()
+        self.assertEqual(self.client.post(url, data).status_code, 409)
+        self.assertFalse(Scenario.objects.filter(owner=self.alice, title="Temporaire").exists())
