@@ -91,4 +91,4 @@ Après P0-04, renseigner moteur/version et rapport ; après P1-01/P1-02, fermer 
 
 ## Décision complémentaire — 15 octobre 2026
 
-**D-34 — VALIDÉ : extension d'archive `.tmps` (THE MOIRA PROTOCOL Stories).** Elle remplace l'extension provisoire `.tmpcamp`. L'archive reste un conteneur ZIP avec manifeste et données JSON versionnées ; l'extension n'est pas une preuve de validité. Le format peut accueillir à terme un scénario ou un ensemble de scénarios, mais le MVP n'exporte qu'un scénario à la fois. Aucune compatibilité d'import avec une ancienne extension n'est nécessaire tant qu'aucune archive n'a été distribuée.
+**D-37 — VALIDÉ : extension d'archive `.tmps` (THE MOIRA PROTOCOL Stories).** Elle remplace l'extension provisoire `.tmpcamp`. L'archive reste un conteneur ZIP avec manifeste et données JSON versionnées ; l'extension n'est pas une preuve de validité. Le format peut accueillir à terme un scénario ou un ensemble de scénarios, mais le MVP n'exporte qu'un scénario à la fois. Aucune compatibilité d'import avec une ancienne extension n'est nécessaire tant qu'aucune archive n'a été distribuée.
