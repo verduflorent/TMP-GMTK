@@ -24,7 +24,7 @@ Référence historique 195 tests ; vérification locale du 9 octobre 2026 : 195 
 | 1 — Fondations Django | 5 | Contrats figés avant migrations ; modèles isolés, bibliothèque privée et services de revision opérationnels ; aucune écriture sans contrôle. |
 | 2 — Éditeur narratif et lecteur MJ | 5 | Scénario ramifié éditable/jouable ; persistance et conflits validés pour toutes mutations ; duplication indépendante. |
 | 3 — Tableau narratif connecté | 4 | Tableau connecté fiable ; déplacements et flèches restaurés après rechargement ; seuils graphiques mesurés. |
-| 4 — Export/import .tmpcamp | 6 | Archive narrative exportable, vérifiable, réimportable ; remappage et retrait sécurisé ; round-trip de référence réussi. |
+| 4 — Export/import .tmps | 6 | Archive narrative exportable, vérifiable, réimportable ; remappage et retrait sécurisé ; round-trip de référence réussi. |
 | 5 — Illustrations et intégrations TMP | 4 | Six rubriques utilisables ; médias HTTPS réutilisables et références privées ; round-trip des dépendances explicitement non autonomes. |
 | 6 — Stabilisation et livraison | 4 | Recette complète, sécurité/accessibilité/non-régression et PostgreSQL validés ; livraison prête, déploiement non implicite. |
 
@@ -47,7 +47,7 @@ Cet état reflète les fichiers présents sur `feature/scenario-editor` et les r
 
 **Réalisé et observé :** prototype Cytoscape, application `scenarios`, migration initiale, bibliothèque privée, éditeur/lecteur, transitions, sauvegardes avec révisions, positions séparées, balises narratives TMP, options de lecture, liaison des Rencontres existantes et chargement explicite vers la Table. Le MJ a confirmé les parcours principaux et le retour des tests au vert après le correctif du tuple `payload`.
 
-**Non démontré / incomplet :** protocole comparatif P0 et accessibilité clavier, contrat .tmpcamp 1.0, idempotence, concurrence PostgreSQL, granularité des écritures, gestion des conflits avec récupération, duplication, ordre narratif explicite, renommage/suppression bibliothèque, tests de charge, médiathèque, références manquantes et tests de livraison.
+**Non démontré / incomplet :** protocole comparatif P0 et accessibilité clavier, contrat .tmps 1.0, idempotence, concurrence PostgreSQL, granularité des écritures, gestion des conflits avec récupération, duplication, ordre narratif explicite, renommage/suppression bibliothèque, tests de charge, médiathèque, références manquantes et tests de livraison.
 
 **Risque bloquant avant rédaction intensive :** la sauvegarde du document reste une synchronisation complète des rubriques. Le code de validation/écriture doit être audité pour les transitions et références étrangères, les suppressions concurrentes et les sauvegardes partiellement interrompues. Ne pas assimiler une suite de tests verte à une garantie d'absence de perte de données.
 
@@ -129,7 +129,7 @@ Cet état reflète les fichiers présents sur `feature/scenario-editor` et les r
 ### P1-02 — Contrat portable et fixtures
 
 - **État :** NON COMMENCÉ.
-- **Objectif :** Figer .tmpcamp 1.0 indépendamment de l'ORM.
+- **Objectif :** Figer .tmps 1.0 indépendamment de l'ORM.
 - **Comportements :** Structure ZIP/JSON, schémas six types, versions/capacités, IDs internes, limites et politique références non résolues.
 - **Fichiers/modules envisagés :** docs/SCENARIOS_ARCHITECTURE.md ; futurs scenarios/archive/schemas/ et tests/fixtures/archives/.
 - **Dépendances :** P1-01.
@@ -303,11 +303,11 @@ Cet état reflète les fichiers présents sur `feature/scenario-editor` et les r
 - **Hors périmètre :** Optimisation globale de TMP-GMTK et fonctions de tableau nouvelles.
 - **Complexité relative :** Moyenne.
 
-## Phase 4 — Export/import .tmpcamp
+## Phase 4 — Export/import .tmps
 
 **Sortie de phase :** Archive narrative exportable, vérifiable, réimportable ; remappage et retrait sécurisé ; round-trip de référence réussi.
 
-### P4-01 — Codec et compatibilité .tmpcamp
+### P4-01 — Codec et compatibilité .tmps
 
 - **État :** NON COMMENCÉ.
 - **Objectif :** Finaliser le format à partir de données réelles.
