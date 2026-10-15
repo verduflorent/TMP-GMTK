@@ -58,10 +58,9 @@ def document(request, pk):
     # A first integration endpoint: full document replacement, guarded by both revisions.
     # The client always sends a complete snapshot. Never accept arbitrary owner/scenario IDs.
     try:
-        ids = [str(s["id"]) for s in items]
+        ids = [str(uuid.UUID(str(item["id"]))) for item in items]
         if len(set(ids)) != len(ids):
             raise ValueError("Identifiants de scènes dupliqués.")
-        ids = [str(uuid.UUID(v)) for v in ids]
         parsed = []
         total_blocks = 0
         block_ids = set()
@@ -91,6 +90,8 @@ def document(request, pk):
                 if len(text) > 50000:
                     raise ValueError("Rubrique trop longue.")
                 target = b.get("target")
+                if target is not None:
+                    target = str(uuid.UUID(str(target)))
                 if kind == "transition":
                     if target not in ids:
                         raise ValueError("Transition vers une scène absente.")
@@ -123,6 +124,14 @@ def document(request, pk):
     with transaction.atomic():
         locked = Scenario.objects.select_for_update().get(pk=scenario.pk, owner=request.user)
         existing_ids = set(str(pk) for pk in locked.scenes.values_list("pk", flat=True))
+        existing_block_owners = {str(b.pk): str(b.scene_id) for b in SceneBlock.objects.filter(scene__scenario=locked)}
+        for sid, title, x, y, blocks in parsed:
+            for bid, kind, text, target, rank, payload in blocks:
+                if bid in existing_block_owners and existing_block_owners[bid] != sid:
+                    return error("Une rubrique existante ne peut pas changer de scène.")
+        supplied_existing = {bid for sid, title, x, y, blocks in parsed for bid, kind, text, target, rank, payload in blocks}
+        if SceneBlock.objects.filter(pk__in=supplied_existing).exclude(scene__scenario=locked).exists():
+            return error("Une rubrique appartient à un autre scénario.")
         structural = existing_ids != set(ids)
         conflict = locked.content_revision != expected_content or (structural and locked.layout_revision != expected_layout) or (not content_only and locked.layout_revision != expected_layout)
         if conflict:
