@@ -261,3 +261,42 @@ class ScenarioLibraryTests(TestCase):
         response = self.client.get(reverse("scenarios:detail", args=[own.pk]))
         self.assertContains(response, "Escarmouche")
         self.assertNotContains(response, "Secret combat")
+
+    def test_cannot_reuse_foreign_block_uuid(self):
+        import json
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        own = Scenario.objects.create(owner=self.alice, title="A")
+        own_scene = Scene.objects.create(scenario=own, title="A1")
+        foreign_scene = Scene.objects.create(scenario=self.bob_scenario, title="B1")
+        foreign_block = SceneBlock.objects.create(scene=foreign_scene, kind="narration", text="Secret")
+        payload = {"mode": "content", "content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(own_scene.pk), "title": "A1", "position": {"x": 0, "y": 0},
+             "blocks": [{"id": str(foreign_block.pk), "kind": "narration", "text": "Vol", "target": None}]}
+        ]}
+        response = self.client.post(reverse("scenarios:document", args=[own.pk]),
+                                    json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 400, response.content)
+        foreign_block.refresh_from_db()
+        self.assertEqual(foreign_block.text, "Secret")
+        self.assertEqual(own_scene.blocks.count(), 0)
+
+    def test_cannot_move_existing_block_to_other_scene(self):
+        import json
+        from .models import Scene, SceneBlock
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="A")
+        first = Scene.objects.create(scenario=scenario, title="A1")
+        second = Scene.objects.create(scenario=scenario, title="A2")
+        block = SceneBlock.objects.create(scene=first, kind="narration", text="Original")
+        payload = {"mode": "content", "content_revision": 0, "layout_revision": 0, "scenes": [
+            {"id": str(first.pk), "title": "A1", "position": {"x": 0, "y": 0}, "blocks": []},
+            {"id": str(second.pk), "title": "A2", "position": {"x": 0, "y": 0},
+             "blocks": [{"id": str(block.pk), "kind": "narration", "text": "Déplacé", "target": None}]},
+        ]}
+        response = self.client.post(reverse("scenarios:document", args=[scenario.pk]),
+                                    json.dumps(payload), content_type="application/json")
+        self.assertEqual(response.status_code, 400, response.content)
+        block.refresh_from_db()
+        self.assertEqual(block.scene_id, first.pk)
+        self.assertEqual(block.text, "Original")
