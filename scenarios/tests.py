@@ -406,3 +406,41 @@ class ScenarioLibraryTests(TestCase):
         self.client.force_login(self.alice)
         response = self.client.get(reverse("scenarios:export", args=[self.bob_scenario.pk]))
         self.assertEqual(response.status_code, 404)
+
+    def test_verify_tmps_archive_is_read_only(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .archive.codec import encode_archive
+        from .models import Scene
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Intact")
+        scene = Scene.objects.create(scenario=scenario, title="Original")
+        doc = {"schema_version": "1.0", "metadata": {"title": "Archive test", "summary": ""},
+               "scenes": [{"id": str(scene.pk), "title": "Original", "narrative_order": 0,
+                           "position": {"x": 0, "y": 0}}],
+               "blocks": [], "resources": {"media": [], "encounters": []}}
+        archive = encode_archive(doc, document_id=str(scenario.document_id))
+        before = Scenario.objects.count()
+        response = self.client.post(reverse("scenarios:verify"), {
+            "archive": SimpleUploadedFile("archive.tmps", archive, content_type="application/octet-stream")
+        })
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["title"], "Archive test")
+        self.assertEqual(response.json()["scenes"], 1)
+        self.assertEqual(Scenario.objects.count(), before)
+        self.assertEqual(Scene.objects.get(pk=scene.pk).title, "Original")
+
+    def test_verify_tmps_rejects_invalid_file(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.force_login(self.alice)
+        response = self.client.post(reverse("scenarios:verify"), {
+            "archive": SimpleUploadedFile("invalid.tmps", b"not-a-zip")
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["ok"])
+
+    def test_verify_tmps_requires_login(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        response = self.client.post(reverse("scenarios:verify"), {
+            "archive": SimpleUploadedFile("invalid.tmps", b"not-a-zip")
+        })
+        self.assertEqual(response.status_code, 302)
