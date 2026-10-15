@@ -40,6 +40,8 @@ def document(request, pk):
     scenario = get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
     if request.method == "GET":
         return JsonResponse(serialize(scenario))
+    if request.method == "POST" and request.content_type != "application/json":
+        return error("Content-Type application/json requis.", 415)
     try:
         data = json.loads(request.body)
     except (ValueError, UnicodeDecodeError):
@@ -50,10 +52,10 @@ def document(request, pk):
     items = data["scenes"]
     if len(items) > 500:
         return error("Limite de 500 scènes dépassée.")
-    try:
-        expected_content = int(data["content_revision"])
-        expected_layout = int(data["layout_revision"])
-    except (KeyError, TypeError, ValueError):
+    expected_content = data.get("content_revision")
+    expected_layout = data.get("layout_revision")
+    if (type(expected_content) is not int or type(expected_layout) is not int
+            or expected_content < 0 or expected_layout < 0):
         return error("Révisions manquantes ou invalides.")
     # A first integration endpoint: full document replacement, guarded by both revisions.
     # The client always sends a complete snapshot. Never accept arbitrary owner/scenario IDs.
@@ -195,6 +197,8 @@ def document(request, pk):
 def save_layout(request, pk):
     """Update positions only; a concurrent narration edit is not a layout conflict."""
     get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
+    if request.content_type != "application/json":
+        return error("Content-Type application/json requis.", 415)
     try:
         data = json.loads(request.body)
         revision = data["layout_revision"]
