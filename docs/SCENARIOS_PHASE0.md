@@ -65,7 +65,7 @@ Libellés des transitions inspectables. Connexions parallèles et boucles identi
 9. Changer l'ordre narratif sans bouger les positions/liens.
 10. Sérialiser le document commun ; recharger et comparer positions, IDs et connexions.
 
-La sérialisation est une simulation locale (fichier ou mémoire). Ce n'est ni le format .tmpcamp final ni une sauvegarde serveur.
+La sérialisation est une simulation locale (fichier ou mémoire). Ce n'est ni le format .tmps final ni une sauvegarde serveur.
 Seuls les mêmes gestes doivent être comparés : aucune connexion par code dans un prototype si l'autre exige une interaction.
 
 ## 6. Accessibilité
