@@ -300,3 +300,52 @@ class ScenarioLibraryTests(TestCase):
         block.refresh_from_db()
         self.assertEqual(block.scene_id, first.pk)
         self.assertEqual(block.text, "Original")
+
+    def test_csrf_enforced_for_document_layout_and_library(self):
+        import json
+        from django.test import Client
+        from .models import Scene
+        scenario = Scenario.objects.create(owner=self.alice, title="CSRF")
+        scene = Scene.objects.create(scenario=scenario, title="Avant")
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.alice)
+        document_url = reverse("scenarios:document", args=[scenario.pk])
+        layout_url = reverse("scenarios:layout", args=[scenario.pk])
+        payload = {"mode": "content", "content_revision": 0, "layout_revision": 0,
+                   "scenes": [{"id": str(scene.pk), "title": "Après",
+                               "position": {"x": 0, "y": 0}, "blocks": []}]}
+        self.assertEqual(client.post(document_url, json.dumps(payload),
+                                     content_type="application/json").status_code, 403)
+        self.assertEqual(client.post(layout_url, json.dumps({"layout_revision": 0, "positions": []}),
+                                     content_type="application/json").status_code, 403)
+        self.assertEqual(client.post(reverse("scenarios:library"), {"title": "Sans jeton"}).status_code, 403)
+        scene.refresh_from_db()
+        self.assertEqual(scene.title, "Avant")
+
+    def test_revisions_reject_booleans_floats_negative_and_strings(self):
+        import json
+        from .models import Scene
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Révisions")
+        scene = Scene.objects.create(scenario=scenario, title="Intacte")
+        url = reverse("scenarios:document", args=[scenario.pk])
+        base = {"mode": "content", "content_revision": 0, "layout_revision": 0,
+                "scenes": [{"id": str(scene.pk), "title": "Modifiée",
+                            "position": {"x": 0, "y": 0}, "blocks": []}]}
+        for invalid in (True, -1, 0.5, "0", None):
+            for field in ("content_revision", "layout_revision"):
+                payload = dict(base)
+                payload[field] = invalid
+                response = self.client.post(url, json.dumps(payload), content_type="application/json")
+                self.assertEqual(response.status_code, 400, (field, invalid, response.content))
+        scene.refresh_from_db()
+        self.assertEqual(scene.title, "Intacte")
+
+    def test_document_and_layout_require_json_content_type(self):
+        import json
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Format")
+        document_url = reverse("scenarios:document", args=[scenario.pk])
+        layout_url = reverse("scenarios:layout", args=[scenario.pk])
+        self.assertEqual(self.client.post(document_url, "{}", content_type="text/plain").status_code, 415)
+        self.assertEqual(self.client.post(layout_url, "{}", content_type="text/plain").status_code, 415)
