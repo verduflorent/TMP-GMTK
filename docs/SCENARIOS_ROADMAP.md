@@ -41,8 +41,8 @@ Cet état reflète les fichiers présents sur `feature/scenario-editor` et les r
 | Statut | Nombre de lots |
 |---|---:|
 | ACCEPTÉ | 0 |
-| À VALIDER | 8 |
-| EN COURS | 9 |
+| À VALIDER | 9 |
+| EN COURS | 8 |
 | NON COMMENCÉ | 15 |
 
 **Réalisé et observé :** prototype Cytoscape, application `scenarios`, migration initiale, bibliothèque privée, éditeur/lecteur, transitions, sauvegardes avec révisions, positions séparées, balises narratives TMP, options de lecture, liaison des Rencontres existantes et chargement explicite vers la Table. Le MJ a confirmé les parcours principaux et le retour des tests au vert après le correctif du tuple `payload`.
