@@ -1,11 +1,11 @@
 """Read-only, consistent export of a single privately owned scenario."""
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
-from .archive.codec import ArchiveError, encode_archive
+from .archive.codec import ArchiveError, encode_archive, decode_archive, MAX_ARCHIVE
 from .models import Scenario
 
 
@@ -85,3 +85,37 @@ def export_scenario(request, pk):
     response["X-Content-Type-Options"] = "nosniff"
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+@login_required
+@require_POST
+def verify_archive(request):
+    """Validate a user-selected TMPS file without creating any database records."""
+    uploaded = request.FILES.get("archive")
+    if uploaded is None:
+        return JsonResponse({"ok": False, "error": "Choisis un fichier .tmps."}, status=400)
+    if not uploaded.name.lower().endswith(".tmps"):
+        return JsonResponse({"ok": False, "error": "Extension .tmps attendue."}, status=400)
+    if uploaded.size > MAX_ARCHIVE:
+        return JsonResponse({"ok": False, "error": "Archive supérieure à 10 Mio."}, status=400)
+    try:
+        content = uploaded.read(MAX_ARCHIVE + 1)
+        manifest, document = decode_archive(content)
+    except (ArchiveError, ValueError, OSError) as exc:
+        return JsonResponse({"ok": False, "error": "Archive invalide : " + str(exc)}, status=400)
+    return JsonResponse({
+        "ok": True,
+        "title": document["metadata"]["title"],
+        "summary": document["metadata"]["summary"],
+        "scenes": len(document["scenes"]),
+        "blocks": len(document["blocks"]),
+        "transitions": sum(b["kind"] == "transition" for b in document["blocks"]),
+        "encounters": len(document["resources"]["encounters"]),
+        "media": len(document["resources"]["media"]),
+        "format_version": manifest["format_version"],
+        "document_id": manifest["document_id"],
+        "export_id": manifest["export_id"],
+        "content_revision": manifest["content_revision"],
+        "layout_revision": manifest["layout_revision"],
+        "warning": "Vérification uniquement : aucune donnée importée. Les Rencontres et médias externes ne sont pas embarqués.",
+    })
