@@ -94,3 +94,17 @@ class SceneBlock(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()} — {self.scene.title}"
+
+
+class ScenarioCreateReceipt(models.Model):
+    """Persisted idempotency receipt scoped to a single account and creation key."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="scenario_create_receipts")
+    key = models.UUIDField()
+    fingerprint = models.CharField(max_length=64)
+    scenario = models.ForeignKey(Scenario, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "key"], name="scenario_create_receipt_owner_key")
+        ]
