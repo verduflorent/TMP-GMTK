@@ -25,7 +25,7 @@ Au démarrage d'un lot, vérifier ses décisions préalables. La validation du p
 | D-06 | Cycles, embranchements et convergences | Pas de contrainte DAG |
 | D-07 | Édition modulaire et lecteur MJ distinct | Lecture fluide sans commandes d'édition |
 | D-08 | Revisions et conflits dès premières écritures | Pas d'écrasement silencieux ; tests dans chaque lot d'édition |
-| D-09 | .tmpcamp = ZIP + JSON versionné | Format portable indépendant ORM ; contrôle du conteneur requis |
+| D-09 | .tmps = ZIP + JSON versionné | Format portable indépendant ORM ; contrôle du conteneur requis |
 | D-10 | Export/import narratif et retrait explicite dans MVP | Trois actions distinctes ; aucun retrait automatique après export |
 | D-11 | Illustrations HTTPS V1 | Métadonnées seulement en base ; pas de stockage durable sur Render |
 | D-12 | Isolation stricte | Résolution owner de toutes ressources ; import appartient au destinataire |
@@ -66,7 +66,7 @@ En cas de changement des détails de format après publication de 1.0, appliquer
 | ID | Sujet | Condition de reprise |
 |---|---|---|
 | D-40 | Fournisseur objet et quotas | besoin d'upload ; vérifier conditions réelles du compte et accès privé |
-| D-41 | Fichiers graphiques dans .tmpcamp | stockage durable à import, validation raster et staging/compensation définis |
+| D-41 | Fichiers graphiques dans .tmps | stockage durable à import, validation raster et staging/compensation définis |
 | D-42 | Snapshots TMP autonomes | exporteur métier traitant équipements/dépendances, respect LdR/CdC |
 | D-43 | Chargement Rencontre depuis lecteur | comportement ajout/remplacement Table décidé et testé séparément |
 | D-44 | Partage public et campagnes multi-scénarios | permissions dédiées et extension portable versionnée |
@@ -88,3 +88,7 @@ Ces sujets ne bloquent pas la V1. Ne pas installer une infrastructure ou créer 
 
 Pour chaque nouvelle entrée : date, auteur/décideur, ID, ancien/nouveau statut, preuves, lots affectés et conséquence sur compatibilité.
 Après P0-04, renseigner moteur/version et rapport ; après P1-01/P1-02, fermer tous détails pré-migration ; à P6-04, publier limites MVP et conserver les décisions reportées.
+
+## Décision complémentaire — 15 octobre 2026
+
+**D-34 — VALIDÉ : extension d'archive `.tmps` (THE MOIRA PROTOCOL Stories).** Elle remplace l'extension provisoire `.tmpcamp`. L'archive reste un conteneur ZIP avec manifeste et données JSON versionnées ; l'extension n'est pas une preuve de validité. Le format peut accueillir à terme un scénario ou un ensemble de scénarios, mais le MVP n'exporte qu'un scénario à la fois. Aucune compatibilité d'import avec une ancienne extension n'est nécessaire tant qu'aucune archive n'a été distribuée.
