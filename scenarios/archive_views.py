@@ -6,7 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST
 
 from .archive.codec import ArchiveError, encode_archive, decode_archive, MAX_ARCHIVE
-from .models import Scenario
+from .models import Scenario, Scene, SceneBlock
+from .archive.import_plan import plan_import
+import uuid
 
 
 def portable_document(scenario, scenes):
@@ -119,3 +121,49 @@ def verify_archive(request):
         "layout_revision": manifest["layout_revision"],
         "warning": "Vérification uniquement : aucune donnée importée. Les Rencontres et médias externes ne sont pas embarqués.",
     })
+
+
+@login_required
+@require_POST
+def import_archive(request):
+    """Import a validated TMPS archive as a new, private scenario atomically."""
+    uploaded = request.FILES.get("archive")
+    if uploaded is None or not uploaded.name.lower().endswith(".tmps"):
+        return JsonResponse({"ok": False, "error": "Sélectionne une archive .tmps."}, status=400)
+    if uploaded.size > MAX_ARCHIVE:
+        return JsonResponse({"ok": False, "error": "Archive trop volumineuse."}, status=400)
+    try:
+        manifest, document = decode_archive(uploaded.read(MAX_ARCHIVE + 1))
+        plan = plan_import(manifest, document)
+    except (ArchiveError, ValueError, OSError, KeyError, TypeError) as exc:
+        return JsonResponse({"ok": False, "error": "Archive invalide : " + str(exc)}, status=400)
+    try:
+        with transaction.atomic():
+            scenario = Scenario.objects.create(
+                owner=request.user, title=plan["title"], summary=plan["summary"],
+                # A restored copy gets its own portable document identity.
+                document_id=uuid.uuid4(),
+            )
+            for item in plan["scenes"]:
+                Scene.objects.create(
+                    id=uuid.UUID(item["id"]), scenario=scenario, title=item["title"],
+                    narrative_rank=item["narrative_order"],
+                    x=item["position"]["x"], y=item["position"]["y"],
+                )
+            for item in plan["blocks"]:
+                SceneBlock.objects.create(
+                    id=uuid.UUID(item["id"]), scene_id=uuid.UUID(item["scene_id"]),
+                    kind=item["kind"], rank=item["rank"], text=item["text"],
+                    payload=item["payload"],
+                    target_scene_id=uuid.UUID(item["target_scene_id"]) if "target_scene_id" in item else None,
+                )
+    except Exception:
+        # Never leave a partially restored graph behind.
+        return JsonResponse({"ok": False, "error": "L'import a échoué : aucune copie n'a été conservée."}, status=422)
+    return JsonResponse({
+        "ok": True, "scenario_id": str(scenario.pk),
+        "url": request.build_absolute_uri("/scenarios/" + str(scenario.pk) + "/"),
+        "scenes": len(plan["scenes"]), "blocks": len(plan["blocks"]),
+        "unresolved_encounters": plan["unresolved_encounters"],
+        "warning": "Copie importée. Les Rencontres doivent être réassociées manuellement.",
+    }, status=201)
