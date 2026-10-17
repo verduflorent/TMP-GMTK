@@ -444,3 +444,38 @@ class ScenarioLibraryTests(TestCase):
             "archive": SimpleUploadedFile("invalid.tmps", b"not-a-zip")
         })
         self.assertEqual(response.status_code, 302)
+
+    def test_import_tmps_creates_independent_graph(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import Scene, SceneBlock
+        from .archive.codec import decode_archive
+        self.client.force_login(self.alice)
+        original = Scenario.objects.create(owner=self.alice, title="Original")
+        a = Scene.objects.create(scenario=original, title="A")
+        b = Scene.objects.create(scenario=original, title="B")
+        SceneBlock.objects.create(scene=a, kind="transition", text="Suivant", target_scene=b)
+        export = self.client.get(reverse("scenarios:export", args=[original.pk]))
+        self.assertEqual(export.status_code, 200)
+        result = self.client.post(reverse("scenarios:import"), {
+            "archive": SimpleUploadedFile("episode.tmps", export.content)
+        })
+        self.assertEqual(result.status_code, 201, result.content)
+        restored = Scenario.objects.get(pk=result.json()["scenario_id"])
+        self.assertNotEqual(restored.pk, original.pk)
+        self.assertNotEqual(restored.document_id, original.document_id)
+        scenes = list(Scene.objects.filter(scenario=restored))
+        self.assertEqual(len(scenes), 2)
+        self.assertFalse({x.pk for x in scenes}.intersection({a.pk, b.pk}))
+        link = SceneBlock.objects.get(scene__scenario=restored, kind="transition")
+        self.assertEqual(link.target_scene.scenario_id, restored.pk)
+        self.assertEqual(Scene.objects.filter(scenario=original).count(), 2)
+
+    def test_invalid_import_has_no_writes(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.force_login(self.alice)
+        before = Scenario.objects.count()
+        result = self.client.post(reverse("scenarios:import"), {
+            "archive": SimpleUploadedFile("invalid.tmps", b"invalid")
+        })
+        self.assertEqual(result.status_code, 400)
+        self.assertEqual(Scenario.objects.count(), before)
