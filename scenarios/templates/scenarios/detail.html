@@ -18,6 +18,13 @@
 <span id="board-help" class="sr-only" role="status" aria-live="polite">Molette : défilement · Ctrl + molette : zoom</span>
 </div><div id="story-board" aria-label="Tableau narratif"></div></div></div><div id="scene-overlay" class="scene-overlay" hidden><section class="scene-dialog" role="dialog" aria-modal="true" aria-labelledby="scene-dialog-title" tabindex="-1"><div class="scene-dialog-header"><div><span class="scene-eyebrow">THE MOIRA PROTOCOL / SCÈNE</span><h2 id="scene-dialog-title">Scène</h2></div><div class="scene-dialog-actions"><button id="scene-style-toggle" type="button" aria-expanded="false" aria-controls="scene-style-panel">⚙ Affichage</button><button id="scene-read-mode">Lecture MJ</button><button id="scene-close">✕ Fermer</button></div></div><div id="scene-style-panel" class="scene-style-panel" hidden><div class="style-row"><label for="style-preset">Style</label><select id="style-preset"><option value="tmp">TMP — Original</option><option value="comfort">Confort de lecture</option><option value="custom">Personnalisé</option></select><label for="style-font">Police du texte</label><select id="style-font"><option value="rajdhani">Rajdhani</option><option value="system">Sans-serif lisible</option><option value="serif">Serif</option></select></div><div class="style-row"><label for="style-t1">Titre T1 <output id="style-t1-value"></output></label><input type="range" id="style-t1" min="22" max="54" step="1"><label for="style-t2">Sous-titre T2 <output id="style-t2-value"></output></label><input type="range" id="style-t2" min="18" max="40" step="1"><label for="style-txt">Texte <output id="style-txt-value"></output></label><input type="range" id="style-txt" min="14" max="28" step="1"></div><div class="style-row"><label for="style-leading">Interligne <output id="style-leading-value"></output></label><input type="range" id="style-leading" min="1.3" max="2.2" step="0.1"><button type="button" id="style-reset">Réinitialiser</button></div><p>Préférences enregistrées dans ce navigateur, sans modifier le texte du scénario.</p></div><div id="scene-read-view" hidden></div><aside class="story-editor"><h2>Édition de la scène</h2><label for="scene-select">Sélectionner</label><select id="scene-select"></select><label for="scene-title">Titre</label><input id="scene-title" maxlength="120"><label for="scene-text">Narration</label><div class="narrative-format-bar" role="group" aria-label="Mise en forme TMP"><button type="button" data-format="T1" title="Titre principal">T1 · Titre</button><button type="button" data-format="T2" title="Sous-titre">T2 · Sous-titre</button><button type="button" data-format="TXT" title="Texte normal">TXT · Texte</button></div><textarea id="scene-text" rows="12" spellcheck="true"></textarea><p class="narrative-format-hint">Sélectionne un passage puis clique sur T1, T2 ou TXT. Le mode Lecture masque les balises.</p><h3>Rubriques contextuelles</h3><div id="story-contexts"></div><div class="story-context-actions"><button data-kind="interpretation">+ Interprétation</button><button data-kind="splash">+ Splash</button><button data-kind="gm_note">+ Note MJ</button><button data-kind="encounter">+ Rencontre</button></div><h3>Transitions</h3><div id="story-links"></div><label for="target-scene">Vers la scène</label><select id="target-scene"></select><button id="add-transition">+ Relier</button><button id="delete-scene">Supprimer la scène</button></aside></section></div>
 </section>
+<dialog id="scene-delete-confirm" class="tmp-encounter-confirm" aria-labelledby="scene-delete-title">
+<p class="tmp-encounter-eyebrow">THE MOIRA PROTOCOL / CONFIRMATION</p>
+<h2 id="scene-delete-title">Supprimer la scène ?</h2>
+<p>« <strong id="scene-delete-name"></strong> » et ses transitions seront retirées du tableau.</p>
+<p>Cette modification sera enregistrée lors de la prochaine sauvegarde du scénario.</p>
+<div class="tmp-encounter-actions"><button type="button" id="scene-delete-cancel">Annuler</button><button type="button" id="scene-delete-accept">Supprimer la scène</button></div>
+</dialog>
 <dialog id="encounter-confirm-dialog" class="tmp-encounter-confirm" aria-labelledby="encounter-confirm-title" aria-describedby="encounter-confirm-description">
 <p class="tmp-encounter-eyebrow">THE MOIRA PROTOCOL / RENCONTRE</p>
 <h2 id="encounter-confirm-title">Charger la Rencontre ?</h2>
@@ -81,7 +88,7 @@
 .story-board-toolbar .story-tool-group #board-cancel{color:#a7191c}
 .story-board-toolbar #board-help{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;padding:0;border:0}
 @media(max-width:600px){.story-board-toolbar{top:10px;left:10px;max-width:calc(100% - 20px);gap:5px}.story-board-toolbar .story-tool-group button{width:34px;height:36px;min-height:36px;font-size:21px}}
-.tmp-encounter-confirm{width:min(92vw,510px);max-height:85vh;overflow:auto;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;padding:26px;box-shadow:0 20px 70px #0008}.tmp-encounter-confirm::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}.tmp-encounter-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}.tmp-encounter-confirm h2{font:30px/1.2 Anton,Impact,sans-serif;margin:8px 0 18px;text-transform:uppercase}.tmp-encounter-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}.tmp-encounter-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800}.tmp-encounter-actions #encounter-confirm-accept{background:#a7191c;color:#fff;border-color:#a7191c}</style>
+.tmp-encounter-confirm{width:min(92vw,510px);max-height:85vh;overflow:auto;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;padding:26px;box-shadow:0 20px 70px #0008}.tmp-encounter-confirm::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}.tmp-encounter-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}.tmp-encounter-confirm h2{font:30px/1.2 Anton,Impact,sans-serif;margin:8px 0 18px;text-transform:uppercase}.tmp-encounter-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}.tmp-encounter-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800}.tmp-encounter-actions #scene-delete-accept{background:#a7191c;color:#fff;border-color:#a7191c}.tmp-encounter-actions #encounter-confirm-accept{background:#a7191c;color:#fff;border-color:#a7191c}</style>
 {{ encounter_options|json_script:"scenario-encounters" }}
 <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 <script>
@@ -255,7 +262,26 @@ $("scene-select").onchange=e=>select(e.target.value,true);
 $("scene-title").oninput=e=>{const s=chosen();if(s){s.title=e.target.value;mark();redraw();$("scene-dialog-title").textContent=s.title;}};
 $("scene-text").oninput=e=>{const s=chosen();if(!s)return;let b=blocks(s,"narration")[0];if(!b){b={id:uuid(),kind:"narration",text:"",rank:0,target:null};s.blocks.unshift(b);}b.text=e.target.value;mark();};
 $("add-scene").onclick=()=>{const id=uuid();scenes.push({id,title:"Nouvelle scène",narrative_order:scenes.length,position:{x:Math.random()*400,y:Math.random()*350},blocks:[]});mark();select(id);redraw(true);openScene(id);};
-$("delete-scene").onclick=()=>{if(!chosen()||!confirm("Supprimer cette scène et ses transitions ?"))return;const id=selected;scenes=scenes.filter(s=>s.id!==id);for(const s of scenes)s.blocks=s.blocks.filter(b=>b.target!==id);scenes.forEach((s,i)=>s.narrative_order=i);selected=scenes[0]?.id||null;mark();refresh();redraw(true);if(!selected)closeScene();else renderSceneModal();};
+$("delete-scene").onclick=()=>{
+ const scene=chosen();if(!scene)return;
+ const dialog=document.getElementById("scene-delete-confirm");
+ document.getElementById("scene-delete-name").textContent=scene.title;
+ dialog.dataset.sceneId=scene.id;
+ dialog.showModal();
+ document.getElementById("scene-delete-cancel").focus();
+};
+document.getElementById("scene-delete-cancel").onclick=()=>document.getElementById("scene-delete-confirm").close();
+document.getElementById("scene-delete-accept").onclick=()=>{
+ const dialog=document.getElementById("scene-delete-confirm");
+ const id=dialog.dataset.sceneId;
+ if(!scenes.some(s=>s.id===id)){dialog.close();return;}
+ scenes=scenes.filter(s=>s.id!==id);
+ for(const s of scenes)s.blocks=s.blocks.filter(b=>b.target!==id);
+ scenes.forEach((s,i)=>s.narrative_order=i);
+ selected=scenes[0]?.id||null;
+ dialog.close();mark();refresh();redraw(true);
+ if(!selected)closeScene();else renderSceneModal();
+};
 document.querySelectorAll(".story-context-actions button").forEach(btn=>btn.onclick=()=>{const s=chosen();if(!s)return;s.blocks.push({id:uuid(),kind:btn.dataset.kind,text:"",rank:s.blocks.length,target:null});mark();refresh();redraw();});
 $("add-transition").onclick=()=>{const s=chosen(),target=$("target-scene").value;if(!s||!target)return;s.blocks.push({id:uuid(),kind:"transition",text:"Continuer",rank:s.blocks.length,target});mark();refresh();redraw();};
 cy.on("tap","node",e=>{if(linkSource){createLink(linkSource,e.target.id());return;}select(e.target.id());});
