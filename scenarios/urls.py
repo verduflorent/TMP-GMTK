@@ -9,6 +9,7 @@ urlpatterns = [
     path("import/", archive_views.import_archive, name="import"),
     path("<uuid:pk>/", views.detail, name="detail"),
     path("<uuid:pk>/export/", archive_views.export_scenario, name="export"),
+    path("<uuid:pk>/delete/", views.delete_scenario, name="delete"),
     path("<uuid:pk>/document/", document_api.document, name="document"),
     path("<uuid:pk>/layout/", document_api.save_layout, name="layout"),
 ]
