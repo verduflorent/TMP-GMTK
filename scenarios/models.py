@@ -108,3 +108,17 @@ class ScenarioCreateReceipt(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["owner", "key"], name="scenario_create_receipt_owner_key")
         ]
+
+
+class ScenarioImportReceipt(models.Model):
+    """One imported scenario per user, idempotency key and archive fingerprint."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="scenario_import_receipts")
+    key = models.UUIDField()
+    fingerprint = models.CharField(max_length=64)
+    scenario = models.ForeignKey(Scenario, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "key"], name="scenario_import_receipt_owner_key")
+        ]
