@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 MAX_ARCHIVE = 10 * 1024 * 1024
 MAX_UNCOMPRESSED = 20 * 1024 * 1024
+MAX_JSON_DEPTH = 40
 MEMBERS = {"manifest.json", "scenario.json"}
 KINDS = {"narration", "interpretation", "gm_note", "splash", "transition", "encounter"}
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -67,7 +68,19 @@ def _keys(value, required, optional=()):
         raise ArchiveError("Champs absents ou inconnus.")
 
 
+def _check_depth(value, depth=0):
+    if depth > MAX_JSON_DEPTH:
+        raise ArchiveError("Profondeur JSON excessive.")
+    if isinstance(value, dict):
+        for child in value.values():
+            _check_depth(child, depth + 1)
+    elif isinstance(value, list):
+        for child in value:
+            _check_depth(child, depth + 1)
+
+
 def validate_document(doc):
+    _check_depth(doc)
     _keys(doc, {"schema_version", "metadata", "scenes", "blocks", "resources"})
     if doc["schema_version"] != "1.0":
         raise ArchiveError("Version narrative inconnue.")
@@ -95,6 +108,7 @@ def validate_document(doc):
             if type(n) not in (int, float) or not math.isfinite(n) or abs(n) > 100000:
                 raise ArchiveError("Coordonnées invalides.")
     transition_count = 0
+    encounter_refs = []
     for block in blocks:
         _keys(block, {"id", "scene_id", "kind", "rank", "text", "payload"}, {"target_scene_id"})
         bid = _uuid(block["id"])
@@ -108,8 +122,28 @@ def validate_document(doc):
         _integer(block["rank"])
         if not isinstance(block["text"], str) or len(block["text"]) > 50000:
             raise ArchiveError("Texte invalide.")
-        if not isinstance(block["payload"], dict) or block["payload"].get("version") != 1:
+        payload = block["payload"]
+        if not isinstance(payload, dict) or type(payload.get("version")) is not int or payload["version"] != 1:
             raise ArchiveError("Payload invalide.")
+        allowed = {"version"}
+        if block["kind"] == "encounter":
+            allowed |= {"resource_key", "unresolved"}
+            if "resource_key" in payload:
+                if not isinstance(payload["resource_key"], str):
+                    raise ArchiveError("Référence de Rencontre invalide.")
+                encounter_refs.append(payload["resource_key"])
+        elif block["kind"] == "splash":
+            allowed |= {"external_url", "alt_text"}
+        if not payload.keys() <= allowed:
+            raise ArchiveError("Champs de rubrique inconnus.")
+        if "external_url" in payload:
+            from urllib.parse import urlsplit
+            url = payload["external_url"]
+            if not isinstance(url, str) or len(url) > 2048:
+                raise ArchiveError("URL invalide.")
+            parsed = urlsplit(url)
+            if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+                raise ArchiveError("URL HTTPS invalide.")
         if block["kind"] == "transition":
             transition_count += 1
             if _uuid(block.get("target_scene_id")) not in scene_ids:
@@ -122,6 +156,17 @@ def validate_document(doc):
     for name in ("media", "encounters"):
         if not isinstance(doc["resources"][name], list) or len(doc["resources"][name]) > 5000:
             raise ArchiveError("Ressources invalides.")
+    keys = set()
+    for resource in doc["resources"]["encounters"]:
+        _keys(resource, {"key", "name", "status"})
+        key = resource["key"]
+        if (not isinstance(key, str) or not 1 <= len(key) <= 128
+                or key in keys or resource["status"] != "unresolved"
+                or not isinstance(resource["name"], str)):
+            raise ArchiveError("Descripteur de Rencontre invalide.")
+        keys.add(key)
+    if any(key not in keys for key in encounter_refs):
+        raise ArchiveError("Rencontre référencée absente.")
     return doc
 
 
@@ -168,10 +213,13 @@ def decode_archive(data):
                     raise ArchiveError("Entrée ZIP interdite.")
             if sum(e.file_size for e in entries) > MAX_UNCOMPRESSED:
                 raise ArchiveError("Décompression trop volumineuse.")
+            total_read = 0
             def read(name):
+                nonlocal total_read
                 with archive.open(name) as stream:
                     content = stream.read(MAX_UNCOMPRESSED + 1)
-                    if len(content) > MAX_UNCOMPRESSED:
+                    total_read += len(content)
+                    if total_read > MAX_UNCOMPRESSED:
                         raise ArchiveError("Décompression trop volumineuse.")
                     return content
             manifest = _json_load(read("manifest.json"))
