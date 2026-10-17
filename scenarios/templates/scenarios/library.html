@@ -35,7 +35,7 @@
     <div class="scenario-section-heading"><h2 id="import-title">Importer un scénario .tmps</h2></div>
     <p>Crée une nouvelle copie privée. Le scénario d'origine ne sera jamais remplacé. Les Rencontres devront être réassociées.</p>
     <form id="scenario-import-form" action="{% url 'scenarios:import' %}" method="post" enctype="multipart/form-data">
-      {% csrf_token %}
+      {% csrf_token %}<input type="hidden" name="import_key" id="scenario-import-key">
       <label for="scenario-import-file">Archive TMP Stories</label>
       <input id="scenario-import-file" type="file" name="archive" accept=".tmps" required>
       <button type="submit" id="scenario-import-button">Importer une copie</button>
@@ -165,6 +165,8 @@ document.addEventListener("DOMContentLoaded",()=>{
    dialog.addEventListener("close",onClose);
   });
   if(!proceed)return;
+  const keyInput=document.getElementById("scenario-import-key");
+  if(!keyInput.value)keyInput.value=crypto.randomUUID();
   button.disabled=true;result.hidden=false;result.className="scenario-verify-result";result.textContent="Import en cours…";
   try{
    const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
@@ -174,6 +176,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    const heading=document.createElement("strong");heading.textContent="✓ Copie créée : "+data.scenes+" scènes, "+data.blocks+" rubriques";result.append(heading);
    const warning=document.createElement("p");warning.textContent=data.warning;result.append(warning);
    const link=document.createElement("a");link.href=data.url;link.textContent="Ouvrir le scénario importé →";result.append(link);
+   document.getElementById("scenario-import-key").value="";
   }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
  });
 });
