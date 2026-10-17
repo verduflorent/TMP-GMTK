@@ -479,3 +479,41 @@ class ScenarioLibraryTests(TestCase):
         })
         self.assertEqual(result.status_code, 400)
         self.assertEqual(Scenario.objects.count(), before)
+
+    def test_delete_scenario_only_removes_its_own_graph(self):
+        from .models import Scene, SceneBlock
+        from toolkit.models import Encounter
+        self.client.force_login(self.alice)
+        doomed = Scenario.objects.create(owner=self.alice, title="Copie")
+        retained = Scenario.objects.create(owner=self.alice, title="Original")
+        scene = Scene.objects.create(scenario=doomed, title="A")
+        SceneBlock.objects.create(scene=scene, kind="narration", text="Texte")
+        encounter = Encounter.objects.create(owner=self.alice, name="Combat")
+        response = self.client.post(reverse("scenarios:delete", args=[doomed.pk]), {
+            "confirm_title": doomed.title, "content_revision": 0, "layout_revision": 0
+        })
+        self.assertRedirects(response, reverse("scenarios:library"))
+        self.assertFalse(Scenario.objects.filter(pk=doomed.pk).exists())
+        self.assertFalse(Scene.objects.filter(pk=scene.pk).exists())
+        self.assertTrue(Scenario.objects.filter(pk=retained.pk).exists())
+        self.assertTrue(Encounter.objects.filter(pk=encounter.pk).exists())
+
+    def test_delete_requires_confirmation_and_fresh_revisions(self):
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="À conserver", content_revision=2)
+        url = reverse("scenarios:delete", args=[scenario.pk])
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.assertEqual(self.client.post(url, {
+            "confirm_title": "Mauvais titre", "content_revision": 2, "layout_revision": 0
+        }).status_code, 400)
+        self.assertEqual(self.client.post(url, {
+            "confirm_title": scenario.title, "content_revision": 1, "layout_revision": 0
+        }).status_code, 409)
+        self.assertTrue(Scenario.objects.filter(pk=scenario.pk).exists())
+
+    def test_delete_foreign_scenario_returns_404(self):
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.post(reverse("scenarios:delete", args=[self.bob_scenario.pk]), {
+            "confirm_title": "Secret", "content_revision": 0, "layout_revision": 0
+        }).status_code, 404)
+        self.assertTrue(Scenario.objects.filter(pk=self.bob_scenario.pk).exists())
