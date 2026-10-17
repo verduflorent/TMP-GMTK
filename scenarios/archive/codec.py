@@ -208,6 +208,10 @@ def decode_archive(data):
             if len(entries) != 2 or {e.filename for e in entries} != MEMBERS:
                 raise ArchiveError("Membres ZIP non autorisés.")
             for entry in entries:
+                # Reject misleading ZIP metadata and any platform-specific link.
+                mode = (entry.external_attr >> 16) & 0o170000
+                if mode not in (0, 0o100000):
+                    raise ArchiveError("Type d'entrée ZIP interdit.")
                 if (entry.flag_bits & 1 or entry.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED)
                         or entry.is_dir() or (entry.external_attr >> 16) & 0o170000 == 0o120000):
                     raise ArchiveError("Entrée ZIP interdite.")
@@ -224,7 +228,7 @@ def decode_archive(data):
                     return content
             manifest = _json_load(read("manifest.json"))
             payload = read("scenario.json")
-    except (zipfile.BadZipFile, RuntimeError, EOFError, OSError) as exc:
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, NotImplementedError, RuntimeError, EOFError, OSError) as exc:
         raise ArchiveError("Archive ZIP invalide.") from exc
     _keys(manifest, {"format", "format_version", "profile", "document_id", "export_id",
                      "created_at", "required_features", "content_revision", "layout_revision", "files"})
@@ -236,7 +240,7 @@ def decode_archive(data):
     _integer(manifest["layout_revision"])
     if not isinstance(manifest["created_at"], str) or not manifest["created_at"].endswith(("+00:00", "Z")):
         raise ArchiveError("Horodatage UTC invalide.")
-    if manifest["required_features"] != []:
+    if type(manifest["required_features"]) is not list or manifest["required_features"] != []:
         raise ArchiveError("Fonctionnalité obligatoire inconnue.")
     files = manifest["files"]
     if not isinstance(files, list) or len(files) != 1:
