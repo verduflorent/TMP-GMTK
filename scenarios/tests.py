@@ -457,7 +457,7 @@ class ScenarioLibraryTests(TestCase):
         export = self.client.get(reverse("scenarios:export", args=[original.pk]))
         self.assertEqual(export.status_code, 200)
         result = self.client.post(reverse("scenarios:import"), {
-            "archive": SimpleUploadedFile("episode.tmps", export.content)
+            "archive": SimpleUploadedFile("episode.tmps", export.content), "import_key": "00000000-0000-4000-8000-000000009991"
         })
         self.assertEqual(result.status_code, 201, result.content)
         restored = Scenario.objects.get(pk=result.json()["scenario_id"])
@@ -475,7 +475,7 @@ class ScenarioLibraryTests(TestCase):
         self.client.force_login(self.alice)
         before = Scenario.objects.count()
         result = self.client.post(reverse("scenarios:import"), {
-            "archive": SimpleUploadedFile("invalid.tmps", b"invalid")
+            "archive": SimpleUploadedFile("invalid.tmps", b"invalid"), "import_key": "00000000-0000-4000-8000-000000009992"
         })
         self.assertEqual(result.status_code, 400)
         self.assertEqual(Scenario.objects.count(), before)
@@ -533,3 +533,23 @@ class ScenarioLibraryTests(TestCase):
             html = response.content.decode("utf-8")
             for native in ("confirm(", "window.confirm(", "alert(", "window.alert(", "prompt(", "window.prompt("):
                 self.assertNotIn(native, html)
+
+    def test_import_replay_does_not_duplicate_scenario(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.force_login(self.alice)
+        original = Scenario.objects.create(owner=self.alice, title="Original")
+        exported = self.client.get(reverse("scenarios:export", args=[original.pk]))
+        self.assertEqual(exported.status_code, 200)
+        key = "00000000-0000-4000-8000-000000009993"
+        url = reverse("scenarios:import")
+        def send():
+            return self.client.post(url, {
+                "archive": SimpleUploadedFile("copy.tmps", exported.content),
+                "import_key": key,
+            })
+        first = send()
+        second = send()
+        self.assertEqual(first.status_code, 201, first.content)
+        self.assertEqual(second.status_code, 200, second.content)
+        self.assertEqual(first.json()["scenario_id"], second.json()["scenario_id"])
+        self.assertEqual(Scenario.objects.filter(owner=self.alice).count(), 2)
