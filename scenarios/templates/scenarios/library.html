@@ -56,6 +56,13 @@
           </a>
           <div class="scenario-card-actions">
             <a class="scenario-export" href="{% url 'scenarios:export' scenario.pk %}" aria-label="Exporter {{ scenario.title }} au format TMPS">↓ Exporter .tmps</a>
+            <form class="scenario-delete-form" method="post" action="{% url 'scenarios:delete' scenario.pk %}" data-scenario-title="{{ scenario.title }}">
+              {% csrf_token %}
+              <input type="hidden" name="confirm_title" value="{{ scenario.title }}">
+              <input type="hidden" name="content_revision" value="{{ scenario.content_revision }}">
+              <input type="hidden" name="layout_revision" value="{{ scenario.layout_revision }}">
+              <button class="scenario-delete" type="submit" aria-label="Supprimer {{ scenario.title }}">✕ Supprimer</button>
+            </form>
           </div>
         </article>
       {% endfor %}
@@ -99,7 +106,7 @@
 .scenario-empty-icon{display:block;font-size:42px;color:var(--tmp-red)}.scenario-empty h3{margin:6px 0}.scenario-empty p{max-width:520px;margin:8px auto 22px}
 @media(max-width:700px){.scenario-form-grid{grid-template-columns:1fr}.scenario-heading{align-items:start}.scenario-card{min-height:165px}}
 .scenario-export{display:inline-block;margin-top:-10px;margin-bottom:8px;padding:8px 12px;border:1px solid var(--tmp-line);background:var(--tmp-panel);font-weight:700;color:var(--tmp-ink);text-decoration:none}.scenario-export:hover,.scenario-export:focus-visible{border-color:var(--tmp-red);color:var(--tmp-red)}
-.scenario-library-item{display:flex;flex-direction:column;min-width:0}.scenario-library-item .scenario-card{flex:1;min-height:195px}.scenario-card-actions{display:flex;align-items:center;justify-content:flex-end;padding:9px 12px;border:1px solid var(--tmp-line);border-top:0;background:var(--tmp-panel)}.scenario-card-actions .scenario-export{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:7px 11px;min-height:34px;background:#fffdf8;border:1px solid #c6bfb3;border-radius:3px;font-size:13px;font-weight:800;text-decoration:none}.scenario-card-actions .scenario-export:hover,.scenario-card-actions .scenario-export:focus-visible{background:var(--tmp-red);border-color:var(--tmp-red);color:#fff}.scenario-verify{margin:0 0 30px;padding:18px 22px;background:var(--tmp-panel);border:1px solid var(--tmp-line)}.scenario-verify p{margin:8px 0 14px}.scenario-verify form{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scenario-verify input[type=file]{max-width:100%;background:#fffdf8;padding:8px;border:1px solid var(--tmp-line)}.scenario-verify button{background:var(--tmp-red);color:#fff;border:1px solid var(--tmp-red);padding:10px 14px;font-weight:700}.scenario-verify button:disabled{opacity:.6}.scenario-verify-result{padding:14px;margin-top:14px;background:#fffdf8;border-left:3px solid var(--tmp-red)}.scenario-verify-result p{margin:5px 0}.scenario-verify-result strong{font-size:18px}</style>
+.scenario-library-item{display:flex;flex-direction:column;min-width:0}.scenario-library-item .scenario-card{flex:1;min-height:195px}.scenario-card-actions{display:flex;align-items:center;justify-content:flex-end;padding:9px 12px;border:1px solid var(--tmp-line);border-top:0;background:var(--tmp-panel)}.scenario-card-actions .scenario-export{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:7px 11px;min-height:34px;background:#fffdf8;border:1px solid #c6bfb3;border-radius:3px;font-size:13px;font-weight:800;text-decoration:none}.scenario-card-actions .scenario-export:hover,.scenario-card-actions .scenario-export:focus-visible{background:var(--tmp-red);border-color:var(--tmp-red);color:#fff}.scenario-verify{margin:0 0 30px;padding:18px 22px;background:var(--tmp-panel);border:1px solid var(--tmp-line)}.scenario-verify p{margin:8px 0 14px}.scenario-verify form{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scenario-verify input[type=file]{max-width:100%;background:#fffdf8;padding:8px;border:1px solid var(--tmp-line)}.scenario-verify button{background:var(--tmp-red);color:#fff;border:1px solid var(--tmp-red);padding:10px 14px;font-weight:700}.scenario-verify button:disabled{opacity:.6}.scenario-verify-result{padding:14px;margin-top:14px;background:#fffdf8;border-left:3px solid var(--tmp-red)}.scenario-verify-result p{margin:5px 0}.scenario-verify-result strong{font-size:18px}.scenario-card-actions{gap:8px;flex-wrap:wrap}.scenario-delete-form{margin:0}.scenario-delete{min-height:34px;padding:7px 11px;background:transparent;color:var(--tmp-red);border:1px solid #cba8a5;border-radius:3px;font-size:13px;font-weight:800;cursor:pointer}.scenario-delete:hover,.scenario-delete:focus-visible{background:var(--tmp-red);color:#fff;border-color:var(--tmp-red)}</style>
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
  const panel=document.getElementById("scenario-create-form"),toggle=document.getElementById("scenario-new-toggle");
@@ -152,6 +159,16 @@ document.addEventListener("DOMContentLoaded",()=>{
    const warning=document.createElement("p");warning.textContent=data.warning;result.append(warning);
    const link=document.createElement("a");link.href=data.url;link.textContent="Ouvrir le scénario importé →";result.append(link);
   }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
+ });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ document.querySelectorAll(".scenario-delete-form").forEach(form=>{
+  form.addEventListener("submit",event=>{
+   const title=form.dataset.scenarioTitle;
+   if(!confirm('Supprimer définitivement « '+title+' » et toutes ses scènes ?\\n\\nLes Rencontres et les autres scénarios seront conservés.'))event.preventDefault();
+  });
  });
 });
 </script>
