@@ -517,3 +517,19 @@ class ScenarioLibraryTests(TestCase):
             "confirm_title": "Secret", "content_revision": 0, "layout_revision": 0
         }).status_code, 404)
         self.assertTrue(Scenario.objects.filter(pk=self.bob_scenario.pk).exists())
+
+    def test_scenario_pages_use_custom_confirmations(self):
+        self.client.force_login(self.alice)
+        scenario = Scenario.objects.create(owner=self.alice, title="Confirmations TMP")
+        library = self.client.get(reverse("scenarios:library"))
+        detail = self.client.get(reverse("scenarios:detail", args=[scenario.pk]))
+        self.assertEqual(library.status_code, 200)
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(library, 'id="scenario-confirm-dialog"')
+        self.assertContains(library, 'id="scenario-import-form"')
+        self.assertContains(detail, 'id="scene-delete-confirm"')
+        self.assertContains(detail, 'id="encounter-confirm-dialog"')
+        for response in (library, detail):
+            html = response.content.decode("utf-8")
+            for native in ("confirm(", "window.confirm(", "alert(", "window.alert(", "prompt(", "window.prompt("):
+                self.assertNotIn(native, html)
