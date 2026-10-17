@@ -1,3 +1,4 @@
+import hashlib
 """Read-only, consistent export of a single privately owned scenario."""
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
@@ -6,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST
 
 from .archive.codec import ArchiveError, encode_archive, decode_archive, MAX_ARCHIVE
-from .models import Scenario, Scene, SceneBlock
+from .models import Scenario, Scene, SceneBlock, ScenarioImportReceipt
 from .archive.import_plan import plan_import
 import uuid
 
@@ -133,12 +134,33 @@ def import_archive(request):
     if uploaded.size > MAX_ARCHIVE:
         return JsonResponse({"ok": False, "error": "Archive trop volumineuse."}, status=400)
     try:
-        manifest, document = decode_archive(uploaded.read(MAX_ARCHIVE + 1))
+        key = uuid.UUID(request.POST["import_key"])
+    except (KeyError, ValueError, TypeError):
+        return JsonResponse({"ok": False, "error": "Clé d'import invalide."}, status=400)
+    content = uploaded.read(MAX_ARCHIVE + 1)
+    fingerprint = hashlib.sha256(content).hexdigest()
+    try:
+        manifest, document = decode_archive(content)
         plan = plan_import(manifest, document)
     except (ArchiveError, ValueError, OSError, KeyError, TypeError) as exc:
         return JsonResponse({"ok": False, "error": "Archive invalide : " + str(exc)}, status=400)
     try:
         with transaction.atomic():
+            receipt, created = ScenarioImportReceipt.objects.get_or_create(
+                owner=request.user, key=key, defaults={"fingerprint": fingerprint}
+            )
+            receipt = ScenarioImportReceipt.objects.select_for_update().get(pk=receipt.pk)
+            if receipt.fingerprint != fingerprint:
+                return JsonResponse({"ok": False, "error": "Clé déjà utilisée pour une autre archive."}, status=409)
+            if not created:
+                if not receipt.scenario_id:
+                    return JsonResponse({"ok": False, "error": "Copie déjà importée puis supprimée."}, status=409)
+                return JsonResponse({"ok": True, "replayed": True,
+                    "scenario_id": str(receipt.scenario_id),
+                    "url": "/scenarios/" + str(receipt.scenario_id) + "/",
+                    "scenes": len(plan["scenes"]), "blocks": len(plan["blocks"]),
+                    "unresolved_encounters": plan["unresolved_encounters"],
+                    "warning": "Import déjà traité : aucune copie supplémentaire."})
             scenario = Scenario.objects.create(
                 owner=request.user, title=plan["title"], summary=plan["summary"],
                 # A restored copy gets its own portable document identity.
@@ -157,6 +179,8 @@ def import_archive(request):
                     payload=item["payload"],
                     target_scene_id=uuid.UUID(item["target_scene_id"]) if "target_scene_id" in item else None,
                 )
+            receipt.scenario = scenario
+            receipt.save(update_fields=["scenario"])
     except Exception:
         # Never leave a partially restored graph behind.
         return JsonResponse({"ok": False, "error": "L'import a échoué : aucune copie n'a été conservée."}, status=422)
