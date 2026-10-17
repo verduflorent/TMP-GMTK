@@ -162,13 +162,41 @@ document.addEventListener("DOMContentLoaded",()=>{
  });
 });
 </script>
+<dialog id="scenario-confirm-dialog" class="tmp-confirm-dialog" aria-labelledby="scenario-confirm-title" aria-describedby="scenario-confirm-description">
+  <p class="tmp-confirm-eyebrow">THE MOIRA PROTOCOL / CONFIRMATION</p>
+  <h2 id="scenario-confirm-title">Supprimer le scénario ?</h2>
+  <p id="scenario-confirm-description"></p>
+  <p>Ses scènes, narrations et transitions seront supprimées. Les Rencontres et les autres scénarios seront conservés.</p>
+  <div class="tmp-confirm-actions"><button type="button" id="scenario-confirm-cancel">Annuler</button><button type="button" id="scenario-confirm-accept">Supprimer définitivement</button></div>
+</dialog>
+<style>
+.tmp-confirm-dialog{width:min(92vw,510px);max-height:85vh;overflow:auto;padding:25px;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;box-shadow:0 18px 70px #0007}
+.tmp-confirm-dialog::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}
+.tmp-confirm-dialog h2{font:30px/1.15 Anton,Impact,sans-serif;text-transform:uppercase;margin:8px 0 18px}
+.tmp-confirm-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}
+.tmp-confirm-dialog p{line-height:1.5}.tmp-confirm-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}
+.tmp-confirm-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800;cursor:pointer}
+.tmp-confirm-actions #scenario-confirm-accept{background:#a7191c;border-color:#a7191c;color:white}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
+ const dialog=document.getElementById("scenario-confirm-dialog");
+ const cancel=document.getElementById("scenario-confirm-cancel");
+ const accept=document.getElementById("scenario-confirm-accept");
+ let pending=null;
  document.querySelectorAll(".scenario-delete-form").forEach(form=>{
   form.addEventListener("submit",event=>{
-   const title=form.dataset.scenarioTitle;
-   if(!confirm('Supprimer définitivement « '+title+' » et toutes ses scènes ?\\n\\nLes Rencontres et les autres scénarios seront conservés.'))event.preventDefault();
+   if(form.dataset.confirmed==="true")return;
+   event.preventDefault();pending=form;
+   document.getElementById("scenario-confirm-description").textContent="« "+form.dataset.scenarioTitle+" »";
+   dialog.showModal();cancel.focus();
   });
+ });
+ cancel.addEventListener("click",()=>dialog.close());
+ dialog.addEventListener("close",()=>{pending=null;});
+ accept.addEventListener("click",()=>{
+  if(!pending)return;
+  const form=pending;form.dataset.confirmed="true";accept.disabled=true;form.requestSubmit();
  });
 });
 </script>
