@@ -65,3 +65,25 @@ def detail(request, pk):
     scenes = scenario.scenes.all()
     encounters = list(Encounter.objects.filter(owner=request.user).order_by("name").values("id", "name"))
     return render(request, "scenarios/detail.html", {"scenario": scenario, "scenes": scenes, "encounter_options": encounters})
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_scenario(request, pk):
+    """Delete only the requested user's scenario, after explicit confirmation."""
+    scenario = get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
+    if request.POST.get("confirm_title") != scenario.title:
+        return HttpResponseBadRequest("Confirmation invalide : le titre du scénario ne correspond pas.")
+    with transaction.atomic():
+        locked = get_object_or_404(
+            Scenario.objects.select_for_update().filter(owner=request.user), pk=pk
+        )
+        try:
+            expected_content = int(request.POST["content_revision"])
+            expected_layout = int(request.POST["layout_revision"])
+        except (KeyError, ValueError, TypeError):
+            return HttpResponseBadRequest("Révisions de suppression invalides.")
+        if expected_content != locked.content_revision or expected_layout != locked.layout_revision:
+            return HttpResponse("Le scénario a changé depuis l'affichage de la bibliothèque. Recharge la page.", status=409)
+        locked.delete()
+    return HttpResponseRedirect(reverse("scenarios:library"))
