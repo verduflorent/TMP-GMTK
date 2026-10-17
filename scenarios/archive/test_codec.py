@@ -35,3 +35,27 @@ class ArchiveCodecTests(SimpleTestCase):
         document["scenes"].append(copy.deepcopy(document["scenes"][0]))
         with self.assertRaises(ArchiveError):
             encode_archive(document, document_id=DOC_ID)
+
+    def test_unknown_encounter_reference_rejected(self):
+        document = copy.deepcopy(self.document)
+        encounter = next(b for b in document["blocks"] if b["kind"] == "encounter")
+        encounter["payload"]["resource_key"] = "missing"
+        with self.assertRaises(ArchiveError):
+            encode_archive(document, document_id=DOC_ID)
+
+    def test_unknown_payload_key_rejected(self):
+        document = copy.deepcopy(self.document)
+        document["blocks"][0]["payload"]["unexpected"] = True
+        with self.assertRaises(ArchiveError):
+            encode_archive(document, document_id=DOC_ID)
+
+    def test_excessive_json_depth_rejected(self):
+        document = copy.deepcopy(self.document)
+        deep = {}
+        node = deep
+        for _ in range(45):
+            node["nested"] = {}
+            node = node["nested"]
+        document["blocks"][0]["payload"] = deep
+        with self.assertRaises(ArchiveError):
+            encode_archive(document, document_id=DOC_ID)
