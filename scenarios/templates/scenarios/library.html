@@ -1,53 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Mes Scénarios — TMP-GMTK
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
- const form=document.getElementById("scenario-verify-form");
- const result=document.getElementById("scenario-verify-result");
- const button=document.getElementById("scenario-verify-button");
- if(!form)return;
- form.addEventListener("submit",async event=>{
-  event.preventDefault();
-  result.hidden=false;result.className="scenario-verify-result";result.replaceChildren();
-  result.textContent="Vérification en cours…";button.disabled=true;
-  try{
-   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
-   const data=await response.json();
-   if(!response.ok||!data.ok)throw Error(data.error||"Impossible de vérifier cette archive.");
-   result.replaceChildren();
-   const heading=document.createElement("strong");heading.textContent="✓ Archive valide : "+data.title;result.append(heading);
-   const details=document.createElement("p");
-   details.textContent=data.scenes+" scènes · "+data.blocks+" rubriques · "+data.transitions+" transitions · "+data.encounters+" références de Rencontres · "+data.media+" médias";
-   const info=document.createElement("p");info.textContent="Format TMPS "+data.format_version+" — révisions contenu "+data.content_revision+" / disposition "+data.layout_revision;
-   const note=document.createElement("p");note.textContent=data.warning;
-   result.append(details,info,note);
-  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
- });
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
- const form=document.getElementById("scenario-import-form");
- const result=document.getElementById("scenario-import-result");
- const button=document.getElementById("scenario-import-button");
- form.addEventListener("submit",async event=>{
-  event.preventDefault();
-  if(!confirm("Créer une nouvelle copie de ce scénario dans votre bibliothèque ?"))return;
-  button.disabled=true;result.hidden=false;result.className="scenario-verify-result";result.textContent="Import en cours…";
-  try{
-   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
-   const data=await response.json();
-   if(!response.ok||!data.ok)throw Error(data.error||"Échec de l'import.");
-   result.replaceChildren();
-   const heading=document.createElement("strong");heading.textContent="✓ Copie créée : "+data.scenes+" scènes, "+data.blocks+" rubriques";result.append(heading);
-   const warning=document.createElement("p");warning.textContent=data.warning;result.append(warning);
-   const link=document.createElement("a");link.href=data.url;link.textContent="Ouvrir le scénario importé →";result.append(link);
-  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
- });
-});
-</script>
-{% endblock %}
+{% block title %}Mes Scénarios — TMP-GMTK{% endblock %}
 {% block content %}
 <section class="scenario-page">
   <header class="scenario-heading">
@@ -155,6 +107,52 @@ document.addEventListener("DOMContentLoaded",()=>{
  toggle.addEventListener("click",()=>show(panel.hidden));
  document.getElementById("scenario-new-close").addEventListener("click",()=>show(false));
  document.getElementById("scenario-empty-new")?.addEventListener("click",()=>show(true));
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const form=document.getElementById("scenario-verify-form");
+ const result=document.getElementById("scenario-verify-result");
+ const button=document.getElementById("scenario-verify-button");
+ if(!form)return;
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  result.hidden=false;result.className="scenario-verify-result";result.replaceChildren();
+  result.textContent="Vérification en cours…";button.disabled=true;
+  try{
+   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw Error(data.error||"Impossible de vérifier cette archive.");
+   result.replaceChildren();
+   const heading=document.createElement("strong");heading.textContent="✓ Archive valide : "+data.title;result.append(heading);
+   const details=document.createElement("p");
+   details.textContent=data.scenes+" scènes · "+data.blocks+" rubriques · "+data.transitions+" transitions · "+data.encounters+" références de Rencontres · "+data.media+" médias";
+   const info=document.createElement("p");info.textContent="Format TMPS "+data.format_version+" — révisions contenu "+data.content_revision+" / disposition "+data.layout_revision;
+   const note=document.createElement("p");note.textContent=data.warning;
+   result.append(details,info,note);
+  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
+ });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const form=document.getElementById("scenario-import-form");
+ const result=document.getElementById("scenario-import-result");
+ const button=document.getElementById("scenario-import-button");
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!confirm("Créer une nouvelle copie de ce scénario dans votre bibliothèque ?"))return;
+  button.disabled=true;result.hidden=false;result.className="scenario-verify-result";result.textContent="Import en cours…";
+  try{
+   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw Error(data.error||"Échec de l'import.");
+   result.replaceChildren();
+   const heading=document.createElement("strong");heading.textContent="✓ Copie créée : "+data.scenes+" scènes, "+data.blocks+" rubriques";result.append(heading);
+   const warning=document.createElement("p");warning.textContent=data.warning;result.append(warning);
+   const link=document.createElement("a");link.href=data.url;link.textContent="Ouvrir le scénario importé →";result.append(link);
+  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
+ });
 });
 </script>
 {% endblock %}
