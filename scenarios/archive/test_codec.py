@@ -59,3 +59,69 @@ class ArchiveCodecTests(SimpleTestCase):
         document["blocks"][0]["payload"] = deep
         with self.assertRaises(ArchiveError):
             encode_archive(document, document_id=DOC_ID)
+
+    def test_duplicate_zip_entry_rejected(self):
+        import io
+        import zipfile
+        import warnings
+        raw = encode_archive(self.document, document_id=DOC_ID)
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            manifest = archive.read("manifest.json")
+            document = archive.read("scenario.json")
+        stream = io.BytesIO()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            with zipfile.ZipFile(stream, "w") as archive:
+                archive.writestr("manifest.json", manifest)
+                archive.writestr("scenario.json", document)
+                archive.writestr("scenario.json", document)
+        with self.assertRaises(ArchiveError):
+            decode_archive(stream.getvalue())
+
+    def test_zip_path_traversal_rejected(self):
+        import io
+        import zipfile
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            archive.writestr("manifest.json", b"{}")
+            archive.writestr("../scenario.json", b"{}")
+        with self.assertRaises(ArchiveError):
+            decode_archive(stream.getvalue())
+
+    def test_zip_symlink_rejected(self):
+        import io
+        import zipfile
+        raw = encode_archive(self.document, document_id=DOC_ID)
+        with zipfile.ZipFile(io.BytesIO(raw)) as source:
+            manifest = source.read("manifest.json")
+            document = source.read("scenario.json")
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            link = zipfile.ZipInfo("scenario.json")
+            link.create_system = 3
+            link.external_attr = (0o120777 << 16)
+            archive.writestr("manifest.json", manifest)
+            archive.writestr(link, document)
+        with self.assertRaises(ArchiveError):
+            decode_archive(stream.getvalue())
+
+    def test_zip_oversized_decompressed_member_rejected(self):
+        import io
+        import zipfile
+        from .codec import MAX_UNCOMPRESSED
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("manifest.json", b"{}")
+            archive.writestr("scenario.json", b"x" * (MAX_UNCOMPRESSED + 1))
+        with self.assertRaises(ArchiveError):
+            decode_archive(stream.getvalue())
+
+    def test_corrupt_json_rejected(self):
+        import io
+        import zipfile
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            archive.writestr("manifest.json", b'{"format": "tmps", "format": "tmps"}')
+            archive.writestr("scenario.json", b"not json")
+        with self.assertRaises(ArchiveError):
+            decode_archive(stream.getvalue())
