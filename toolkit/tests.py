@@ -310,7 +310,7 @@ class OfficialEquipmentCatalogueTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "GridLock")
         self.assertContains(response, "AEGIS")
-        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Armes officielles (29)")
         self.assertContains(response, "Implants officiels (16)")
 
     def test_official_catalogue_is_collapsible_and_shows_reference_properties(self):
@@ -318,7 +318,7 @@ class OfficialEquipmentCatalogueTests(TestCase):
         self.assertContains(response, 'class="equip-catalogue-root"')
         self.assertContains(response, 'class="equip-reference-list"')
         self.assertNotContains(response, 'id="equip-preview-level"')
-        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Armes officielles (29)")
         self.assertContains(response, "Implants officiels (16)")
 
     def test_official_reference_visible_without_database_seed(self):
@@ -328,8 +328,19 @@ class OfficialEquipmentCatalogueTests(TestCase):
         response = self.client.get(reverse("equipment_home"))
         self.assertContains(response, "GridLock")
         self.assertContains(response, "AEGIS")
-        self.assertContains(response, "Armes officielles (28)")
+        self.assertContains(response, "Armes officielles (29)")
         self.assertContains(response, "Implants officiels (16)")
+
+    def test_compact_grenade_launcher_is_in_official_catalogue(self):
+        from catalogue.models import MobWeapon
+        weapon = MobWeapon.objects.get(name="Lance-grenades compact")
+        self.assertEqual(weapon.tier, 2)
+        self.assertEqual(weapon.allowed_profiles, "C")
+        self.assertEqual(weapon.hands, 1)
+        self.assertEqual(weapon.optimal_range, "MEDIUM")
+        self.assertEqual(weapon.power, 20)
+        self.assertEqual(weapon.aim, 1)
+        self.assertIn("5×5", weapon.property_text)
 
     def test_legacy_preview_parameter_does_not_break_catalogue(self):
         self.assertEqual(self.client.get(reverse("equipment_home") + "?level=oops").status_code, 200)

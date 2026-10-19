@@ -7,11 +7,11 @@ from catalogue.models import MobImplant, MobWeapon
 class MonsterCatalogueSeedTests(TestCase):
     def test_seed_is_idempotent_and_complete(self):
         call_command("seed_monster_catalogue", verbosity=0)
-        self.assertEqual(MobWeapon.objects.count(), 28)
+        self.assertEqual(MobWeapon.objects.count(), 29)
         self.assertEqual(MobImplant.objects.count(), 16)
 
         call_command("seed_monster_catalogue", verbosity=0)
-        self.assertEqual(MobWeapon.objects.count(), 28)
+        self.assertEqual(MobWeapon.objects.count(), 29)
         self.assertEqual(MobImplant.objects.count(), 16)
 
     def test_seed_preserves_profile_and_weapon_structure(self):

@@ -26,6 +26,7 @@ WEAPONS = [
     ("Mitrailleuse", 3, "C", 2, "MEDIUM", 20, 0, "Suppression", "Ignore 1 niveau de Couverture.", False),
     ("Lame lourde", 3, "C", 2, "CONTACT", 25, 0, "Garde", "Peut effectuer une Parade contre une attaque à distance.", False),
     ("Masse de combat", 2, "C", 2, "CONTACT", 25, 0, "Dégâts", "+5 Dégâts × Niveau.", False),
+    ("Lance-grenades compact", 2, "C", 1, "MEDIUM", 20, 1, "Flash", "Zone 3×3. Peut remplacer le tir normal par une grenade flash en Zone 5×5 : les créatures présentes doivent dépenser 1 Réaction ou devenir Aveuglées jusqu'à la fin de votre prochain tour. Peut tirer par-dessus les Couvertures selon les règles de la grenade flash.", False),
     ("Lance-flammes", 3, "C", 2, "SHORT", 30, -1, "Incendiaire", "Zone cône 3×3. Les cibles touchées effectuent un test de VOL ou subissent un Désavantage.", False),
     ("Lance-roquettes", 4, "C", 2, "LONG", 35, -3, "Impact explosif", "Zone 5×5. Les cibles touchées perdent 5 Armure.", False),
     ("Backpulse", 3, "K", 1, "SHORT", 0, 2, "Propulsion", "Repousse la cible de Niveau cases.", True),
