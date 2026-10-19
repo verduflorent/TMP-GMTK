@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "catalogue",
     "toolkit",
     "rules",
+    "scenarios",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "title": "Fixture de référence",
+    "summary": "Graphe cyclique, six types et référence non résolue"
+  },
+  "scenes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "title": "Arrivée",
+      "narrative_order": 0,
+      "position": {
+        "x": 10,
+        "y": 20
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "title": "Hôpital",
+      "narrative_order": 1,
+      "position": {
+        "x": 240,
+        "y": 40
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "title": "Marcus",
+      "narrative_order": 2,
+      "position": {
+        "x": 480,
+        "y": 40
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "title": "Sortie",
+      "narrative_order": 3,
+      "position": {
+        "x": 700,
+        "y": 120
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "scene_id": "00000000-0000-4000-8000-000000000001",
+      "kind": "narration",
+      "rank": 0,
+      "text": "|T1| ARRIVÉE |/T1|",
+      "payload": {
+        "version": 1
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000102",
+      "scene_id": "00000000-0000-4000-8000-000000000001",
+      "kind": "interpretation",
+      "rank": 1,
+      "text": "L'accueil est désert.",
+      "payload": {
+        "version": 1
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000103",
+      "scene_id": "00000000-0000-4000-8000-000000000001",
+      "kind": "transition",
+      "rank": 2,
+      "text": "Vers l'hôpital",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000002"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000104",
+      "scene_id": "00000000-0000-4000-8000-000000000002",
+      "kind": "splash",
+      "rank": 0,
+      "text": "Entrée",
+      "payload": {
+        "version": 1,
+        "external_url": "https://example.org/illustration.png",
+        "alt_text": "Façade d'hôpital"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000105",
+      "scene_id": "00000000-0000-4000-8000-000000000002",
+      "kind": "gm_note",
+      "rank": 1,
+      "text": "Ne pas révéler l'identité.",
+      "payload": {
+        "version": 1
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000106",
+      "scene_id": "00000000-0000-4000-8000-000000000002",
+      "kind": "encounter",
+      "rank": 2,
+      "text": "Escarmouche",
+      "payload": {
+        "version": 1,
+        "resource_key": "encounter-1"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000107",
+      "scene_id": "00000000-0000-4000-8000-000000000002",
+      "kind": "transition",
+      "rank": 3,
+      "text": "Voir Marcus",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000003"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000108",
+      "scene_id": "00000000-0000-4000-8000-000000000002",
+      "kind": "transition",
+      "rank": 4,
+      "text": "Autre chemin",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000003"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000109",
+      "scene_id": "00000000-0000-4000-8000-000000000003",
+      "kind": "transition",
+      "rank": 0,
+      "text": "Retour à l'hôpital",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000002"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000110",
+      "scene_id": "00000000-0000-4000-8000-000000000003",
+      "kind": "transition",
+      "rank": 1,
+      "text": "Partir",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000004"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000111",
+      "scene_id": "00000000-0000-4000-8000-000000000004",
+      "kind": "transition",
+      "rank": 0,
+      "text": "Recommencer",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000112",
+      "scene_id": "00000000-0000-4000-8000-000000000004",
+      "kind": "transition",
+      "rank": 1,
+      "text": "Rester ici",
+      "payload": {
+        "version": 1
+      },
+      "target_scene_id": "00000000-0000-4000-8000-000000000004"
+    }
+  ],
+  "resources": {
+    "media": [],
+    "encounters": [
+      {
+        "key": "encounter-1",
+        "name": "Escarmouche",
+        "status": "unresolved"
+      }
+    ]
+  }
+}

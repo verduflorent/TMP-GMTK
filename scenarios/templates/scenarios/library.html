@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Mes Scénarios — TMP-GMTK{% endblock %}
+{% block content %}
+<section class="scenario-page">
+  <header class="scenario-heading">
+    <div><p class="scenario-eyebrow">THE MOIRA PROTOCOL / NARRATION</p><h1>Mes Scénarios</h1><p>Construisez vos aventures, scène après scène.</p></div>
+    <button type="button" id="scenario-new-toggle" aria-expanded="{% if form.errors %}true{% else %}false{% endif %}" aria-controls="scenario-create-form">+ Nouveau scénario</button>
+  </header>
+  <section id="scenario-create-form" class="scenario-create panel" {% if not form.errors %}hidden{% endif %}>
+    <div class="scenario-section-heading"><h2>Créer un scénario</h2><button type="button" id="scenario-new-close" aria-label="Fermer le formulaire">✕</button></div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="creation_key" value="{{ creation_key }}">
+      {{ form.non_field_errors }}
+      <div class="scenario-form-grid">
+        {% for field in form %}
+        <div class="scenario-field{% if field.name == 'summary' %} scenario-field-wide{% endif %}">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="scenario-submit" type="submit">Créer le scénario →</button>
+    </form>
+  </section>
+  <section class="scenario-verify panel" aria-labelledby="verify-title">
+    <div class="scenario-section-heading"><h2 id="verify-title">Vérifier une archive .tmps</h2></div>
+    <p>Contrôler une sauvegarde avant son futur réimport. Aucune modification de votre bibliothèque.</p>
+    <form id="scenario-verify-form" action="{% url 'scenarios:verify' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="scenario-archive-file">Archive TMP Stories</label>
+      <input id="scenario-archive-file" type="file" name="archive" accept=".tmps" required>
+      <button type="submit" id="scenario-verify-button">Vérifier l'archive</button>
+    </form>
+    <div id="scenario-verify-result" role="status" aria-live="polite" hidden></div>
+  </section>
+  <section class="scenario-verify panel" aria-labelledby="import-title">
+    <div class="scenario-section-heading"><h2 id="import-title">Importer un scénario .tmps</h2></div>
+    <p>Crée une nouvelle copie privée. Le scénario d'origine ne sera jamais remplacé. Les Rencontres devront être réassociées.</p>
+    <form id="scenario-import-form" action="{% url 'scenarios:import' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}<input type="hidden" name="import_key" id="scenario-import-key">
+      <label for="scenario-import-file">Archive TMP Stories</label>
+      <input id="scenario-import-file" type="file" name="archive" accept=".tmps" required>
+      <button type="submit" id="scenario-import-button">Importer une copie</button>
+    </form>
+    <div id="scenario-import-result" role="status" aria-live="polite" hidden></div>
+  </section>
+  <section class="scenario-library">
+    <div class="scenario-section-heading"><h2>Bibliothèque</h2><span class="scenario-count">{{ scenarios|length }} scénario{{ scenarios|length|pluralize }}</span></div>
+    {% if scenarios %}
+      <div class="scenario-grid">
+      {% for scenario in scenarios %}
+        <article class="scenario-library-item">
+          <a class="scenario-card" href="{% url 'scenarios:detail' scenario.pk %}">
+            <span class="scenario-card-top"><span>SCÉNARIO / {{ forloop.counter|stringformat:"02d" }}</span><span aria-hidden="true">↗</span></span>
+            <strong>{{ scenario.title }}</strong>
+            {% if scenario.summary %}<span class="scenario-summary">{{ scenario.summary|truncatechars:140 }}</span>{% endif %}
+            <span class="scenario-card-meta">{{ scenario.folder.name|default:"Sans dossier" }} <span aria-hidden="true">·</span> {{ scenario.updated_at|date:"d/m/Y" }}</span>
+          </a>
+          <div class="scenario-card-actions">
+            <a class="scenario-export" href="{% url 'scenarios:export' scenario.pk %}" aria-label="Exporter {{ scenario.title }} au format TMPS">↓ Exporter .tmps</a>
+            <form class="scenario-delete-form" method="post" action="{% url 'scenarios:delete' scenario.pk %}" data-scenario-title="{{ scenario.title }}">
+              {% csrf_token %}
+              <input type="hidden" name="confirm_title" value="{{ scenario.title }}">
+              <input type="hidden" name="content_revision" value="{{ scenario.content_revision }}">
+              <input type="hidden" name="layout_revision" value="{{ scenario.layout_revision }}">
+              <button class="scenario-delete" type="submit" aria-label="Supprimer {{ scenario.title }}">✕ Supprimer</button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="scenario-empty">
+        <span class="scenario-empty-icon" aria-hidden="true">▤</span>
+        <h3>Votre bibliothèque est vide</h3>
+        <p>Créez votre premier scénario pour commencer à organiser vos scènes et embranchements.</p>
+        <button type="button" id="scenario-empty-new">+ Créer mon premier scénario</button>
+      </div>
+    {% endif %}
+  </section>
+</section>
+<style>
+.scenario-page{max-width:1400px;margin:0 auto;padding:clamp(12px,2vw,28px);color:var(--tmp-ink)}
+.scenario-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin:0 0 32px}
+.scenario-heading h1{margin:0 0 10px}.scenario-heading p{margin:0}
+.scenario-eyebrow{font-size:12px;letter-spacing:.16em;color:var(--tmp-red);font-weight:700;margin-bottom:10px!important}
+.scenario-heading>button,.scenario-submit,.scenario-empty button{background:var(--tmp-red);color:#fff;border:1px solid var(--tmp-red);padding:12px 18px}
+.scenario-heading>button:hover,.scenario-submit:hover,.scenario-empty button:hover{background:#851619;color:#fff}
+.scenario-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid var(--tmp-red);padding-bottom:12px;margin-bottom:18px}
+.scenario-section-heading h2{margin:0}.scenario-section-heading>button{padding:4px 10px}
+.scenario-count{font-weight:700;color:#625d56}
+.scenario-create{margin-bottom:30px;background:var(--tmp-panel);padding:22px}
+.scenario-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.scenario-field-wide{grid-column:1/-1}
+.scenario-field label{display:block;font-weight:700;margin-bottom:6px}
+.scenario-field input,.scenario-field select,.scenario-field textarea{width:100%;display:block;background:#fffdf8;color:var(--tmp-ink);border:1px solid var(--tmp-line);padding:10px}
+.scenario-field textarea{min-height:90px}
+.scenario-submit{margin-top:18px}
+.scenario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px}
+.scenario-card{background:var(--tmp-panel);border:1px solid var(--tmp-line);border-top:3px solid var(--tmp-red);padding:19px;display:flex;flex-direction:column;gap:13px;min-height:195px;transition:border-color .15s,box-shadow .15s}
+.scenario-card:hover,.scenario-card:focus-visible{border-color:var(--tmp-red);box-shadow:0 5px 16px #00000012;color:var(--tmp-ink)}
+.scenario-card-top{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;font-weight:700;color:#7b272b}
+.scenario-card-top span:last-child{font-size:21px}
+.scenario-card strong{font:25px/1.2 Anton,Impact,sans-serif;text-transform:uppercase}
+.scenario-summary{font-size:15px}
+.scenario-card-meta{margin-top:auto;border-top:1px solid var(--tmp-line);padding-top:10px;color:#625d56;font-size:13px}
+.scenario-empty{background:var(--tmp-panel);border:1px dashed var(--tmp-line);padding:42px 24px;text-align:center}
+.scenario-empty-icon{display:block;font-size:42px;color:var(--tmp-red)}.scenario-empty h3{margin:6px 0}.scenario-empty p{max-width:520px;margin:8px auto 22px}
+@media(max-width:700px){.scenario-form-grid{grid-template-columns:1fr}.scenario-heading{align-items:start}.scenario-card{min-height:165px}}
+.scenario-export{display:inline-block;margin-top:-10px;margin-bottom:8px;padding:8px 12px;border:1px solid var(--tmp-line);background:var(--tmp-panel);font-weight:700;color:var(--tmp-ink);text-decoration:none}.scenario-export:hover,.scenario-export:focus-visible{border-color:var(--tmp-red);color:var(--tmp-red)}
+.scenario-library-item{display:flex;flex-direction:column;min-width:0}.scenario-library-item .scenario-card{flex:1;min-height:195px}.scenario-card-actions{display:flex;align-items:center;justify-content:flex-end;padding:9px 12px;border:1px solid var(--tmp-line);border-top:0;background:var(--tmp-panel)}.scenario-card-actions .scenario-export{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:7px 11px;min-height:34px;background:#fffdf8;border:1px solid #c6bfb3;border-radius:3px;font-size:13px;font-weight:800;text-decoration:none}.scenario-card-actions .scenario-export:hover,.scenario-card-actions .scenario-export:focus-visible{background:var(--tmp-red);border-color:var(--tmp-red);color:#fff}.scenario-verify{margin:0 0 30px;padding:18px 22px;background:var(--tmp-panel);border:1px solid var(--tmp-line)}.scenario-verify p{margin:8px 0 14px}.scenario-verify form{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scenario-verify input[type=file]{max-width:100%;background:#fffdf8;padding:8px;border:1px solid var(--tmp-line)}.scenario-verify button{background:var(--tmp-red);color:#fff;border:1px solid var(--tmp-red);padding:10px 14px;font-weight:700}.scenario-verify button:disabled{opacity:.6}.scenario-verify-result{padding:14px;margin-top:14px;background:#fffdf8;border-left:3px solid var(--tmp-red)}.scenario-verify-result p{margin:5px 0}.scenario-verify-result strong{font-size:18px}.scenario-card-actions{gap:8px;flex-wrap:wrap}.scenario-delete-form{margin:0}.scenario-delete{min-height:34px;padding:7px 11px;background:transparent;color:var(--tmp-red);border:1px solid #cba8a5;border-radius:3px;font-size:13px;font-weight:800;cursor:pointer}.scenario-delete:hover,.scenario-delete:focus-visible{background:var(--tmp-red);color:#fff;border-color:var(--tmp-red)}</style>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const panel=document.getElementById("scenario-create-form"),toggle=document.getElementById("scenario-new-toggle");
+ function show(open){panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));if(open)panel.querySelector("input")?.focus();}
+ toggle.addEventListener("click",()=>show(panel.hidden));
+ document.getElementById("scenario-new-close").addEventListener("click",()=>show(false));
+ document.getElementById("scenario-empty-new")?.addEventListener("click",()=>show(true));
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const form=document.getElementById("scenario-verify-form");
+ const result=document.getElementById("scenario-verify-result");
+ const button=document.getElementById("scenario-verify-button");
+ if(!form)return;
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  result.hidden=false;result.className="scenario-verify-result";result.replaceChildren();
+  result.textContent="Vérification en cours…";button.disabled=true;
+  try{
+   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw Error(data.error||"Impossible de vérifier cette archive.");
+   result.replaceChildren();
+   const heading=document.createElement("strong");heading.textContent="✓ Archive valide : "+data.title;result.append(heading);
+   const details=document.createElement("p");
+   details.textContent=data.scenes+" scènes · "+data.blocks+" rubriques · "+data.transitions+" transitions · "+data.encounters+" références de Rencontres · "+data.media+" médias";
+   const info=document.createElement("p");info.textContent="Format TMPS "+data.format_version+" — révisions contenu "+data.content_revision+" / disposition "+data.layout_revision;
+   const note=document.createElement("p");note.textContent=data.warning;
+   result.append(details,info,note);
+  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
+ });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const form=document.getElementById("scenario-import-form");
+ const result=document.getElementById("scenario-import-result");
+ const button=document.getElementById("scenario-import-button");
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const proceed=await new Promise(resolve=>{
+   const dialog=document.getElementById("scenario-confirm-dialog");
+   const heading=document.getElementById("scenario-confirm-title");
+   const description=document.getElementById("scenario-confirm-description");
+   const extra=document.getElementById("scenario-confirm-extra");
+   const accept=document.getElementById("scenario-confirm-accept");
+   const cancel=document.getElementById("scenario-confirm-cancel");
+   heading.textContent="Importer une copie ?";
+   description.textContent="Créer un nouveau scénario indépendant à partir de l'archive sélectionnée.";
+   extra.textContent="Aucun scénario existant ne sera remplacé. Les Rencontres devront être réassociées.";
+   accept.textContent="Importer une copie";
+   accept.disabled=false;
+   dialog.showModal();cancel.focus();
+   const onClose=()=>{dialog.removeEventListener("close",onClose);resolve(dialog.returnValue==="accept");};
+   dialog.addEventListener("close",onClose);
+  });
+  if(!proceed)return;
+  const keyInput=document.getElementById("scenario-import-key");
+  if(!keyInput.value)keyInput.value=crypto.randomUUID();
+  button.disabled=true;result.hidden=false;result.className="scenario-verify-result";result.textContent="Import en cours…";
+  try{
+   const response=await fetch(form.action,{method:"POST",body:new FormData(form),credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok||!data.ok)throw Error(data.error||"Échec de l'import.");
+   result.replaceChildren();
+   const heading=document.createElement("strong");heading.textContent="✓ Copie créée : "+data.scenes+" scènes, "+data.blocks+" rubriques";result.append(heading);
+   const warning=document.createElement("p");warning.textContent=data.warning;result.append(warning);
+   const link=document.createElement("a");link.href=data.url;link.textContent="Ouvrir le scénario importé →";result.append(link);
+   document.getElementById("scenario-import-key").value="";
+  }catch(error){result.textContent="✕ "+error.message;}finally{button.disabled=false;}
+ });
+});
+</script>
+<dialog id="scenario-confirm-dialog" class="tmp-confirm-dialog" aria-labelledby="scenario-confirm-title" aria-describedby="scenario-confirm-description">
+  <p class="tmp-confirm-eyebrow">THE MOIRA PROTOCOL / CONFIRMATION</p>
+  <h2 id="scenario-confirm-title">Supprimer le scénario ?</h2>
+  <p id="scenario-confirm-description"></p>
+  <p id="scenario-confirm-extra">Ses scènes, narrations et transitions seront supprimées. Les Rencontres et les autres scénarios seront conservés.</p>
+  <div class="tmp-confirm-actions"><button type="button" id="scenario-confirm-cancel">Annuler</button><button type="button" id="scenario-confirm-accept">Supprimer définitivement</button></div>
+</dialog>
+<style>
+.tmp-confirm-dialog{width:min(92vw,510px);max-height:85vh;overflow:auto;padding:25px;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;box-shadow:0 18px 70px #0007}
+.tmp-confirm-dialog::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}
+.tmp-confirm-dialog h2{font:30px/1.15 Anton,Impact,sans-serif;text-transform:uppercase;margin:8px 0 18px}
+.tmp-confirm-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}
+.tmp-confirm-dialog p{line-height:1.5}.tmp-confirm-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}
+.tmp-confirm-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800;cursor:pointer}
+.tmp-confirm-actions #scenario-confirm-accept{background:#a7191c;border-color:#a7191c;color:white}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const dialog=document.getElementById("scenario-confirm-dialog");
+ const cancel=document.getElementById("scenario-confirm-cancel");
+ const accept=document.getElementById("scenario-confirm-accept");
+ let pending=null;
+ document.querySelectorAll(".scenario-delete-form").forEach(form=>{
+  form.addEventListener("submit",event=>{
+   if(form.dataset.confirmed==="true")return;
+   event.preventDefault();pending=form;
+   document.getElementById("scenario-confirm-title").textContent="Supprimer le scénario ?";
+   document.getElementById("scenario-confirm-description").textContent="« "+form.dataset.scenarioTitle+" »";
+   document.getElementById("scenario-confirm-extra").textContent="Ses scènes, narrations et transitions seront supprimées. Les Rencontres et les autres scénarios seront conservés.";
+   accept.textContent="Supprimer définitivement";
+   dialog.showModal();cancel.focus();
+  });
+ });
+ cancel.addEventListener("click",()=>dialog.close("cancel"));
+ dialog.addEventListener("close",()=>{pending=null;});
+ accept.addEventListener("click",()=>{
+  if(!pending){dialog.close("accept");return;}
+  const form=pending;form.dataset.confirmed="true";accept.disabled=true;form.requestSubmit();
+ });
+});
+</script>
+{% endblock %}
