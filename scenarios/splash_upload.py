@@ -1,54 +1,57 @@
-"""Authenticated image upload for scenario Splash blocks.
+"""Private scenario Splash images stored in PostgreSQL, served by Django."""
+import io
 
-Requires CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.
-No files are stored on Render's ephemeral disk.
-"""
-import os
-import uuid
-
-import cloudinary
-import cloudinary.uploader
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
+from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .models import Scenario
+from .models import Scenario, ScenarioSplash
 
-MAX_SPLASH_BYTES = 8 * 1024 * 1024
-MIME_TYPES = {"image/png", "image/jpeg", "image/webp"}
+MAX_UPLOAD = 8 * 1024 * 1024
+MAX_PIXELS = 24_000_000
+MAX_SIDE = 1920
+MAX_STORED = 2 * 1024 * 1024
 
 
 @login_required
 @require_POST
 def upload_splash(request, pk):
-    get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
-    image = request.FILES.get("image")
-    if image is None or image.size > MAX_SPLASH_BYTES or image.size == 0:
+    scenario = get_object_or_404(Scenario.objects.filter(owner=request.user), pk=pk)
+    uploaded = request.FILES.get("image")
+    if uploaded is None or not 0 < uploaded.size <= MAX_UPLOAD:
         return JsonResponse({"error": "Image absente ou supérieure à 8 Mio."}, status=400)
-    if image.content_type not in MIME_TYPES:
-        return JsonResponse({"error": "Format PNG, JPEG ou WebP requis."}, status=400)
-    signature = image.read(16)
-    image.seek(0)
-    if not (signature.startswith(b"\x89PNG\r\n\x1a\n")
-            or signature.startswith(b"\xff\xd8\xff")
-            or signature.startswith(b"RIFF") and signature[8:12] == b"WEBP"):
-        return JsonResponse({"error": "Fichier image invalide."}, status=400)
-    cloud = os.environ.get("CLOUDINARY_CLOUD_NAME")
-    key = os.environ.get("CLOUDINARY_API_KEY")
-    secret = os.environ.get("CLOUDINARY_API_SECRET")
-    if not all((cloud, key, secret)):
-        return JsonResponse({"error": "Stockage des images non configuré."}, status=503)
-    cloudinary.config(cloud_name=cloud, api_key=key, api_secret=secret, secure=True)
     try:
-        result = cloudinary.uploader.upload(
-            image, folder="tmp-gmtk/scenarios/" + str(request.user.pk),
-            public_id=str(uuid.uuid4()), resource_type="image",
-            overwrite=False, invalidate=False,
-        )
-    except Exception:
-        return JsonResponse({"error": "Téléversement impossible. Réessaie plus tard."}, status=502)
-    url = result.get("secure_url", "")
-    if not url.startswith("https://res.cloudinary.com/"):
-        return JsonResponse({"error": "Réponse du stockage invalide."}, status=502)
-    return JsonResponse({"url": url})
+        with Image.open(uploaded) as source:
+            if source.format not in ("PNG", "JPEG", "WEBP"):
+                raise ValueError("Format d'image non pris en charge.")
+            if source.width * source.height > MAX_PIXELS:
+                raise ValueError("Image trop grande.")
+            source.load()
+            corrected = ImageOps.exif_transpose(source)
+            corrected.thumbnail((MAX_SIDE, MAX_SIDE))
+            if corrected.mode not in ("RGB", "RGBA"):
+                corrected = corrected.convert("RGBA" if "A" in corrected.getbands() else "RGB")
+            output = io.BytesIO()
+            corrected.save(output, format="WEBP", quality=80, method=4)
+            data = output.getvalue()
+            if len(data) > MAX_STORED:
+                raise ValueError("Image compressée trop volumineuse.")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        return JsonResponse({"error": "Image invalide ou trop volumineuse."}, status=400)
+    splash = ScenarioSplash.objects.create(scenario=scenario, data=data)
+    return JsonResponse({"url": f"/scenarios/{scenario.pk}/splash/{splash.pk}/"})
+
+
+@login_required
+@require_GET
+def read_splash(request, pk, image_id):
+    image = get_object_or_404(
+        ScenarioSplash.objects.filter(scenario_id=pk, scenario__owner=request.user),
+        pk=image_id,
+    )
+    response = HttpResponse(bytes(image.data), content_type=image.content_type)
+    response["Cache-Control"] = "private, max-age=3600"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
