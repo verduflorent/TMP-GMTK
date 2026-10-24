@@ -1329,3 +1329,14 @@ def encounter_move_folder(request, encounter_id):
         if encounter is not None:
             _move_to_folder(request, encounter)
     return redirect("encounters")
+
+@login_required
+def economy_docs(request):
+    documents = [
+        {"label": "Boutique", "path": "docs/economie/01.webp"},
+        {"label": "Boutique d'armes", "path": "docs/economie/02.webp"},
+        {"label": "Accessoires EVO", "path": "docs/economie/03.webp"},
+        {"label": "Gadgets EVO", "path": "docs/economie/04.webp"},
+        {"label": "Table Loot", "path": "docs/economie/05.webp"},
+    ]
+    return render(request, "toolkit/economie.html", {"documents": documents})
