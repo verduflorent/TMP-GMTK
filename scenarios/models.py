@@ -122,3 +122,12 @@ class ScenarioImportReceipt(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["owner", "key"], name="scenario_import_receipt_owner_key")
         ]
+
+
+class ScenarioSplash(models.Model):
+    """Compressed private image stored in PostgreSQL rather than Render's disk."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE, related_name="splash_images")
+    data = models.BinaryField()
+    content_type = models.CharField(max_length=32, default="image/webp")
+    created_at = models.DateTimeField(auto_now_add=True)
