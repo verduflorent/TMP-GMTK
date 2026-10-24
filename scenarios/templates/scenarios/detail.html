@@ -141,7 +141,7 @@ if(b.kind==="splash"){
  const file=document.createElement("input");file.type="file";file.accept="image/png,image/jpeg,image/webp";
  const feedback=document.createElement("span");feedback.setAttribute("role","status");
  const preview=document.createElement("img");preview.alt="Aperçu du Splash";preview.style.cssText="display:block;max-width:100%;max-height:300px;object-fit:contain;margin:10px 0";
- const syncPreview=()=>{const url=b.text.trim();preview.hidden=!/^https:\/\//i.test(url);if(!preview.hidden)preview.src=url;};
+ const syncPreview=()=>{const url=b.text.trim();preview.hidden=!(/^(https:\/\/|\/scenarios\/)/i.test(url));if(!preview.hidden)preview.src=url;};
  syncPreview();
  file.addEventListener("change",async()=>{
   const image=file.files?.[0];if(!image)return;
@@ -251,7 +251,7 @@ const body=$("scene-read-view");body.replaceChildren();
 const narrative=document.createElement("div");narrative.className="scene-read-narration";renderNarrative(narrative,blocks(s,"narration").map(b=>b.text).join("\n\n"));body.append(narrative);
 const contexts=s.blocks.filter(b=>!["narration","transition"].includes(b.kind));const bar=document.createElement("div");bar.className="scene-read-contexts";
 for(const b of contexts){const button=document.createElement("button");button.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;button.setAttribute("aria-pressed",String(activeContext===b.id));button.onclick=()=>{activeContext=activeContext===b.id?null:b.id;renderSceneModal();};bar.append(button);}body.append(bar);
-const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^https:\/\//i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";
+const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^(https:\/\/|\/scenarios\/)/i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";
  if(active.kind==="encounter"&&active.payload?.encounter_id){
   const encounter=encounterOptions.find(e=>e.id===active.payload.encounter_id);
   const info=document.createElement("p");info.textContent=encounter?"Rencontre liée : "+encounter.name:"Rencontre indisponible";
