@@ -21,6 +21,7 @@
         <a href="{% url 'equipment_home' %}" {% if request.resolver_match.url_name == 'equipment_home' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='equipment' %}Équipements</a>
         <a href="{% url 'bestiary' %}" {% if request.resolver_match.url_name == 'bestiary' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='book' %}Bestiaire</a>
         <a href="{% url 'scenarios:library' %}" {% if request.resolver_match.namespace == 'scenarios' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='book' %}Mes Scénarios</a>
+        <a href="{% url 'economy_docs' %}" {% if request.resolver_match.url_name == 'economy_docs' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='book' %}Économie</a>
         <a href="{% url 'encounters' %}" {% if request.resolver_match.url_name == 'encounters' %}aria-current="page"{% endif %}>{% include 'includes/icon.html' with name='group' %}Rencontres</a>
     </nav>
     <form class="site-logout" method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">{% include 'includes/icon.html' with name='exit' %}Déconnexion</button></form>
