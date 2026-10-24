@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Économie — TMP-GMTK{% endblock %}
+{% block content %}
+<section class="economy-page">
+ <header><p class="economy-kicker">THE MOIRA PROTOCOL / DOCUMENTATION MJ</p><h1>ÉCONOMIE</h1><p>Catalogues et tables de référence.</p></header>
+ <nav class="economy-tabs" aria-label="Documents Économie">
+ {% for item in documents %}<button type="button" data-economy-tab="{{ forloop.counter0 }}" {% if forloop.first %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>{{ item.label }}</button>{% endfor %}
+ </nav>
+ {% for item in documents %}
+ <article class="economy-panel" data-economy-panel="{{ forloop.counter0 }}" {% if not forloop.first %}hidden{% endif %}>
+ <div class="economy-controls"><h2>{{ item.label }}</h2><div><button type="button" data-zoom="-1">−</button><button type="button" data-zoom="0">100 %</button><button type="button" data-zoom="1">＋</button><a href="{% static item.path %}" target="_blank" rel="noopener">Ouvrir en grand ↗</a></div></div>
+ <div class="economy-viewport"><img src="{% static item.path %}" alt="{{ item.label }}" loading="lazy"></div>
+ </article>
+ {% endfor %}
+</section>
+<style>
+.economy-page{max-width:1500px;margin:auto;padding:clamp(15px,3vw,35px);color:var(--tmp-ink)}
+.economy-kicker{font-size:12px;letter-spacing:.15em;font-weight:800;color:var(--tmp-red)}
+.economy-page h1{font:clamp(35px,5vw,64px)/1.1 Anton,Impact,sans-serif;margin:10px 0}
+.economy-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:25px 0;border-bottom:2px solid var(--tmp-red);padding-bottom:12px}
+.economy-tabs button,.economy-controls button,.economy-controls a{border:1px solid var(--tmp-line);background:var(--tmp-panel);padding:10px 13px;color:var(--tmp-ink);font-weight:800;text-decoration:none;cursor:pointer}
+.economy-tabs button[aria-selected=true]{background:var(--tmp-red);color:#fff;border-color:var(--tmp-red)}
+.economy-panel{background:var(--tmp-panel);border:1px solid var(--tmp-line);padding:15px}
+.economy-panel[hidden]{display:none}
+.economy-controls{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:15px}
+.economy-controls h2{margin:0;font:28px Anton,Impact,sans-serif}
+.economy-controls>div{display:flex;gap:6px;flex-wrap:wrap}
+.economy-viewport{overflow:auto;max-height:75vh;background:#e8e4dc;text-align:center}
+.economy-viewport img{display:block;max-width:none;width:100%;height:auto;transform-origin:top left}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+ const tabs=[...document.querySelectorAll("[data-economy-tab]")];
+ const panels=[...document.querySelectorAll("[data-economy-panel]")];
+ tabs.forEach(tab=>tab.addEventListener("click",()=>{
+  const id=tab.dataset.economyTab;
+  tabs.forEach(t=>t.setAttribute("aria-selected",String(t===tab)));
+  panels.forEach(p=>p.hidden=p.dataset.economyPanel!==id);
+ }));
+ panels.forEach(panel=>{
+  let zoom=1;const img=panel.querySelector("img");
+  panel.querySelectorAll("[data-zoom]").forEach(button=>button.addEventListener("click",()=>{
+   const delta=Number(button.dataset.zoom);
+   zoom=delta===0?1:Math.min(3,Math.max(.5,zoom+delta*.25));
+   img.style.width=(zoom*100)+"%";
+  }));
+ });
+});
+</script>
+{% endblock %}
