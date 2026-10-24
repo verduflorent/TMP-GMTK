@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ scenario.title }} — TMP-GMTK{% endblock %}
 {% block content %}
-<section class="story-workspace" data-url="{% url 'scenarios:document' scenario.pk %}" data-layout-url="{% url 'scenarios:layout' scenario.pk %}">
+<section class="story-workspace" data-url="{% url 'scenarios:document' scenario.pk %}" data-layout-url="{% url 'scenarios:layout' scenario.pk %}" data-splash-url="{% url 'scenarios:splash_upload' scenario.pk %}">
   <div class="story-top"><div><a href="{% url 'scenarios:library' %}">← Mes Scénarios</a><h1>{{ scenario.title }}</h1><p>{{ scenario.summary|default:"Éditeur narratif" }}</p></div><div class="story-actions"><button id="add-scene">+ Scène</button><button id="save-story">Enregistrer</button><span id="save-status" role="status">Chargement…</span></div></div>
   <div class="story-layout"><div class="story-board-shell"><div class="story-board-toolbar" role="toolbar" aria-label="Outils du tableau narratif">
 <div class="story-tool-group" aria-label="Zoom et cadrage">
@@ -134,7 +134,32 @@ function markLayout(){layoutDirty=true;$("save-status").textContent="Positions n
 function blocks(scene,kind){return scene.blocks.filter(b=>b.kind===kind)}
 function chosen(){return scenes.find(s=>s.id===selected)}
 function redraw(fit=false){const zoom=cy.zoom(),pan=cy.pan();cy.elements().remove();cy.add([...scenes.map(s=>({data:{id:s.id,label:(s.narrative_order+1)+" · "+s.title+"\n"+s.blocks.filter(b=>b.kind!=="narration"&&b.kind!=="transition").map(b=>({interpretation:"◉",splash:"▧",gm_note:"✎",encounter:"⚔"})[b.kind]||"•").join(" ")},position:s.position})),...scenes.flatMap(s=>blocks(s,"transition").map(b=>({data:{id:b.id,source:s.id,target:b.target,label:b.text||"Continuer"}})))]);cy.layout({name:"preset",fit:false}).run();if(fit)cy.fit(undefined,40);else{cy.zoom(zoom);cy.pan(pan);}if(selected)cy.getElementById(selected).select();}
-function refresh(){const opts=scenes.map(s=>new Option((s.narrative_order+1)+" · "+s.title,s.id));$("scene-select").replaceChildren(...opts);$("target-scene").replaceChildren(...scenes.map(s=>new Option(s.title,s.id)));const s=chosen();$("scene-title").disabled=!s;$("scene-text").disabled=!s;$("delete-scene").disabled=!s;if(!s){$("scene-title").value="";$("scene-text").value="";$("story-contexts").replaceChildren();$("story-links").replaceChildren();return;}$("scene-select").value=s.id;$("scene-title").value=s.title;$("scene-text").value=blocks(s,"narration")[0]?.text||"";const context=$("story-contexts");context.replaceChildren();for(const b of s.blocks.filter(b=>!["narration","transition"].includes(b.kind))){const details=document.createElement("details");details.className="story-context";const summary=document.createElement("summary");summary.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;const input=document.createElement("textarea");input.value=b.text;input.rows=4;input.oninput=()=>{b.text=input.value;mark()};const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};details.append(summary);if(b.kind==="encounter")encounterChoice(b,details);details.append(input,del);context.append(details);}const links=$("story-links");links.replaceChildren();for(const b of blocks(s,"transition")){const line=document.createElement("div");line.className="story-link";const label=document.createElement("span");label.textContent=(b.text||"Continuer")+" → "+(scenes.find(x=>x.id===b.target)?.title||"?");const del=document.createElement("button");del.textContent="×";del.setAttribute("aria-label","Supprimer la transition");del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};line.append(label,del);links.append(line);}}
+function refresh(){const opts=scenes.map(s=>new Option((s.narrative_order+1)+" · "+s.title,s.id));$("scene-select").replaceChildren(...opts);$("target-scene").replaceChildren(...scenes.map(s=>new Option(s.title,s.id)));const s=chosen();$("scene-title").disabled=!s;$("scene-text").disabled=!s;$("delete-scene").disabled=!s;if(!s){$("scene-title").value="";$("scene-text").value="";$("story-contexts").replaceChildren();$("story-links").replaceChildren();return;}$("scene-select").value=s.id;$("scene-title").value=s.title;$("scene-text").value=blocks(s,"narration")[0]?.text||"";const context=$("story-contexts");context.replaceChildren();for(const b of s.blocks.filter(b=>!["narration","transition"].includes(b.kind))){const details=document.createElement("details");details.className="story-context";const summary=document.createElement("summary");summary.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;const input=document.createElement("textarea");input.value=b.text;input.rows=4;input.oninput=()=>{b.text=input.value;mark()};const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};details.append(summary);
+if(b.kind==="encounter")encounterChoice(b,details);
+if(b.kind==="splash"){
+ const uploadLabel=document.createElement("label");uploadLabel.textContent="Image Splash (PNG, JPG ou WebP)";
+ const file=document.createElement("input");file.type="file";file.accept="image/png,image/jpeg,image/webp";
+ const feedback=document.createElement("span");feedback.setAttribute("role","status");
+ const preview=document.createElement("img");preview.alt="Aperçu du Splash";preview.style.cssText="display:block;max-width:100%;max-height:300px;object-fit:contain;margin:10px 0";
+ const syncPreview=()=>{const url=b.text.trim();preview.hidden=!/^https:\/\//i.test(url);if(!preview.hidden)preview.src=url;};
+ syncPreview();
+ file.addEventListener("change",async()=>{
+  const image=file.files?.[0];if(!image)return;
+  if(image.size>8*1024*1024){feedback.textContent="Image supérieure à 8 Mio.";return;}
+  const data=new FormData();data.append("image",image);
+  const token=csrf();data.append("csrfmiddlewaretoken",token);
+  feedback.textContent="Envoi de l'image…";file.disabled=true;
+  try{
+   const response=await fetch(document.querySelector(".story-workspace").dataset.splashUrl,{method:"POST",body:data,credentials:"same-origin",headers:{"X-CSRFToken":token}});
+   const result=await response.json();
+   if(!response.ok)throw Error(result.error||"Envoi impossible");
+   b.text=result.url;input.value=result.url;syncPreview();mark();feedback.textContent="Image ajoutée. Enregistre le scénario.";
+  }catch(error){feedback.textContent=error.message;}finally{file.disabled=false;}
+ });
+ input.addEventListener("input",syncPreview);
+ details.append(uploadLabel,file,feedback,preview);
+}
+details.append(input,del);context.append(details);}const links=$("story-links");links.replaceChildren();for(const b of blocks(s,"transition")){const line=document.createElement("div");line.className="story-link";const label=document.createElement("span");label.textContent=(b.text||"Continuer")+" → "+(scenes.find(x=>x.id===b.target)?.title||"?");const del=document.createElement("button");del.textContent="×";del.setAttribute("aria-label","Supprimer la transition");del.onclick=()=>{s.blocks=s.blocks.filter(x=>x!==b);mark();refresh();redraw()};line.append(label,del);links.append(line);}}
 const READER_STYLE_KEY="tmp-scenarios-reader-style-v1";
 const stylePresets={
  tmp:{preset:"tmp",font:"rajdhani",t1:32,t2:24,txt:18,leading:1.8},
