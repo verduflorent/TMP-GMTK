@@ -251,7 +251,18 @@ const body=$("scene-read-view");body.replaceChildren();
 const narrative=document.createElement("div");narrative.className="scene-read-narration";renderNarrative(narrative,blocks(s,"narration").map(b=>b.text).join("\n\n"));body.append(narrative);
 const contexts=s.blocks.filter(b=>!["narration","transition"].includes(b.kind));const bar=document.createElement("div");bar.className="scene-read-contexts";
 for(const b of contexts){const button=document.createElement("button");button.textContent=({interpretation:"◉ Interprétation",splash:"▧ Splash",gm_note:"✎ Note MJ",encounter:"⚔ Rencontre"})[b.kind]||b.kind;button.setAttribute("aria-pressed",String(activeContext===b.id));button.onclick=()=>{activeContext=activeContext===b.id?null:b.id;renderSceneModal();};bar.append(button);}body.append(bar);
-const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"&&/^(https:\/\/|\/scenarios\/)/i.test(active.text)){const img=document.createElement("img");img.src=active.text;img.alt="Illustration de "+s.title;img.onerror=()=>{panel.textContent="Illustration indisponible."};panel.append(img);}else panel.textContent=active.text||"(Vide)";
+const active=contexts.find(b=>b.id===activeContext);if(active){const panel=document.createElement("div");panel.className="scene-read-panel";if(active.kind==="splash"){
+ const url=(active.text||"").trim();
+ if(/^(https:\/\/|\/scenarios\/)/i.test(url)){
+  const img=document.createElement("img");
+  img.src=url;img.alt="Illustration de "+s.title;
+  img.loading="lazy";
+  img.onerror=()=>{panel.textContent="Illustration indisponible. Vérifie que l'image est bien enregistrée et accessible."};
+  panel.append(img);
+ }else{
+  panel.textContent=url?"Lien Splash invalide : "+url:"Aucune image associée à ce Splash.";
+ }
+}else panel.textContent=active.text||"(Vide)";
  if(active.kind==="encounter"&&active.payload?.encounter_id){
   const encounter=encounterOptions.find(e=>e.id===active.payload.encounter_id);
   const info=document.createElement("p");info.textContent=encounter?"Rencontre liée : "+encounter.name:"Rencontre indisponible";
