@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+﻿from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -60,7 +60,7 @@ def table_home(request):
         mob.hp_percent = round(current_hp * 100 / visible_total)
         mob.shield_percent = round(shield * 100 / visible_total)
         mob.stat_display = [
-            (label, payload.get("stats", {}).get(key, "—"),
+            (label, payload.get("stats", {}).get(key, "â€”"),
              payload.get("stat_modifiers", {}).get(key, 0))
             for key, label in (
                 ("force", "FOR"), ("agility", "AGI"), ("perception", "PER"),
@@ -71,7 +71,7 @@ def table_home(request):
         mob.live_resources = (
             ("hp", "PV", f"{current_hp}/{max_hp}"),
             ("shield", "PB", shield),
-            ("reactions", "Réactions", payload.get("reactions", 0)),
+            ("reactions", "RÃ©actions", payload.get("reactions", 0)),
             ("vigilance", "Vigilance", payload.get("vigilance", 0)),
         )
     roll_result = request.session.pop("table_roll_result", None)
@@ -119,7 +119,7 @@ def monster_builder(request):
 
     profile_labels = {
         "": "Commun", "C": "Combattant", "A": "Assassin",
-        "T": "Tireur", "S": "Soutien", "K": "Contrôle",
+        "T": "Tireur", "S": "Soutien", "K": "ContrÃ´le",
     }
 
     for mob in generated_mobs:
@@ -136,7 +136,7 @@ def monster_builder(request):
             ("max_hp", "PV", mob["max_hp"]),
             ("armor", "Armure", mob["armor"]),
             ("shield", "PB", mob["shield"]),
-            ("reactions", "Réactions", mob["reactions"]),
+            ("reactions", "RÃ©actions", mob["reactions"]),
             ("vigilance", "Vigilance", mob["vigilance"]),
         )
 
@@ -558,13 +558,13 @@ def table_mob_edit(request, mob_id):
             continue
         refs = requested[kind]
         if kind == "weapons" and not refs:
-            return JsonResponse({"ok": False, "errors": {kind: ["Au moins une arme est nécessaire."]}}, status=400)
+            return JsonResponse({"ok": False, "errors": {kind: ["Au moins une arme est nÃ©cessaire."]}}, status=400)
         for ref in refs:
             if not isinstance(ref, dict) or ref.get("source") not in ("catalogue", "user") or type(ref.get("id")) is not int:
-                return JsonResponse({"ok": False, "errors": {kind: ["Référence invalide."]}}, status=400)
+                return JsonResponse({"ok": False, "errors": {kind: ["RÃ©fÃ©rence invalide."]}}, status=400)
             queryset = catalogue.objects if ref["source"] == "catalogue" else owned.objects.filter(owner=request.user)
             if not queryset.filter(id=ref["id"]).exists():
-                return JsonResponse({"ok": False, "errors": {kind: ["Équipement introuvable."]}}, status=400)
+                return JsonResponse({"ok": False, "errors": {kind: ["Ã‰quipement introuvable."]}}, status=400)
         draft[kind] = refs
         if kind == "weapons" and "weapon_slots" not in request.POST:
             draft.pop("weapon_slots", None)
@@ -573,7 +573,7 @@ def table_mob_edit(request, mob_id):
     if requested["abilities"] is not None:
         abilities = requested["abilities"]
         if any(not isinstance(a, dict) or not isinstance(a.get("name"), str) or not a["name"].strip() or len(a["name"]) > 120 for a in abilities):
-            return JsonResponse({"ok": False, "errors": {"abilities": ["Capacité invalide."]}}, status=400)
+            return JsonResponse({"ok": False, "errors": {"abilities": ["CapacitÃ© invalide."]}}, status=400)
         draft["abilities"] = abilities
 
     if "weapon_slots" in request.POST:
@@ -637,7 +637,7 @@ def table_mob_edit(request, mob_id):
         # Keep existing wounds when the maximum increases or decreases.
         new_hp = max(0, new_max - max(0, old_max - old_hp))
     if new_hp > new_max:
-        return JsonResponse({"ok": False, "errors": {"current_hp": ["Les PV dépassent le maximum."]}}, status=400)
+        return JsonResponse({"ok": False, "errors": {"current_hp": ["Les PV dÃ©passent le maximum."]}}, status=400)
 
     payload = dict(old_payload)
     payload.update(recalculated)
@@ -757,7 +757,7 @@ def bestiary_duplicate(request, mob_id):
     source = BestiaryMob.objects.filter(id=mob_id, owner=request.user).first()
     if source is not None:
         source.pk = None
-        source.name = f"{source.name} — Copie"
+        source.name = f"{source.name} â€” Copie"
         source.save()
     return redirect("bestiary")
 
@@ -1183,7 +1183,7 @@ def encounter_duplicate(request, encounter_id):
     source = Encounter.objects.filter(id=encounter_id, owner=request.user).first()
     if source is None:
         return redirect("encounters")
-    duplicate = Encounter.objects.create(owner=request.user, name=f"{source.name} — Copie")
+    duplicate = Encounter.objects.create(owner=request.user, name=f"{source.name} â€” Copie")
     for entry in source.draft_mobs.all():
         EncounterDraftMob.objects.create(
             encounter=duplicate, name=entry.name, quantity=entry.quantity,
@@ -1333,10 +1333,11 @@ def encounter_move_folder(request, encounter_id):
 @login_required
 def economy_docs(request):
     documents = [
-        {"label": "Boutique", "path": "docs/economie/01.webp"},
-        {"label": "Boutique d'armes", "path": "docs/economie/02.webp"},
-        {"label": "Accessoires EVO", "path": "docs/economie/03.webp"},
-        {"label": "Gadgets EVO", "path": "docs/economie/04.webp"},
-        {"label": "Table Loot", "path": "docs/economie/05.webp"},
+        {"label": "Boutique", "path": "docs/economie/01.png"},
+        {"label": "Boutique d'armes", "path": "docs/economie/02.png"},
+        {"label": "Accessoires EVO", "path": "docs/economie/03.png"},
+        {"label": "Gadgets EVO", "path": "docs/economie/04.png"},
+        {"label": "Table Loot", "path": "docs/economie/05.png"},
     ]
     return render(request, "toolkit/economie.html", {"documents": documents})
+
