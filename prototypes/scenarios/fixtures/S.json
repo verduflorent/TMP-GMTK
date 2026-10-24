@@ -1,0 +1,1331 @@
+{
+  "fixture_version": 1,
+  "seed": 20261009,
+  "scenes": [
+    {
+      "id": "scene-0001",
+      "title": "Scène 1 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 0,
+      "position": {
+        "x": 15,
+        "y": 3
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0002",
+      "title": "Scène 2 — Écho",
+      "narrative_order": 1,
+      "position": {
+        "x": 290,
+        "y": 21
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0003",
+      "title": "Scène 3 — Écho",
+      "narrative_order": 2,
+      "position": {
+        "x": 568,
+        "y": 8
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0004",
+      "title": "Scène 4 — Écho",
+      "narrative_order": 3,
+      "position": {
+        "x": 859,
+        "y": 2
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0005",
+      "title": "Scène 5 — Écho",
+      "narrative_order": 4,
+      "position": {
+        "x": 1134,
+        "y": 1
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0006",
+      "title": "Scène 6 — Écho",
+      "narrative_order": 5,
+      "position": {
+        "x": 1408,
+        "y": 10
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0007",
+      "title": "Scène 7 — Écho",
+      "narrative_order": 6,
+      "position": {
+        "x": 1713,
+        "y": 11
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0008",
+      "title": "Scène 8 — Écho",
+      "narrative_order": 7,
+      "position": {
+        "x": 1992,
+        "y": 2
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0009",
+      "title": "Scène 9 — Écho",
+      "narrative_order": 8,
+      "position": {
+        "x": 2260,
+        "y": 34
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0010",
+      "title": "Scène 10 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 9,
+      "position": {
+        "x": 2548,
+        "y": 33
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0011",
+      "title": "Scène 11 — Écho",
+      "narrative_order": 10,
+      "position": {
+        "x": 2805,
+        "y": 24
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0012",
+      "title": "Scène 12 — Écho",
+      "narrative_order": 11,
+      "position": {
+        "x": 3080,
+        "y": 14
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0013",
+      "title": "Scène 13 — Écho",
+      "narrative_order": 12,
+      "position": {
+        "x": 3370,
+        "y": 24
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 5
+    },
+    {
+      "id": "scene-0014",
+      "title": "Scène 14 — Écho",
+      "narrative_order": 13,
+      "position": {
+        "x": 3662,
+        "y": 24
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0015",
+      "title": "Scène 15 — Écho",
+      "narrative_order": 14,
+      "position": {
+        "x": 3920,
+        "y": 5
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0016",
+      "title": "Scène 16 — Écho",
+      "narrative_order": 15,
+      "position": {
+        "x": 4217,
+        "y": 19
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0017",
+      "title": "Scène 17 — Écho",
+      "narrative_order": 16,
+      "position": {
+        "x": 4515,
+        "y": 11
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0018",
+      "title": "Scène 18 — Écho",
+      "narrative_order": 17,
+      "position": {
+        "x": 4787,
+        "y": 13
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0019",
+      "title": "Scène 19 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 18,
+      "position": {
+        "x": 5073,
+        "y": 5
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0020",
+      "title": "Scène 20 — Écho",
+      "narrative_order": 19,
+      "position": {
+        "x": 5338,
+        "y": 7
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 5
+    },
+    {
+      "id": "scene-0021",
+      "title": "Scène 21 — Écho",
+      "narrative_order": 20,
+      "position": {
+        "x": 23,
+        "y": 194
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 7
+    },
+    {
+      "id": "scene-0022",
+      "title": "Scène 22 — Écho",
+      "narrative_order": 21,
+      "position": {
+        "x": 288,
+        "y": 197
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0023",
+      "title": "Scène 23 — Écho",
+      "narrative_order": 22,
+      "position": {
+        "x": 589,
+        "y": 198
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0024",
+      "title": "Scène 24 — Écho",
+      "narrative_order": 23,
+      "position": {
+        "x": 855,
+        "y": 216
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0025",
+      "title": "Scène 25 — Écho",
+      "narrative_order": 24,
+      "position": {
+        "x": 1140,
+        "y": 215
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0026",
+      "title": "Scène 26 — Écho",
+      "narrative_order": 25,
+      "position": {
+        "x": 1414,
+        "y": 208
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 5
+    },
+    {
+      "id": "scene-0027",
+      "title": "Scène 27 — Écho",
+      "narrative_order": 26,
+      "position": {
+        "x": 1706,
+        "y": 199
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 5
+    },
+    {
+      "id": "scene-0028",
+      "title": "Scène 28 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 27,
+      "position": {
+        "x": 1972,
+        "y": 196
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0029",
+      "title": "Scène 29 — Écho",
+      "narrative_order": 28,
+      "position": {
+        "x": 2256,
+        "y": 204
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0030",
+      "title": "Scène 30 — Écho",
+      "narrative_order": 29,
+      "position": {
+        "x": 2531,
+        "y": 213
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0031",
+      "title": "Scène 31 — Écho",
+      "narrative_order": 30,
+      "position": {
+        "x": 2832,
+        "y": 200
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0032",
+      "title": "Scène 32 — Écho",
+      "narrative_order": 31,
+      "position": {
+        "x": 3096,
+        "y": 188
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0033",
+      "title": "Scène 33 — Écho",
+      "narrative_order": 32,
+      "position": {
+        "x": 3387,
+        "y": 210
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0034",
+      "title": "Scène 34 — Écho",
+      "narrative_order": 33,
+      "position": {
+        "x": 3661,
+        "y": 186
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0035",
+      "title": "Scène 35 — Écho",
+      "narrative_order": 34,
+      "position": {
+        "x": 3922,
+        "y": 186
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0036",
+      "title": "Scène 36 — Écho",
+      "narrative_order": 35,
+      "position": {
+        "x": 4214,
+        "y": 187
+      },
+      "rubric_types": [],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0037",
+      "title": "Scène 37 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 36,
+      "position": {
+        "x": 4496,
+        "y": 214
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0038",
+      "title": "Scène 38 — Écho",
+      "narrative_order": 37,
+      "position": {
+        "x": 4770,
+        "y": 196
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation"
+      ],
+      "rubric_count": 2
+    },
+    {
+      "id": "scene-0039",
+      "title": "Scène 39 — Écho",
+      "narrative_order": 38,
+      "position": {
+        "x": 5073,
+        "y": 187
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 3
+    },
+    {
+      "id": "scene-0040",
+      "title": "Scène 40 — Écho",
+      "narrative_order": 39,
+      "position": {
+        "x": 5354,
+        "y": 196
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0041",
+      "title": "Scène 41 — Écho",
+      "narrative_order": 40,
+      "position": {
+        "x": 31,
+        "y": 390
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0042",
+      "title": "Scène 42 — Écho",
+      "narrative_order": 41,
+      "position": {
+        "x": 301,
+        "y": 394
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0043",
+      "title": "Scène 43 — Écho",
+      "narrative_order": 42,
+      "position": {
+        "x": 571,
+        "y": 389
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0044",
+      "title": "Scène 44 — Écho",
+      "narrative_order": 43,
+      "position": {
+        "x": 846,
+        "y": 392
+      },
+      "rubric_types": [
+        "narration"
+      ],
+      "rubric_count": 1
+    },
+    {
+      "id": "scene-0045",
+      "title": "Scène 45 — Écho",
+      "narrative_order": 44,
+      "position": {
+        "x": 1131,
+        "y": 370
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    },
+    {
+      "id": "scene-0046",
+      "title": "Scène 46 — Réunion à l'observatoire, décision imprévue",
+      "narrative_order": 45,
+      "position": {
+        "x": 1410,
+        "y": 383
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0047",
+      "title": "Scène 47 — Écho",
+      "narrative_order": 46,
+      "position": {
+        "x": 1683,
+        "y": 390
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note"
+      ],
+      "rubric_count": 4
+    },
+    {
+      "id": "scene-0048",
+      "title": "Scène 48 — Écho",
+      "narrative_order": 47,
+      "position": {
+        "x": 1984,
+        "y": 388
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition"
+      ],
+      "rubric_count": 5
+    },
+    {
+      "id": "scene-0049",
+      "title": "Scène 49 — Écho",
+      "narrative_order": 48,
+      "position": {
+        "x": 2253,
+        "y": 397
+      },
+      "rubric_types": [
+        "narration",
+        "interpretation",
+        "splash",
+        "gm_note",
+        "transition",
+        "encounter"
+      ],
+      "rubric_count": 6
+    },
+    {
+      "id": "scene-0050",
+      "title": "Scène 50 — Écho",
+      "narrative_order": 49,
+      "position": {
+        "x": 2553,
+        "y": 380
+      },
+      "rubric_types": [],
+      "rubric_count": 0
+    }
+  ],
+  "transitions": [
+    {
+      "id": "transition-00001",
+      "source": "scene-0001",
+      "target": "scene-0002",
+      "label": "Vers Scène 2 — Écho"
+    },
+    {
+      "id": "transition-00002",
+      "source": "scene-0002",
+      "target": "scene-0003",
+      "label": "Vers Scène 3 — Écho"
+    },
+    {
+      "id": "transition-00003",
+      "source": "scene-0003",
+      "target": "scene-0001",
+      "label": "Vers Scène 1 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00004",
+      "source": "scene-0004",
+      "target": "scene-0004",
+      "label": "Vers Scène 4 — Écho"
+    },
+    {
+      "id": "transition-00005",
+      "source": "scene-0005",
+      "target": "scene-0006",
+      "label": "Vers Scène 6 — Écho"
+    },
+    {
+      "id": "transition-00006",
+      "source": "scene-0005",
+      "target": "scene-0006",
+      "label": "Vers Scène 6 — Écho"
+    },
+    {
+      "id": "transition-00007",
+      "source": "scene-0007",
+      "target": "scene-0009",
+      "label": "Vers Scène 9 — Écho"
+    },
+    {
+      "id": "transition-00008",
+      "source": "scene-0008",
+      "target": "scene-0009",
+      "label": "Vers Scène 9 — Écho"
+    },
+    {
+      "id": "transition-00009",
+      "source": "scene-0010",
+      "target": "scene-0011",
+      "label": "Vers Scène 11 — Écho"
+    },
+    {
+      "id": "transition-00010",
+      "source": "scene-0010",
+      "target": "scene-0012",
+      "label": "Vers Scène 12 — Écho"
+    },
+    {
+      "id": "transition-00011",
+      "source": "scene-0010",
+      "target": "scene-0013",
+      "label": "Vers Scène 13 — Écho"
+    },
+    {
+      "id": "transition-00012",
+      "source": "scene-0010",
+      "target": "scene-0014",
+      "label": "Vers Scène 14 — Écho"
+    },
+    {
+      "id": "transition-00013",
+      "source": "scene-0010",
+      "target": "scene-0015",
+      "label": "Vers Scène 15 — Écho"
+    },
+    {
+      "id": "transition-00014",
+      "source": "scene-0047",
+      "target": "scene-0023",
+      "label": "Vers Scène 23 — Écho"
+    },
+    {
+      "id": "transition-00015",
+      "source": "scene-0020",
+      "target": "scene-0040",
+      "label": "Vers Scène 40 — Écho"
+    },
+    {
+      "id": "transition-00016",
+      "source": "scene-0005",
+      "target": "scene-0026",
+      "label": "Vers Scène 26 — Écho"
+    },
+    {
+      "id": "transition-00017",
+      "source": "scene-0006",
+      "target": "scene-0011",
+      "label": "Vers Scène 11 — Écho"
+    },
+    {
+      "id": "transition-00018",
+      "source": "scene-0011",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00019",
+      "source": "scene-0029",
+      "target": "scene-0046",
+      "label": "Vers Scène 46 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00020",
+      "source": "scene-0008",
+      "target": "scene-0011",
+      "label": "Vers Scène 11 — Écho"
+    },
+    {
+      "id": "transition-00021",
+      "source": "scene-0009",
+      "target": "scene-0028",
+      "label": "Vers Scène 28 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00022",
+      "source": "scene-0045",
+      "target": "scene-0016",
+      "label": "Vers Scène 16 — Écho"
+    },
+    {
+      "id": "transition-00023",
+      "source": "scene-0047",
+      "target": "scene-0023",
+      "label": "Vers Scène 23 — Écho"
+    },
+    {
+      "id": "transition-00024",
+      "source": "scene-0023",
+      "target": "scene-0028",
+      "label": "Vers Scène 28 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00025",
+      "source": "scene-0003",
+      "target": "scene-0025",
+      "label": "Vers Scène 25 — Écho"
+    },
+    {
+      "id": "transition-00026",
+      "source": "scene-0016",
+      "target": "scene-0042",
+      "label": "Vers Scène 42 — Écho"
+    },
+    {
+      "id": "transition-00027",
+      "source": "scene-0031",
+      "target": "scene-0032",
+      "label": "Vers Scène 32 — Écho"
+    },
+    {
+      "id": "transition-00028",
+      "source": "scene-0048",
+      "target": "scene-0029",
+      "label": "Vers Scène 29 — Écho"
+    },
+    {
+      "id": "transition-00029",
+      "source": "scene-0035",
+      "target": "scene-0045",
+      "label": "Vers Scène 45 — Écho"
+    },
+    {
+      "id": "transition-00030",
+      "source": "scene-0040",
+      "target": "scene-0040",
+      "label": "Vers Scène 40 — Écho"
+    },
+    {
+      "id": "transition-00031",
+      "source": "scene-0033",
+      "target": "scene-0005",
+      "label": "Vers Scène 5 — Écho"
+    },
+    {
+      "id": "transition-00032",
+      "source": "scene-0048",
+      "target": "scene-0003",
+      "label": "Vers Scène 3 — Écho"
+    },
+    {
+      "id": "transition-00033",
+      "source": "scene-0029",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00034",
+      "source": "scene-0040",
+      "target": "scene-0048",
+      "label": "Vers Scène 48 — Écho"
+    },
+    {
+      "id": "transition-00035",
+      "source": "scene-0034",
+      "target": "scene-0012",
+      "label": "Vers Scène 12 — Écho"
+    },
+    {
+      "id": "transition-00036",
+      "source": "scene-0029",
+      "target": "scene-0015",
+      "label": "Vers Scène 15 — Écho"
+    },
+    {
+      "id": "transition-00037",
+      "source": "scene-0031",
+      "target": "scene-0044",
+      "label": "Vers Scène 44 — Écho"
+    },
+    {
+      "id": "transition-00038",
+      "source": "scene-0018",
+      "target": "scene-0038",
+      "label": "Vers Scène 38 — Écho"
+    },
+    {
+      "id": "transition-00039",
+      "source": "scene-0005",
+      "target": "scene-0019",
+      "label": "Vers Scène 19 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00040",
+      "source": "scene-0026",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00041",
+      "source": "scene-0016",
+      "target": "scene-0045",
+      "label": "Vers Scène 45 — Écho"
+    },
+    {
+      "id": "transition-00042",
+      "source": "scene-0037",
+      "target": "scene-0039",
+      "label": "Vers Scène 39 — Écho"
+    },
+    {
+      "id": "transition-00043",
+      "source": "scene-0012",
+      "target": "scene-0010",
+      "label": "Vers Scène 10 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00044",
+      "source": "scene-0014",
+      "target": "scene-0034",
+      "label": "Vers Scène 34 — Écho"
+    },
+    {
+      "id": "transition-00045",
+      "source": "scene-0023",
+      "target": "scene-0043",
+      "label": "Vers Scène 43 — Écho"
+    },
+    {
+      "id": "transition-00046",
+      "source": "scene-0031",
+      "target": "scene-0014",
+      "label": "Vers Scène 14 — Écho"
+    },
+    {
+      "id": "transition-00047",
+      "source": "scene-0017",
+      "target": "scene-0042",
+      "label": "Vers Scène 42 — Écho"
+    },
+    {
+      "id": "transition-00048",
+      "source": "scene-0026",
+      "target": "scene-0010",
+      "label": "Vers Scène 10 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00049",
+      "source": "scene-0036",
+      "target": "scene-0006",
+      "label": "Vers Scène 6 — Écho"
+    },
+    {
+      "id": "transition-00050",
+      "source": "scene-0014",
+      "target": "scene-0037",
+      "label": "Vers Scène 37 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00051",
+      "source": "scene-0012",
+      "target": "scene-0032",
+      "label": "Vers Scène 32 — Écho"
+    },
+    {
+      "id": "transition-00052",
+      "source": "scene-0047",
+      "target": "scene-0045",
+      "label": "Vers Scène 45 — Écho"
+    },
+    {
+      "id": "transition-00053",
+      "source": "scene-0004",
+      "target": "scene-0023",
+      "label": "Vers Scène 23 — Écho"
+    },
+    {
+      "id": "transition-00054",
+      "source": "scene-0017",
+      "target": "scene-0034",
+      "label": "Vers Scène 34 — Écho"
+    },
+    {
+      "id": "transition-00055",
+      "source": "scene-0045",
+      "target": "scene-0015",
+      "label": "Vers Scène 15 — Écho"
+    },
+    {
+      "id": "transition-00056",
+      "source": "scene-0014",
+      "target": "scene-0001",
+      "label": "Vers Scène 1 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00057",
+      "source": "scene-0049",
+      "target": "scene-0048",
+      "label": "Vers Scène 48 — Écho"
+    },
+    {
+      "id": "transition-00058",
+      "source": "scene-0040",
+      "target": "scene-0008",
+      "label": "Vers Scène 8 — Écho"
+    },
+    {
+      "id": "transition-00059",
+      "source": "scene-0045",
+      "target": "scene-0037",
+      "label": "Vers Scène 37 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00060",
+      "source": "scene-0031",
+      "target": "scene-0009",
+      "label": "Vers Scène 9 — Écho"
+    },
+    {
+      "id": "transition-00061",
+      "source": "scene-0023",
+      "target": "scene-0012",
+      "label": "Vers Scène 12 — Écho"
+    },
+    {
+      "id": "transition-00062",
+      "source": "scene-0013",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00063",
+      "source": "scene-0024",
+      "target": "scene-0023",
+      "label": "Vers Scène 23 — Écho"
+    },
+    {
+      "id": "transition-00064",
+      "source": "scene-0013",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00065",
+      "source": "scene-0041",
+      "target": "scene-0016",
+      "label": "Vers Scène 16 — Écho"
+    },
+    {
+      "id": "transition-00066",
+      "source": "scene-0023",
+      "target": "scene-0010",
+      "label": "Vers Scène 10 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00067",
+      "source": "scene-0030",
+      "target": "scene-0021",
+      "label": "Vers Scène 21 — Écho"
+    },
+    {
+      "id": "transition-00068",
+      "source": "scene-0030",
+      "target": "scene-0033",
+      "label": "Vers Scène 33 — Écho"
+    },
+    {
+      "id": "transition-00069",
+      "source": "scene-0023",
+      "target": "scene-0009",
+      "label": "Vers Scène 9 — Écho"
+    },
+    {
+      "id": "transition-00070",
+      "source": "scene-0019",
+      "target": "scene-0029",
+      "label": "Vers Scène 29 — Écho"
+    },
+    {
+      "id": "transition-00071",
+      "source": "scene-0036",
+      "target": "scene-0026",
+      "label": "Vers Scène 26 — Écho"
+    },
+    {
+      "id": "transition-00072",
+      "source": "scene-0025",
+      "target": "scene-0046",
+      "label": "Vers Scène 46 — Réunion à l'observatoire, décision imprévue"
+    },
+    {
+      "id": "transition-00073",
+      "source": "scene-0012",
+      "target": "scene-0034",
+      "label": "Vers Scène 34 — Écho"
+    },
+    {
+      "id": "transition-00074",
+      "source": "scene-0014",
+      "target": "scene-0002",
+      "label": "Vers Scène 2 — Écho"
+    },
+    {
+      "id": "transition-00075",
+      "source": "scene-0025",
+      "target": "scene-0038",
+      "label": "Vers Scène 38 — Écho"
+    },
+    {
+      "id": "transition-00076",
+      "source": "scene-0045",
+      "target": "scene-0033",
+      "label": "Vers Scène 33 — Écho"
+    },
+    {
+      "id": "transition-00077",
+      "source": "scene-0035",
+      "target": "scene-0013",
+      "label": "Vers Scène 13 — Écho"
+    },
+    {
+      "id": "transition-00078",
+      "source": "scene-0019",
+      "target": "scene-0043",
+      "label": "Vers Scène 43 — Écho"
+    },
+    {
+      "id": "transition-00079",
+      "source": "scene-0006",
+      "target": "scene-0035",
+      "label": "Vers Scène 35 — Écho"
+    },
+    {
+      "id": "transition-00080",
+      "source": "scene-0040",
+      "target": "scene-0021",
+      "label": "Vers Scène 21 — Écho"
+    },
+    {
+      "id": "transition-00081",
+      "source": "scene-0018",
+      "target": "scene-0045",
+      "label": "Vers Scène 45 — Écho"
+    },
+    {
+      "id": "transition-00082",
+      "source": "scene-0029",
+      "target": "scene-0038",
+      "label": "Vers Scène 38 — Écho"
+    },
+    {
+      "id": "transition-00083",
+      "source": "scene-0029",
+      "target": "scene-0036",
+      "label": "Vers Scène 36 — Écho"
+    },
+    {
+      "id": "transition-00084",
+      "source": "scene-0025",
+      "target": "scene-0031",
+      "label": "Vers Scène 31 — Écho"
+    },
+    {
+      "id": "transition-00085",
+      "source": "scene-0018",
+      "target": "scene-0003",
+      "label": "Vers Scène 3 — Écho"
+    },
+    {
+      "id": "transition-00086",
+      "source": "scene-0040",
+      "target": "scene-0039",
+      "label": "Vers Scène 39 — Écho"
+    },
+    {
+      "id": "transition-00087",
+      "source": "scene-0039",
+      "target": "scene-0039",
+      "label": "Vers Scène 39 — Écho"
+    },
+    {
+      "id": "transition-00088",
+      "source": "scene-0006",
+      "target": "scene-0004",
+      "label": "Vers Scène 4 — Écho"
+    },
+    {
+      "id": "transition-00089",
+      "source": "scene-0016",
+      "target": "scene-0034",
+      "label": "Vers Scène 34 — Écho"
+    },
+    {
+      "id": "transition-00090",
+      "source": "scene-0014",
+      "target": "scene-0034",
+      "label": "Vers Scène 34 — Écho"
+    },
+    {
+      "id": "transition-00091",
+      "source": "scene-0016",
+      "target": "scene-0031",
+      "label": "Vers Scène 31 — Écho"
+    },
+    {
+      "id": "transition-00092",
+      "source": "scene-0030",
+      "target": "scene-0013",
+      "label": "Vers Scène 13 — Écho"
+    },
+    {
+      "id": "transition-00093",
+      "source": "scene-0044",
+      "target": "scene-0014",
+      "label": "Vers Scène 14 — Écho"
+    },
+    {
+      "id": "transition-00094",
+      "source": "scene-0024",
+      "target": "scene-0008",
+      "label": "Vers Scène 8 — Écho"
+    },
+    {
+      "id": "transition-00095",
+      "source": "scene-0012",
+      "target": "scene-0035",
+      "label": "Vers Scène 35 — Écho"
+    },
+    {
+      "id": "transition-00096",
+      "source": "scene-0041",
+      "target": "scene-0004",
+      "label": "Vers Scène 4 — Écho"
+    },
+    {
+      "id": "transition-00097",
+      "source": "scene-0049",
+      "target": "scene-0007",
+      "label": "Vers Scène 7 — Écho"
+    },
+    {
+      "id": "transition-00098",
+      "source": "scene-0008",
+      "target": "scene-0008",
+      "label": "Vers Scène 8 — Écho"
+    },
+    {
+      "id": "transition-00099",
+      "source": "scene-0025",
+      "target": "scene-0033",
+      "label": "Vers Scène 33 — Écho"
+    },
+    {
+      "id": "transition-00100",
+      "source": "scene-0006",
+      "target": "scene-0023",
+      "label": "Vers Scène 23 — Écho"
+    }
+  ]
+}
