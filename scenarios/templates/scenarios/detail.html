@@ -18,6 +18,14 @@
 <span id="board-help" class="sr-only" role="status" aria-live="polite">Molette : défilement · Ctrl + molette : zoom</span>
 </div><div id="story-board" aria-label="Tableau narratif"></div></div></div><div id="scene-overlay" class="scene-overlay" hidden><section class="scene-dialog" role="dialog" aria-modal="true" aria-labelledby="scene-dialog-title" tabindex="-1"><div class="scene-dialog-header"><div><span class="scene-eyebrow">THE MOIRA PROTOCOL / SCÈNE</span><h2 id="scene-dialog-title">Scène</h2></div><div class="scene-dialog-actions"><button id="scene-style-toggle" type="button" aria-expanded="false" aria-controls="scene-style-panel">⚙ Affichage</button><button id="scene-read-mode">Lecture MJ</button><button id="scene-close">✕ Fermer</button></div></div><div id="scene-style-panel" class="scene-style-panel" hidden><div class="style-row"><label for="style-preset">Style</label><select id="style-preset"><option value="tmp">TMP — Original</option><option value="comfort">Confort de lecture</option><option value="custom">Personnalisé</option></select><label for="style-font">Police du texte</label><select id="style-font"><option value="rajdhani">Rajdhani</option><option value="system">Sans-serif lisible</option><option value="serif">Serif</option></select></div><div class="style-row"><label for="style-t1">Titre T1 <output id="style-t1-value"></output></label><input type="range" id="style-t1" min="22" max="54" step="1"><label for="style-t2">Sous-titre T2 <output id="style-t2-value"></output></label><input type="range" id="style-t2" min="18" max="40" step="1"><label for="style-txt">Texte <output id="style-txt-value"></output></label><input type="range" id="style-txt" min="14" max="28" step="1"></div><div class="style-row"><label for="style-leading">Interligne <output id="style-leading-value"></output></label><input type="range" id="style-leading" min="1.3" max="2.2" step="0.1"><button type="button" id="style-reset">Réinitialiser</button></div><p>Préférences enregistrées dans ce navigateur, sans modifier le texte du scénario.</p></div><div id="scene-read-view" hidden></div><aside class="story-editor"><h2>Édition de la scène</h2><label for="scene-select">Sélectionner</label><select id="scene-select"></select><label for="scene-title">Titre</label><input id="scene-title" maxlength="120"><label for="scene-text">Narration</label><div class="narrative-format-bar" role="group" aria-label="Mise en forme TMP"><button type="button" data-format="T1" title="Titre principal">T1 · Titre</button><button type="button" data-format="T2" title="Sous-titre">T2 · Sous-titre</button><button type="button" data-format="TXT" title="Texte normal">TXT · Texte</button></div><textarea id="scene-text" rows="12" spellcheck="true"></textarea><p class="narrative-format-hint">Sélectionne un passage puis clique sur T1, T2 ou TXT. Le mode Lecture masque les balises.</p><h3>Rubriques contextuelles</h3><div id="story-contexts"></div><div class="story-context-actions"><button data-kind="interpretation">+ Interprétation</button><button data-kind="splash">+ Splash</button><button data-kind="gm_note">+ Note MJ</button><button data-kind="encounter">+ Rencontre</button></div><h3>Transitions</h3><div id="story-links"></div><label for="target-scene">Vers la scène</label><select id="target-scene"></select><button id="add-transition">+ Relier</button><button id="delete-scene">Supprimer la scène</button></aside></section></div>
 </section>
+<dialog id="splash-fullscreen" class="splash-fullscreen" aria-label="Illustration Splash en plein écran">
+ <div class="splash-fullscreen-toolbar"><span id="splash-fullscreen-title">SPLASH</span><div>
+ <button type="button" id="splash-zoom-out" aria-label="Dézoomer">−</button>
+ <button type="button" id="splash-zoom-reset">Adapter</button>
+ <button type="button" id="splash-zoom-in" aria-label="Zoomer">＋</button>
+ <button type="button" id="splash-close">✕ Fermer</button></div></div>
+ <div class="splash-fullscreen-viewport"><img id="splash-fullscreen-image" alt="Illustration Splash"></div>
+</dialog>
 <dialog id="scene-delete-confirm" class="tmp-encounter-confirm" aria-labelledby="scene-delete-title">
 <p class="tmp-encounter-eyebrow">THE MOIRA PROTOCOL / CONFIRMATION</p>
 <h2 id="scene-delete-title">Supprimer la scène ?</h2>
@@ -88,7 +96,15 @@
 .story-board-toolbar .story-tool-group #board-cancel{color:#a7191c}
 .story-board-toolbar #board-help{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;padding:0;border:0}
 @media(max-width:600px){.story-board-toolbar{top:10px;left:10px;max-width:calc(100% - 20px);gap:5px}.story-board-toolbar .story-tool-group button{width:34px;height:36px;min-height:36px;font-size:21px}}
-.tmp-encounter-confirm{width:min(92vw,510px);max-height:85vh;overflow:auto;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;padding:26px;box-shadow:0 20px 70px #0008}.tmp-encounter-confirm::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}.tmp-encounter-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}.tmp-encounter-confirm h2{font:30px/1.2 Anton,Impact,sans-serif;margin:8px 0 18px;text-transform:uppercase}.tmp-encounter-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}.tmp-encounter-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800}.tmp-encounter-actions #scene-delete-accept{background:#a7191c;color:#fff;border-color:#a7191c}.tmp-encounter-actions #encounter-confirm-accept{background:#a7191c;color:#fff;border-color:#a7191c}</style>
+.tmp-encounter-confirm{width:min(92vw,510px);max-height:85vh;overflow:auto;background:#f4f1e9;color:#222;border:1px solid #a7191c;border-top:5px solid #a7191c;padding:26px;box-shadow:0 20px 70px #0008}.tmp-encounter-confirm::backdrop{background:#0b1118b8;backdrop-filter:blur(2px)}.tmp-encounter-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a7191c}.tmp-encounter-confirm h2{font:30px/1.2 Anton,Impact,sans-serif;margin:8px 0 18px;text-transform:uppercase}.tmp-encounter-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:25px}.tmp-encounter-actions button{padding:11px 16px;border:1px solid #b8b0a5;background:#fffdf8;color:#222;font-weight:800}.tmp-encounter-actions #scene-delete-accept{background:#a7191c;color:#fff;border-color:#a7191c}.tmp-encounter-actions #encounter-confirm-accept{background:#a7191c;color:#fff;border-color:#a7191c}.splash-fullscreen{position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:#10141b;color:#fff;overflow:hidden}
+.splash-fullscreen::backdrop{background:#070a0df2}
+.splash-fullscreen-toolbar{height:60px;box-sizing:border-box;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#1c232c;border-bottom:2px solid #a7191c;font-weight:800}
+.splash-fullscreen-toolbar>div{display:flex;gap:7px;flex-wrap:wrap}
+.splash-fullscreen-toolbar button{padding:8px 13px;background:#f4f1e9;color:#161b20;border:1px solid #9d9b96;font-weight:800;cursor:pointer}
+.splash-fullscreen-viewport{height:calc(100dvh - 60px);overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
+.splash-fullscreen-viewport img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;transform-origin:center center}
+@media(max-width:600px){.splash-fullscreen-toolbar{height:auto;min-height:60px;flex-wrap:wrap}.splash-fullscreen-viewport{height:calc(100dvh - 110px)}}
+</style>
 {{ encounter_options|json_script:"scenario-encounters" }}
 <script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 <script>
@@ -246,6 +262,27 @@ document.getElementById("encounter-confirm-accept").addEventListener("click",()=
  // Native form submission preserves the existing CSRF-protected POST workflow.
  HTMLFormElement.prototype.submit.call(form);
 });
+const splashDialog=document.getElementById("splash-fullscreen");
+const splashImage=document.getElementById("splash-fullscreen-image");
+const splashViewport=splashDialog.querySelector(".splash-fullscreen-viewport");
+let splashZoom=1;
+function setSplashZoom(next){
+ splashZoom=Math.max(.5,Math.min(4,next));
+ splashImage.style.transform="scale("+splashZoom+")";
+}
+function openSplashFullscreen(url,title){
+ splashImage.src=url;
+ splashImage.alt="Splash — "+title;
+ document.getElementById("splash-fullscreen-title").textContent=title;
+ setSplashZoom(1);
+ splashDialog.showModal();
+ document.getElementById("splash-close").focus();
+}
+document.getElementById("splash-close").addEventListener("click",()=>splashDialog.close());
+document.getElementById("splash-zoom-in").addEventListener("click",()=>setSplashZoom(splashZoom+.25));
+document.getElementById("splash-zoom-out").addEventListener("click",()=>setSplashZoom(splashZoom-.25));
+document.getElementById("splash-zoom-reset").addEventListener("click",()=>setSplashZoom(1));
+splashDialog.addEventListener("close",()=>{splashImage.removeAttribute("src");setSplashZoom(1);});
 function renderSceneModal(){const s=chosen();if(!s){closeScene();return;}$("scene-dialog-title").textContent=s.title;$("scene-read-mode").textContent=readerMode?"Modifier la scène":"Lecture MJ";$("scene-read-view").hidden=!readerMode;document.querySelector(".story-editor").hidden=readerMode;if(!readerMode)return;
 const body=$("scene-read-view");body.replaceChildren();
 const narrative=document.createElement("div");narrative.className="scene-read-narration";renderNarrative(narrative,blocks(s,"narration").map(b=>b.text).join("\n\n"));body.append(narrative);
@@ -257,6 +294,16 @@ const active=contexts.find(b=>b.id===activeContext);if(active){const panel=docum
   const img=document.createElement("img");
   img.src=url;img.alt="Illustration de "+s.title;
   img.loading="lazy";
+  img.style.cursor="zoom-in";
+  img.title="Cliquer pour afficher en plein écran";
+  img.tabIndex=0;img.setAttribute("role","button");
+  img.setAttribute("aria-label","Ouvrir le Splash en plein écran");
+  img.addEventListener("click",()=>openSplashFullscreen(url,s.title));
+  img.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openSplashFullscreen(url,s.title);}});
+  const fullscreenButton=document.createElement("button");fullscreenButton.type="button";
+  fullscreenButton.textContent="⛶ Plein écran";
+  fullscreenButton.addEventListener("click",()=>openSplashFullscreen(url,s.title));
+  panel.append(fullscreenButton);
   img.onerror=()=>{panel.textContent="Illustration indisponible. Vérifie que l'image est bien enregistrée et accessible."};
   panel.append(img);
  }else{
