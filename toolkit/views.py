@@ -757,7 +757,7 @@ def bestiary_duplicate(request, mob_id):
     source = BestiaryMob.objects.filter(id=mob_id, owner=request.user).first()
     if source is not None:
         source.pk = None
-        source.name = f"{source.name} â€” Copie"
+        source.name = f"{source.name} — Copie"
         source.save()
     return redirect("bestiary")
 
@@ -1183,7 +1183,7 @@ def encounter_duplicate(request, encounter_id):
     source = Encounter.objects.filter(id=encounter_id, owner=request.user).first()
     if source is None:
         return redirect("encounters")
-    duplicate = Encounter.objects.create(owner=request.user, name=f"{source.name} â€” Copie")
+    duplicate = Encounter.objects.create(owner=request.user, name=f"{source.name} — Copie")
     for entry in source.draft_mobs.all():
         EncounterDraftMob.objects.create(
             encounter=duplicate, name=entry.name, quantity=entry.quantity,
