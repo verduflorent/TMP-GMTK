@@ -13,16 +13,16 @@ from rules.engine import (
 
 class MobScalingTests(SimpleTestCase):
     def test_hp_scales_linearly_beyond_level_ten(self):
-        self.assertEqual(max_hp(1), 250)
-        self.assertEqual(max_hp(5), 370)
-        self.assertEqual(max_hp(3, constitution=12), 330)
-        self.assertEqual(max_hp(10), 520)
-        self.assertEqual(max_hp(20), 820)
+        self.assertEqual(max_hp(1), 200)
+        self.assertEqual(max_hp(5), 320)
+        self.assertEqual(max_hp(3, constitution=12), 280)
+        self.assertEqual(max_hp(10), 470)
+        self.assertEqual(max_hp(20), 770)
 
     def test_damage_base_scales_linearly(self):
-        self.assertEqual(base_damage(1), 50)
-        self.assertEqual(base_damage(10), 140)
-        self.assertEqual(base_damage(15), 190)
+        self.assertEqual(base_damage(1), 40)
+        self.assertEqual(base_damage(10), 130)
+        self.assertEqual(base_damage(15), 180)
 
     def test_stats_are_capped_at_level_ten(self):
         self.assertEqual(profile_stats("C", 10), profile_stats("C", 15))
@@ -51,7 +51,7 @@ class MobAttackTests(SimpleTestCase):
         result = resolve_attack(level=1, perception=12, weapon_power=15, weapon_aim=1, roll=10)
         self.assertTrue(result.success)
         self.assertEqual(result.threshold, 13)
-        self.assertEqual(result.damage, 80)
+        self.assertEqual(result.damage, 70)
 
     def test_failed_attack_has_no_damage(self):
         result = resolve_attack(level=1, perception=10, weapon_power=15, weapon_aim=0, roll=15)
@@ -61,7 +61,7 @@ class MobAttackTests(SimpleTestCase):
     def test_mobs_have_no_special_critical_rule(self):
         result = resolve_attack(level=1, perception=10, weapon_power=10, weapon_aim=2, roll=1)
         self.assertTrue(result.success)
-        self.assertEqual(result.damage, 115)
+        self.assertEqual(result.damage, 105)
 
 
 class ResolvedCombatCardTests(SimpleTestCase):
@@ -77,13 +77,13 @@ class ResolvedCombatCardTests(SimpleTestCase):
 
         card = resolve_weapon(self.Item("Revolver", 10, 2, "+5 Puissance."), 3)
         self.assertEqual(card.effective_power, 15)
-        self.assertEqual(card.neutral_damage, 100)
+        self.assertEqual(card.neutral_damage, 90)
 
     def test_arc_level_33_displays_neutral_damage(self):
         from rules.engine import resolve_weapon
 
         card = resolve_weapon(self.Item("Arc", 15, 1, "Ignore les Couvertures légères."), 33)
-        self.assertEqual(card.neutral_damage, 400)
+        self.assertEqual(card.neutral_damage, 390)
 
     def test_scaled_weapon_property_is_resolved(self):
         from rules.engine import resolve_weapon
@@ -108,7 +108,7 @@ class ResolvedCombatCardTests(SimpleTestCase):
         from rules.engine import resolve_weapon
 
         card = resolve_weapon(self.Item("Masse de combat", 25, 0, "+5 Dégâts × Niveau."), 10)
-        self.assertEqual(card.neutral_damage, 240)
+        self.assertEqual(card.neutral_damage, 230)
         self.assertEqual(card.resolved_property, "")
 
 
@@ -249,3 +249,14 @@ class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
         card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
         self.assertEqual(card.contact_damage, 230)
         self.assertEqual(card.distance_damage, 185)
+
+class LevelZeroHotfixTests(SimpleTestCase):
+    def test_level_zero_baseline_and_profile(self):
+        self.assertEqual(max_hp(0), 150)
+        self.assertEqual(base_damage(0), 30)
+        self.assertEqual(profile_stats("C", 0), profile_stats("C", 1))
+        self.assertEqual(profile_derived("S", 0).shield, 0)
+
+    def test_negative_level_rejected(self):
+        with self.assertRaises(ValueError):
+            max_hp(-1)
