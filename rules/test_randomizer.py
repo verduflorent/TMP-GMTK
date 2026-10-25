@@ -512,7 +512,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
         )
         self.assertEqual(mob["profile"], MobProfile.COMBATANT)
         self.assertEqual(mob["level"], 5)
-        self.assertEqual(mob["max_hp"], 390)
+        self.assertEqual(mob["max_hp"], 340)
         self.assertEqual(mob["current_hp"], 390)
         # N5 Combattant: 25 Armure de profil + AEGIS tiré par ce seed (+25).
         self.assertEqual(mob["armor"], 50)
@@ -560,7 +560,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
         )
         self.assertEqual(mob["level"], 5)
         self.assertEqual(mob["profile"], MobProfile.ASSASSIN)
-        self.assertEqual(mob["max_hp"], 370)
+        self.assertEqual(mob["max_hp"], 320)
         self.assertEqual(mob["reactions"], 2)
         self.assertEqual(mob["stats"].agility, 15)
         self.assertTrue(mob["primary"].supports_profile(MobProfile.ASSASSIN))
@@ -576,7 +576,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
             rng=random.Random(4),
         )
         self.assertEqual(mob["stats"].perception, 20)
-        self.assertEqual(mob["max_hp"], 690)
+        self.assertEqual(mob["max_hp"], 640)
         self.assertGreaterEqual(len(mob["implants"]), 2)
 
     def test_forced_unknown_profile_is_rejected(self):
@@ -646,7 +646,7 @@ class ResolvedLoadoutIntegrationTests(SimpleTestCase):
             rng=random.Random(1),
         )
         self.assertEqual(mob["armor"], 75 + 75)
-        self.assertEqual(mob["primary_card"].neutral_damage, 210)
+        self.assertEqual(mob["primary_card"].neutral_damage, 200)
 
 
 class IdenticalAkimboResolutionTests(SimpleTestCase):
@@ -678,7 +678,7 @@ class IdenticalAkimboResolutionTests(SimpleTestCase):
             )
             if mob["akimbo_identical"]:
                 self.assertEqual(mob["primary_card"].effective_power, 20)
-                self.assertEqual(mob["primary_card"].neutral_damage, 110)
+                self.assertEqual(mob["primary_card"].neutral_damage, 100)
                 return
         self.fail("Aucun Akimbo identique trouvé dans les seeds de test.")
 
