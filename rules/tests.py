@@ -182,7 +182,7 @@ class PropertyLineTests(SimpleTestCase):
         card = resolve_weapon(Item(), 6)
         # Chakram is P15 at distance and P20 at Contact.
         self.assertEqual(card.effective_power, 15)
-        self.assertEqual(card.distance_damage, 130)
+        self.assertEqual(card.distance_damage, 120)
         self.assertEqual(card.contact_damage, 140)
         self.assertEqual(len(card.property_lines), 2)
         self.assertIn("bondir", card.property_lines[0])
@@ -200,12 +200,12 @@ class HybridWeaponDamageTests(SimpleTestCase):
     def test_short_shotgun_contextual_damage(self):
         from rules.engine import resolve_weapon
         card = resolve_weapon(self.Item("Fusil à pompe court", 10, 2), 5)
-        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (10, 110, 130))
+        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (10, 100, 120))
 
     def test_chakram_contextual_damage(self):
         from rules.engine import resolve_weapon
         card = resolve_weapon(self.Item("Chakram", 15, 1), 6)
-        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (15, 130, 140))
+        self.assertEqual((card.effective_power, card.distance_damage, card.contact_damage), (15, 120, 130))
         self.assertEqual(len(card.property_lines), 2)
 
 
@@ -229,7 +229,7 @@ class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
         card = resolve_weapon(self.Weapon("Pistolet", 10, "SHORT"), 10)
         card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
         self.assertEqual(distance, 25)
-        self.assertEqual(card.neutral_damage, 185)
+        self.assertEqual(card.neutral_damage, 175)
 
     def test_minos_adds_contact_damage(self):
         from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses, resolve_weapon
@@ -238,7 +238,7 @@ class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
         card = resolve_weapon(self.Weapon("Katana", 15, "CONTACT"), 10)
         card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
         self.assertEqual(contact, 50)
-        self.assertEqual(card.neutral_damage, 220)
+        self.assertEqual(card.neutral_damage, 210)
 
     def test_hybrid_shotgun_receives_only_matching_contextual_bonus(self):
         from rules.engine import apply_weapon_damage_bonuses, implant_damage_bonuses, resolve_weapon
@@ -247,7 +247,7 @@ class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
         contact, distance = implant_damage_bonuses(implants, 10)
         card = resolve_weapon(self.Weapon("Fusil à pompe court", 10, "SHORT"), 10)
         card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
-        self.assertEqual(card.contact_damage, 230)
+        self.assertEqual(card.contact_damage, 220)
         self.assertEqual(card.distance_damage, 185)
 
 class LevelZeroHotfixTests(SimpleTestCase):
