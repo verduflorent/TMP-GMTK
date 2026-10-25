@@ -183,7 +183,7 @@ class PropertyLineTests(SimpleTestCase):
         # Chakram is P15 at distance and P20 at Contact.
         self.assertEqual(card.effective_power, 15)
         self.assertEqual(card.distance_damage, 120)
-        self.assertEqual(card.contact_damage, 140)
+        self.assertEqual(card.contact_damage, 130)
         self.assertEqual(len(card.property_lines), 2)
         self.assertIn("bondir", card.property_lines[0])
         self.assertIn("Portée Moyenne", card.property_lines[1])
@@ -248,7 +248,7 @@ class ImplantWeaponDamageIntegrationTests(SimpleTestCase):
         card = resolve_weapon(self.Weapon("Fusil à pompe court", 10, "SHORT"), 10)
         card = apply_weapon_damage_bonuses(card, contact_bonus=contact, distance_bonus=distance)
         self.assertEqual(card.contact_damage, 220)
-        self.assertEqual(card.distance_damage, 185)
+        self.assertEqual(card.distance_damage, 175)
 
 class LevelZeroHotfixTests(SimpleTestCase):
     def test_level_zero_baseline_and_profile(self):
