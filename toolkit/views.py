@@ -520,7 +520,7 @@ def table_mob_edit(request, mob_id):
 
     class LiveMobEditForm(forms.Form):
         name = forms.CharField(max_length=120)
-        level = forms.IntegerField(min_value=1, max_value=99)
+        level = forms.IntegerField(min_value=0, max_value=99)
         current_hp = forms.IntegerField(min_value=0)
         max_hp = forms.IntegerField(min_value=1)
         shield = forms.IntegerField(min_value=0)
