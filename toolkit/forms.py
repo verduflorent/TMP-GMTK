@@ -10,7 +10,7 @@ class MonsterBuilderForm(forms.Form):
     )
     level = forms.IntegerField(
         label="Niveau",
-        min_value=1,
+        min_value=0,
         max_value=99,
         initial=1,
     )
