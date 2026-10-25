@@ -513,7 +513,7 @@ class CompleteMobGenerationTests(SimpleTestCase):
         self.assertEqual(mob["profile"], MobProfile.COMBATANT)
         self.assertEqual(mob["level"], 5)
         self.assertEqual(mob["max_hp"], 340)
-        self.assertEqual(mob["current_hp"], 390)
+        self.assertEqual(mob["current_hp"], 340)
         # N5 Combattant: 25 Armure de profil + AEGIS tiré par ce seed (+25).
         self.assertEqual(mob["armor"], 50)
         self.assertEqual(mob["stats"].force, 14)
