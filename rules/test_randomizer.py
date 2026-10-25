@@ -681,3 +681,10 @@ class IdenticalAkimboResolutionTests(SimpleTestCase):
                 self.assertEqual(mob["primary_card"].neutral_damage, 110)
                 return
         self.fail("Aucun Akimbo identique trouvé dans les seeds de test.")
+
+class LevelZeroGenerationTests(SimpleTestCase):
+    def test_level_zero_has_only_tier_one_and_no_implant_slots(self):
+        from rules.randomizer import tier_weights, implant_slot_chances, roll_implant_slots
+        self.assertEqual(tier_weights(0), (100.0, 0.0, 0.0, 0.0))
+        self.assertEqual(implant_slot_chances(0), (0.0, 0.0, 0.0))
+        self.assertEqual(roll_implant_slots(0, random.Random(1)), [])
