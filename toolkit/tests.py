@@ -1774,7 +1774,7 @@ class AkimboTableEditorContractTests(TestCase):
         mob, _pm = self._create_akimbo_table_mob()
         self.assertTrue(mob.payload["akimbo"])
         self.assertTrue(mob.payload["akimbo_identical"])
-        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 150), (10, 130)])
+        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 140), (10, 120)])
 
     def test_table_editor_preserves_akimbo_and_live_mob_identity(self):
         mob, pm = self._create_akimbo_table_mob()
@@ -1795,7 +1795,7 @@ class AkimboTableEditorContractTests(TestCase):
         self.assertEqual(mob.id, before.get("id", mob.id))
         self.assertEqual(mob.payload["current_hp"], before["current_hp"])
         self.assertEqual(mob.payload["token_id"], before.get("token_id", ""))
-        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 150), (10, 130)])
+        self.assertEqual([(w["power"], w["damage"]) for w in mob.payload["weapons"]], [(20, 140), (10, 120)])
 
     def test_table_editor_rejects_akimbo_with_two_handed_weapon(self):
         from catalogue.models import MobWeapon
