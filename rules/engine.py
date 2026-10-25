@@ -73,7 +73,7 @@ class MobAttackResult:
 def profile_stats(profile: str, level: int) -> MobStats:
     _validate_level(level)
     try:
-        values = PROFILE_STATS[profile][min(level, 10) - 1]
+        values = PROFILE_STATS[profile][max(1, min(level, 10)) - 1]
     except KeyError as exc:
         raise ValueError(f"Profil Mob inconnu : {profile}") from exc
     return MobStats(*values)
@@ -86,12 +86,12 @@ def round_to_5(value: int | float) -> int:
 
 def max_hp(level: int, constitution: int = 10) -> int:
     _validate_level(level)
-    return 250 + 30 * (level - 1) + (constitution - 10) * 10
+    return (150 if level == 0 else 200 + 30 * (level - 1)) + (constitution - 10) * 10
 
 
 def base_damage(level: int) -> int:
     _validate_level(level)
-    return 50 + 10 * (level - 1)
+    return 30 if level == 0 else 40 + 10 * (level - 1)
 
 
 def profile_derived(profile: str, level: int) -> MobDerived:
@@ -323,8 +323,8 @@ def resolve_attack(
 
 
 def _validate_level(level: int) -> None:
-    if level < 1:
-        raise ValueError("Le niveau Mob doit être supérieur ou égal à 1.")
+    if type(level) is not int or level < 0:
+        raise ValueError("Le niveau Mob doit être un entier supérieur ou égal à 0.")
 
 
 def _validate_roll(roll: int) -> None:
