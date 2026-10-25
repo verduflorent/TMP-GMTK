@@ -63,6 +63,8 @@ def tier_weights(level: int) -> tuple[float, float, float, float]:
     """Return T1..T4 weights for a level, interpolating between design anchors."""
     _validate_level(level)
 
+    if level == 0:
+        return (100.0, 0.0, 0.0, 0.0)
     if level in TIER_ANCHORS:
         return TIER_ANCHORS[level]
 
@@ -227,6 +229,8 @@ IMPLANT_SLOT_ANCHORS = {
 def implant_slot_chances(level: int) -> tuple[float, float, float]:
     """Return independent fill chances for implant slots 1..3."""
     _validate_level(level)
+    if level == 0:
+        return (0.0, 0.0, 0.0)
     levels = sorted(IMPLANT_SLOT_ANCHORS)
 
     if level >= levels[-1]:
@@ -686,7 +690,7 @@ def generate_mob(weapons, implants, *, level: int, profile: str | None = None, r
     if selected_profile not in PROFILE_WEIGHTS:
         raise ValueError(f"Profil Mob inconnu : {selected_profile}")
     loadout = choose_weapon_loadout(weapons, profile=selected_profile, level=level, rng=rng)
-    selected_implants = choose_implants(implants, profile=selected_profile, level=level, rng=rng)
+    selected_implants = [] if level == 0 else choose_implants(implants, profile=selected_profile, level=level, rng=rng)
     mob = _assemble_mob(
         level=level, profile=selected_profile,
         primary=loadout["primary"], secondary=loadout["secondary"],
@@ -743,5 +747,5 @@ def _validate_quantity(quantity: int) -> None:
 
 
 def _validate_level(level: int) -> None:
-    if level < 1:
-        raise ValueError("Le niveau Mob doit être supérieur ou égal à 1.")
+    if type(level) is not int or level < 0:
+        raise ValueError("Le niveau Mob doit être un entier supérieur ou égal à 0.")
